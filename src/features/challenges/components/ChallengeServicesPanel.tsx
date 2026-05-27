@@ -8,6 +8,7 @@ import { parseNxctlService, type NxctlServiceEntry } from '../lib/nxctl-services
 
 type ServiceAction = 'up' | 'restart' | 'extend'
 type ServiceActionLoadingState = ServiceAction | null
+const CHALLENGE_KEY_HEADER = 'X-NXCTL-Challenge-Key'
 
 interface ChallengeServicesPanelProps {
   open: boolean
@@ -17,8 +18,38 @@ interface ChallengeServicesPanelProps {
 const buildNxctlHeaders = (service: NxctlServiceEntry, json = false) => {
   const headers: Record<string, string> = {}
   if (json) headers['Content-Type'] = 'application/json'
-  if (service.key) headers['X-NXCTL-Challenge-Key'] = service.key
+  if (service.key) headers[CHALLENGE_KEY_HEADER] = service.key
   return headers
+}
+
+const buildNxctlStatusHeaders = (services: NxctlServiceEntry[]) => {
+  const headers: Record<string, string> = {}
+  const keys = Array.from(new Set(
+    services
+      .map((service) => service.key?.trim())
+      .filter((key): key is string => Boolean(key))
+  ))
+
+  if (keys.length > 0) {
+    headers[CHALLENGE_KEY_HEADER] = keys.join(',')
+  }
+
+  return headers
+}
+
+const buildNxctlStatusUrl = (services: NxctlServiceEntry[]) => {
+  const params = new URLSearchParams({ action: 'status' })
+  const names = Array.from(new Set(
+    services
+      .map((service) => service.name.trim())
+      .filter(Boolean)
+  ))
+
+  if (names.length > 0) {
+    params.set('filter', names.join(','))
+  }
+
+  return `/api/nxctl?${params.toString()}`
 }
 
 const getExportEndpoint = (item: any) => String(item?.endpoint || item?.url || '').trim()
@@ -46,8 +77,16 @@ const toSshCommand = (endpoint: string, user?: string) => {
   const parsed = parseTcpEndpoint(endpoint)
   if (!parsed) return endpoint
 
-  const login = user ? `${user}@` : ''
+  const username = user?.trim() || 'username'
+  const login = `${username}@`
   return `ssh ${login}${parsed.host} -p ${parsed.port}`
+}
+
+const toSshCopyCommand = (endpoint: string, user?: string) => {
+  const command = toSshCommand(endpoint, user)
+  return command.startsWith('ssh ')
+    ? command.replace(/^ssh\s+/, 'ssh -o StrictHostKeyChecking=no ')
+    : command
 }
 
 const isHttpEndpoint = (endpoint: string) => /^https?:\/\//i.test(endpoint)
@@ -59,6 +98,17 @@ const formatDuration = (seconds: number) => {
   const sec = seconds % 60
   if (h > 0) return `${h}h ${m}m ${sec}s`
   return `${m}m ${sec}s`
+}
+
+const formatShortDuration = (seconds?: number | null) => {
+  if (!seconds || seconds <= 0) return null
+  if (seconds < 60) return `${Math.ceil(seconds)}s`
+  return `${Math.ceil(seconds / 60)}m`
+}
+
+const formatExtendWaitDuration = (seconds?: number | null) => {
+  if (!seconds || seconds <= 0) return null
+  return `${Math.max(1, Math.ceil(seconds / 60))}m`
 }
 
 const stringifyNxctlDetail = (value: unknown): string | null => {
@@ -108,6 +158,24 @@ const getNxctlErrorMessage = (data: any) => {
     'Unknown error'
   )
 }
+
+const getNxctlStatusName = (item: any) => String(item?.name || item?.challenge?.name || '').trim()
+
+const normalizeNxctlStatusDetail = (item: any) => ({
+  challenge: {
+    name: getNxctlStatusName(item),
+    type: item?.type || item?.challenge?.type || null,
+  },
+  runtime: {
+    status: item?.runtime?.status || item?.status || 'unknown',
+    container_id: item?.runtime?.container_id || item?.container_id || null,
+    remaining_seconds: item?.runtime?.remaining_seconds ?? item?.remaining_seconds ?? null,
+    restart_cooldown: item?.runtime?.restart_cooldown ?? item?.restart_cooldown ?? 0,
+    extend_cooldown: item?.runtime?.extend_cooldown ?? item?.extend_cooldown ?? 0,
+    extend: item?.runtime?.extend || item?.extend || null,
+  },
+  exports: Array.isArray(item?.exports) ? item.exports : [],
+})
 
 const isNxctlNotFoundError = (status: number, data: any): boolean => {
   const getCode = (val: any): string | null => {
@@ -220,37 +288,112 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
     inspectRunRef.current = runId
     const isCurrentRun = () => inspectRunRef.current === runId
 
-    parsedServices.forEach(async (service) => {
-      setServiceDetailsLoading((prev) => ({ ...prev, [service.name]: true }))
-      setServiceDetailsError((prev) => ({ ...prev, [service.name]: null }))
+    const loadStatus = async () => {
+      const serviceNames = new Set(parsedServices.map((service) => service.name))
+      setServiceDetailsLoading((prev) => {
+        const next = { ...prev }
+        parsedServices.forEach((service) => {
+          next[service.name] = true
+        })
+        return next
+      })
+      setServiceDetailsError((prev) => {
+        const next = { ...prev }
+        parsedServices.forEach((service) => {
+          next[service.name] = null
+        })
+        return next
+      })
+
       try {
-        const res = await fetch(`/api/nxctl?action=inspect&name=${encodeURIComponent(service.name)}`, {
-          headers: buildNxctlHeaders(service),
+        const res = await fetch(buildNxctlStatusUrl(parsedServices), {
+          headers: buildNxctlStatusHeaders(parsedServices),
         })
         const data = await res.json()
         if (!isCurrentRun()) return
 
-        if (res.ok) {
-          setServiceDetails((prev) => ({ ...prev, [service.name]: data }))
-          setServiceDetailsFetchTime((prev) => ({ ...prev, [service.name]: Date.now() }))
-          setServiceDetailsError((prev) => ({ ...prev, [service.name]: null }))
-        } else {
-          if (isNxctlNotFoundError(res.status, data)) {
-            setHiddenServices((prev) => ({ ...prev, [service.name]: true }))
-          } else {
-            setServiceDetailsError((prev) => ({ ...prev, [service.name]: getNxctlErrorMessage(data) }))
-          }
+        if (!res.ok || !Array.isArray(data)) {
+          const message = getNxctlErrorMessage(data)
+          setServiceDetailsError((prev) => {
+            const next = { ...prev }
+            parsedServices.forEach((service) => {
+              next[service.name] = message
+            })
+            return next
+          })
+          return
         }
+
+        const statusByName = new Map<string, any>()
+        data.forEach((item: any) => {
+          const name = getNxctlStatusName(item)
+          if (name) statusByName.set(name, normalizeNxctlStatusDetail(item))
+        })
+
+        const fetchedAt = Date.now()
+        setServiceDetails((prev) => {
+          const next = { ...prev }
+          parsedServices.forEach((service) => {
+            const detail = statusByName.get(service.name)
+            if (detail) {
+              next[service.name] = detail
+            } else {
+              delete next[service.name]
+            }
+          })
+          return next
+        })
+        setServiceDetailsFetchTime((prev) => {
+          const next = { ...prev }
+          parsedServices.forEach((service) => {
+            if (statusByName.has(service.name)) {
+              next[service.name] = fetchedAt
+            } else {
+              delete next[service.name]
+            }
+          })
+          return next
+        })
+        setServiceDetailsError((prev) => {
+          const next = { ...prev }
+          parsedServices.forEach((service) => {
+            next[service.name] = statusByName.has(service.name)
+              ? null
+              : 'Service is not visible from NXCTL status. Check the service name or challenge key.'
+          })
+          return next
+        })
+        setHiddenServices((prev) => {
+          const next = { ...prev }
+          parsedServices.forEach((service) => {
+            if (serviceNames.has(service.name)) next[service.name] = false
+          })
+          return next
+        })
       } catch (error: any) {
         if (!isCurrentRun()) return
-        console.error(`Failed to fetch service details for ${service.name}`, error)
-        setServiceDetailsError((prev) => ({ ...prev, [service.name]: error.message || 'Failed to inspect service status' }))
+        console.error('Failed to fetch service status', error)
+        setServiceDetailsError((prev) => {
+          const next = { ...prev }
+          parsedServices.forEach((service) => {
+            next[service.name] = error.message || 'Failed to fetch service status'
+          })
+          return next
+        })
       } finally {
         if (isCurrentRun()) {
-          setServiceDetailsLoading((prev) => ({ ...prev, [service.name]: false }))
+          setServiceDetailsLoading((prev) => {
+            const next = { ...prev }
+            parsedServices.forEach((service) => {
+              next[service.name] = false
+            })
+            return next
+          })
         }
       }
-    })
+    }
+
+    loadStatus()
 
     return () => {
       inspectRunRef.current += 1
@@ -383,6 +526,7 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
                   (!isHttpEndpoint(endpoint) && parseTcpEndpoint(endpoint) !== null)
                 const isSsh = isReturnedTcp && service.options.type === 'ssh'
                 const command = isSsh ? toSshCommand(endpoint, service.options.user) : isTcp ? toTcpCommand(endpoint) : endpoint
+                const copyCommand = isSsh ? toSshCopyCommand(endpoint, service.options.user) : command
                 const password = isSsh ? service.options.pass || '' : ''
 
                 return {
@@ -396,8 +540,8 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
                   isSsh,
                   command,
                   password,
-                  copyText: password ? `${command}\npassword: ${password}` : command,
-                  copyMessage: password ? 'Copied SSH details' : 'Copied endpoint',
+                  copyText: copyCommand,
+                  copyMessage: isSsh ? 'Copied SSH command' : 'Copied endpoint',
                 }
               })
               .filter(Boolean)
@@ -410,10 +554,15 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
           const remainingSec = remainingSecFromApi !== null ? Math.max(0, remainingSecFromApi - timeSinceFetch) : null
           const restartCooldownSec = typeof details?.runtime?.restart_cooldown === 'number' ? details.runtime.restart_cooldown : (details?.runtime?.restart_cooldown ? Number(details.runtime.restart_cooldown) : 0)
 
-          // Use backend's extend_availability data
+          // Use backend's extend availability, but only show the next extend window in the UI.
           const extendAvailability = details?.runtime?.extend
           const thresholdSec = extendAvailability?.threshold_seconds || 300 // fallback to 5 minutes
           const canExtend = extendAvailability?.can_extend || false
+          const extendWaitSec = !canExtend && remainingSec !== null && remainingSec > thresholdSec
+            ? remainingSec - thresholdSec
+            : 0
+          const restartCooldownLabel = formatShortDuration(restartCooldownSec)
+          const extendDelayLabel = !canExtend ? formatExtendWaitDuration(extendWaitSec) : null
 
           const formatSecs = (s: number) => {
             if (s <= 0) return '0s'
@@ -487,6 +636,11 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
                   >
                     {actionLoading === 'restart' ? <Loader2 size={12} className={`${serviceActionButtonIconClass} animate-spin`} /> : <RefreshCcw size={12} className={serviceActionButtonIconClass} />}
                     <span>Restart</span>
+                    {restartCooldownLabel && (
+                      <span className="rounded bg-yellow-500/10 px-1 text-[9px] font-bold text-yellow-300">
+                        {restartCooldownLabel}
+                      </span>
+                    )}
                   </button>
                   <button
                     type="button"
@@ -499,10 +653,8 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
                       if (!isRunning) return 'Cannot extend: service is not running'
                       if (!remainingSec) return 'No expiration available to extend'
                       if (!canExtend) {
-                        if (extendAvailability?.cooldown_remaining_seconds && extendAvailability.cooldown_remaining_seconds > 0) {
-                          return `Extend cooldown: ${formatSecs(extendAvailability.cooldown_remaining_seconds)}`
-                        }
-                        return `Can extend when remaining ≤ ${formatSecs(thresholdSec)}`
+                        if (extendDelayLabel) return `Can extend in about ${extendDelayLabel}`
+                        return `Can extend when remaining <= ${formatSecs(thresholdSec)}`
                       }
                       return `Extend service time`
                     })()}
@@ -517,6 +669,11 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
                   >
                     {actionLoading === 'extend' ? <Loader2 size={12} className={`${serviceActionButtonIconClass} animate-spin`} /> : <Clock size={12} className={serviceActionButtonIconClass} />}
                     <span>Extend</span>
+                    {extendDelayLabel && (
+                      <span className="rounded bg-cyan-500/10 px-1 text-[9px] font-bold text-cyan-300">
+                        {extendDelayLabel}
+                      </span>
+                    )}
                   </button>
                 </div>
 

@@ -98,6 +98,82 @@ function challengeKeyFromRequest(request: Request, fallback?: unknown) {
   return request.headers.get(CHALLENGE_KEY_HEADER) || String(fallback || '')
 }
 
+function parseStatusFilter(searchParams: URLSearchParams) {
+  const names = [
+    ...searchParams
+      .getAll('filter')
+      .flatMap((filter) => filter.split(',')),
+    ...searchParams.getAll('name'),
+  ]
+    .map((name) => name.trim())
+    .filter(Boolean)
+
+  return Array.from(new Set(names))
+}
+
+function buildStatusUrl(targetNames: string[]) {
+  if (targetNames.length === 0) return `${apiUrl}/status`
+
+  const statusParams = new URLSearchParams()
+  targetNames.forEach((name) => {
+    statusParams.append('name', name)
+  })
+
+  return `${apiUrl}/status?${statusParams.toString()}`
+}
+
+function getNxctlErrorCode(data: any): string {
+  const values = [data?.detail, data?.error, data?.message, data]
+
+  for (const value of values) {
+    if (!value) continue
+    if (typeof value === 'string') return value
+    if (typeof value === 'object') {
+      if (typeof value.error === 'string') return value.error
+      if (typeof value.code === 'string') return value.code
+    }
+  }
+
+  return ''
+}
+
+function isTargetedStatusAccessError(result: Awaited<ReturnType<typeof safeFetch>>) {
+  return (
+    result.status === 404 &&
+    getNxctlErrorCode(result.data) === 'challenge_not_found_or_not_authorized'
+  )
+}
+
+async function fetchStatus(targetNames: string[], headers: Record<string, string>) {
+  const result = await safeFetch(buildStatusUrl(targetNames), { headers })
+
+  if (
+    targetNames.length <= 1 ||
+    result.ok ||
+    !isTargetedStatusAccessError(result)
+  ) {
+    return result
+  }
+
+  const results = []
+  for (const name of targetNames) {
+    const item = await safeFetch(buildStatusUrl([name]), { headers })
+    if (item.ok && Array.isArray(item.data)) {
+      results.push(...item.data)
+    }
+  }
+
+  if (results.length > 0) {
+    return {
+      ok: true,
+      status: 200,
+      data: results,
+    }
+  }
+
+  return result
+}
+
 function jsonResponse(result: Awaited<ReturnType<typeof safeFetch>>) {
   return NextResponse.json(result.data, {
     status: result.status,
@@ -131,9 +207,10 @@ export async function GET(request: Request) {
     return jsonError('Invalid GET action')
   }
 
-  const result = await safeFetch(`${apiUrl}/status`, {
-    headers: buildNxctlHeaders(challengeKey),
-  })
+  const result = await fetchStatus(
+    parseStatusFilter(searchParams),
+    buildNxctlHeaders(challengeKey)
+  )
 
   return jsonResponse(result)
 }
