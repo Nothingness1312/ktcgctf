@@ -49,6 +49,10 @@ export default function ScoreboardPage() {
   if (!user) return null
 
   const isAllView = view === 'all'
+  const selectedScoreboardEvent = selectedEvent === 'all' || selectedEvent === 'main'
+    ? undefined
+    : startedEvents.find((event) => String(event.id) === String(selectedEvent))
+  const chartStartDate = selectedScoreboardEvent?.start_time
 
   return (
     <PageBackground
@@ -96,7 +100,11 @@ export default function ScoreboardPage() {
         <div className={`space-y-4 ${hasMounted ? '' : 'opacity-0'} transition-opacity duration-500`}>
           {!isAllView && stableLeaderboard.length > 0 && !isEmpty && (
             <div>
-              <ScoreboardChart leaderboard={stableLeaderboard.length > 0 ? stableLeaderboard : leaderboard} isDark={isDark} />
+              <ScoreboardChart
+                leaderboard={stableLeaderboard.length > 0 ? stableLeaderboard : leaderboard}
+                isDark={isDark}
+                startDate={chartStartDate}
+              />
             </div>
           )}
 

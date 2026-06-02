@@ -4,6 +4,7 @@ import BaseScoreboardChart, { type ChartSeries } from './base/BaseScoreboardChar
 interface ScoreboardChartProps {
   leaderboard: LeaderboardEntry[]
   isDark?: boolean
+  startDate?: string | null
 }
 
 function truncate(str: string, n: number) {
@@ -15,7 +16,8 @@ function adjustDate(dateStr: string) {
   return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
 }
 
-export default function ScoreboardChart({ leaderboard }: ScoreboardChartProps) {
+export default function ScoreboardChart({ leaderboard, startDate }: ScoreboardChartProps) {
+  const adjustedStartDate = startDate ? adjustDate(startDate) : undefined
   const series: ChartSeries[] = leaderboard.slice(0, 10).map((entry) => {
     const shortName = truncate(entry.username, 16)
 
@@ -28,5 +30,5 @@ export default function ScoreboardChart({ leaderboard }: ScoreboardChartProps) {
     }
   })
 
-  return <BaseScoreboardChart title="Top 10 Users" series={series} />
+  return <BaseScoreboardChart title="Top 10 Users" series={series} startDate={adjustedStartDate} />
 }

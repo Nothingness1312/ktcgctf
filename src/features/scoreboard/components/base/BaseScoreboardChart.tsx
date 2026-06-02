@@ -16,9 +16,18 @@ import type { ChartData, ChartOptions, Plugin, TooltipItem } from 'chart.js'
 
 import BaseScoreboardCard from './BaseScoreboardCard'
 
+type ScoreboardEndpointMarker = {
+  color: string
+  dataIndex: number
+  offsetX: number
+  offsetY: number
+  score: number
+}
+
 declare module 'chart.js' {
   interface Chart {
     $scoreboardRevealProgress?: number
+    $scoreboardEndpointMarkers?: ScoreboardEndpointMarker[]
   }
 }
 
@@ -43,6 +52,7 @@ type BaseScoreboardChartProps = {
   title: string
   series: ChartSeries[]
   yAxisTitle?: string
+  startDate?: string
 }
 
 const scoreboardRevealPlugin: Plugin<'line'> = {
@@ -70,6 +80,39 @@ const scoreboardRevealPlugin: Plugin<'line'> = {
   },
 }
 
+const scoreboardEndpointPlugin: Plugin<'line'> = {
+  id: 'scoreboardEndpointMarkers',
+  afterDatasetsDraw(chart) {
+    const markers = chart.$scoreboardEndpointMarkers
+    if (!markers?.length || (chart.$scoreboardRevealProgress ?? 1) < 1) return
+
+    const { ctx, chartArea, scales } = chart
+    const xScale = scales.x
+    const yScale = scales.y
+    if (!ctx || !chartArea || !xScale || !yScale) return
+
+    ctx.save()
+    markers.forEach((marker) => {
+      const x = xScale.getPixelForValue(marker.dataIndex) + marker.offsetX
+      const rawY = yScale.getPixelForValue(marker.score) + marker.offsetY
+      const y = Math.max(chartArea.top + 5, Math.min(chartArea.bottom - 5, rawY))
+
+      if (x < chartArea.left || x > chartArea.right || y < chartArea.top || y > chartArea.bottom) {
+        return
+      }
+
+      ctx.beginPath()
+      ctx.arc(x, y, 4, 0, Math.PI * 2)
+      ctx.fillStyle = marker.color
+      ctx.fill()
+      ctx.lineWidth = 2
+      ctx.strokeStyle = '#f8fafc'
+      ctx.stroke()
+    })
+    ctx.restore()
+  },
+}
+
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -78,34 +121,36 @@ ChartJS.register(
   Title,
   Tooltip,
   Legend,
-  scoreboardRevealPlugin
+  scoreboardRevealPlugin,
+  scoreboardEndpointPlugin
 )
 
-function buildChartData(series: ChartSeries[]) {
+function buildChartData(series: ChartSeries[], startDate?: string) {
   const allDates = new Set<string>()
   const seriesMeta = series.map(s => {
     const sortedData = [...s.data].sort((a, b) => a.date.localeCompare(b.date))
     sortedData.forEach(p => allDates.add(p.date))
 
-    const firstDate = sortedData[0]?.date
-    const baselineDate = firstDate ? getBaselineDate(firstDate) : undefined
-    const hasBaseline = Boolean(baselineDate && baselineDate !== firstDate)
-
-    if (hasBaseline && baselineDate) allDates.add(baselineDate)
-
     return {
       name: s.name,
       data: sortedData,
-      baselineDate: hasBaseline ? baselineDate : undefined,
     }
   })
+
+  const firstSolveDate = Array.from(allDates).sort()[0]
+  const baselineDate = getBaselineDate(startDate, firstSolveDate)
+  if (baselineDate) allDates.add(baselineDate)
+
+  const lastSolveDate = Array.from(allDates).sort().at(-1)
+  const endPaddingDate = lastSolveDate ? addMinutesToDateString(lastSolveDate, 1) : undefined
+  if (endPaddingDate) allDates.add(endPaddingDate)
 
   const sortedDates = Array.from(allDates).sort()
 
   return sortedDates.map((date) => {
     const point: BuiltChartPoint = { date }
     seriesMeta.forEach(s => {
-      if (s.baselineDate && date === s.baselineDate) {
+      if (baselineDate && date === baselineDate) {
         point[s.name] = 0
         return
       }
@@ -117,16 +162,62 @@ function buildChartData(series: ChartSeries[]) {
   })
 }
 
+function addMinutesToDateString(dateString: string, minutes: number) {
+  const parsedDate = new Date(dateString)
+  if (Number.isNaN(parsedDate.getTime())) return undefined
+
+  return toLocalMinuteString(new Date(parsedDate.getTime() + minutes * 60000))
+}
+
+function getBaselineDate(startDate?: string, firstSolveDate?: string) {
+  if (!firstSolveDate) return startDate
+  if (startDate && startDate < firstSolveDate) return startDate
+
+  const dayStart = `${firstSolveDate.slice(0, 10)}T00:00`
+  return dayStart < firstSolveDate ? dayStart : undefined
+}
+
+function getFirstSolveDate(series: ChartSeries) {
+  return [...series.data].sort((a, b) => a.date.localeCompare(b.date))[0]?.date
+}
+
 function toLocalMinuteString(date: Date) {
   const offsetMs = date.getTimezoneOffset() * 60000
   return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16)
 }
 
-function getBaselineDate(firstDate: string) {
-  const parsedDate = new Date(firstDate)
-  if (Number.isNaN(parsedDate.getTime())) return firstDate
+function buildEndpointMarkers(series: ChartSeries[], builtData: BuiltChartPoint[], labels: string[]) {
+  const endpointIndex = labels.length - 1
+  const endpoint = builtData[endpointIndex]
+  if (!endpoint) return []
 
-  return toLocalMinuteString(new Date(parsedDate.getTime() - 60000))
+  const groups = new Map<number, { color: string; index: number }[]>()
+
+  series.forEach((s, index) => {
+    const value = endpoint[s.name]
+    if (typeof value !== 'number') return
+
+    const group = groups.get(value) ?? []
+    group.push({
+      color: SERIES_COLORS[index % SERIES_COLORS.length],
+      index,
+    })
+    groups.set(value, group)
+  })
+
+  return Array.from(groups.entries()).flatMap(([score, group]) => {
+    const sortedGroup = [...group].sort((a, b) => a.index - b.index)
+    const center = (sortedGroup.length - 1) / 2
+    const gap = sortedGroup.length > 5 ? 6 : 8
+
+    return sortedGroup.map((entry, index) => ({
+      color: entry.color,
+      dataIndex: endpointIndex,
+      offsetX: -8,
+      offsetY: (index - center) * gap,
+      score,
+    }))
+  })
 }
 
 function easeOutCubic(value: number) {
@@ -137,18 +228,39 @@ export default function BaseScoreboardChart({
   title,
   series,
   yAxisTitle = 'Score',
+  startDate,
 }: BaseScoreboardChartProps) {
   const chartRef = React.useRef<ChartJS<'line', (number | null)[], string> | null>(null)
 
-  const builtData = React.useMemo(() => buildChartData(series), [series])
+  const builtData = React.useMemo(() => buildChartData(series, startDate), [series, startDate])
   const labels = React.useMemo(() => builtData.map(point => point.date), [builtData])
+  const endpointMarkers = React.useMemo(
+    () => buildEndpointMarkers(series, builtData, labels),
+    [builtData, labels, series]
+  )
   const solveDateSets = React.useMemo(
     () => series.map(s => new Set(s.data.map(point => point.date))),
     [series]
   )
+  const drawOrderByName = React.useMemo(() => {
+    const orderedSeries = series
+      .map((s, index) => ({
+        name: s.name,
+        index,
+        firstSolveDate: getFirstSolveDate(s),
+      }))
+      .sort((a, b) => {
+        if (!a.firstSolveDate && !b.firstSolveDate) return a.index - b.index
+        if (!a.firstSolveDate) return 1
+        if (!b.firstSolveDate) return -1
+        return a.firstSolveDate.localeCompare(b.firstSolveDate) || a.index - b.index
+      })
+
+    return new Map(orderedSeries.map((s, index) => [s.name, index]))
+  }, [series])
   const chartKey = React.useMemo(
-    () => series.map(s => `${s.name}:${s.data.map(p => `${p.date}:${p.score}`).join(',')}`).join('|'),
-    [series]
+    () => `${startDate ?? ''}|${series.map(s => `${s.name}:${s.data.map(p => `${p.date}:${p.score}`).join(',')}`).join('|')}`,
+    [series, startDate]
   )
 
   const chartData = React.useMemo<ChartData<'line', (number | null)[], string>>(() => ({
@@ -167,22 +279,35 @@ export default function BaseScoreboardChart({
         borderWidth: i === 0 ? 2.6 : 2,
         borderCapStyle: 'round' as const,
         borderJoinStyle: 'round' as const,
-        order: i,
-        stepped: 'after' as const,
+        order: drawOrderByName.get(s.name) ?? i,
+        stepped: 'before' as const,
         tension: 0,
         pointRadius(context) {
           const date = labels[context.dataIndex]
           return solveDateSets[context.datasetIndex]?.has(date) ? 3 : 0
         },
         pointHitRadius: 12,
-        pointHoverRadius: 5,
+        pointHoverRadius(context) {
+          return context.dataIndex === labels.length - 1 ? 0 : 5
+        },
         pointBackgroundColor: color,
         pointBorderColor: '#f8fafc',
         pointBorderWidth: 2,
         spanGaps: true,
       }
     }),
-  }), [builtData, labels, series, solveDateSets])
+  }), [builtData, drawOrderByName, labels, series, solveDateSets])
+
+  React.useEffect(() => {
+    const chart = chartRef.current
+    if (!chart) return
+
+    chart.$scoreboardEndpointMarkers = endpointMarkers
+
+    return () => {
+      chart.$scoreboardEndpointMarkers = undefined
+    }
+  }, [endpointMarkers])
 
   const options = React.useMemo<ChartOptions<'line'>>(() => ({
     responsive: true,
