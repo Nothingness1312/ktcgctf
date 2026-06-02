@@ -105,6 +105,10 @@ const ChallengeListPanel: React.FC<ChallengeListPanelProps> = ({
             onEventChange={onEventChange}
             hideAllEventOption={!isGlobalAdmin}
             hideMainEventOption={!isGlobalAdmin}
+            includeEndedEvents
+            showEventState={false}
+            eventNavigationMode="select"
+            upcomingVisibilityWindowDays={null}
           />
 
           <div className="mt-4 space-y-2">

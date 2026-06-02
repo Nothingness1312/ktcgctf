@@ -47,6 +47,7 @@ export default function NavbarNotifications({
     notifPanelRef,
     notifButtonRef,
     markAllNotificationsRead,
+    markNotificationRead,
     openNotifPanel,
     handleSendNotif,
     handleDeleteNotif,
@@ -91,6 +92,7 @@ export default function NavbarNotifications({
                 notifPanelRef={notifPanelRef}
                 setNotifOpen={setNotifOpen}
                 markAllNotificationsRead={markAllNotificationsRead}
+                markNotificationRead={markNotificationRead}
                 solveSoundEnabled={solveSoundEnabled}
                 setSolveSoundEnabled={setSolveSoundEnabled}
                 globalAdminStatus={globalAdminStatus}

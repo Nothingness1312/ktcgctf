@@ -23,6 +23,7 @@ type Props = {
   // When false, do not show timing/visual state (colors/icons) for events.
   // Useful for admin views where timing badges are not desired.
   showEventState?: boolean
+  eventNavigationMode?: 'scroll' | 'select'
   // Controls which upcoming events appear in the event pill filter.
   // Default: 30 days. Set to null to show all upcoming events (useful for admin).
   upcomingVisibilityWindowDays?: number | null
@@ -48,6 +49,7 @@ export default function ChallengeFilterBar({
   hideMainEventOption = false,
   includeEndedEvents = false,
   showEventState = true,
+  eventNavigationMode = 'scroll',
   upcomingVisibilityWindowDays = 30,
   settings,
   categories,
@@ -80,6 +82,7 @@ export default function ChallengeFilterBar({
             hideMainEventOption={hideMainEventOption}
             includeEndedEvents={includeEndedEvents}
             showEventState={showEventState}
+            eventNavigationMode={eventNavigationMode}
             upcomingVisibilityWindowDays={upcomingVisibilityWindowDays}
             isEventDirty={dirtyState.isEventDirty}
             anyFilterDirty={dirtyState.anyFilterDirty}

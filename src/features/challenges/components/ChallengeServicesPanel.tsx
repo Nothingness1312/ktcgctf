@@ -111,6 +111,32 @@ const formatExtendWaitDuration = (seconds?: number | null) => {
   return `${Math.max(1, Math.ceil(seconds / 60))}m`
 }
 
+const firstBoolean = (...values: unknown[]): boolean | null => {
+  for (const value of values) {
+    if (typeof value === 'boolean') return value
+    if (typeof value === 'number') return value !== 0
+    if (typeof value === 'string') {
+      const normalized = value.trim().toLowerCase()
+      if (normalized === 'true') return true
+      if (normalized === 'false') return false
+    }
+  }
+
+  return null
+}
+
+const firstNumber = (...values: unknown[]): number | null => {
+  for (const value of values) {
+    if (typeof value === 'number' && Number.isFinite(value)) return value
+    if (typeof value === 'string' && value.trim() !== '') {
+      const parsed = Number(value)
+      if (Number.isFinite(parsed)) return parsed
+    }
+  }
+
+  return null
+}
+
 const stringifyNxctlDetail = (value: unknown): string | null => {
   if (!value) return null
   if (typeof value === 'string') return value
@@ -140,6 +166,10 @@ const stringifyNxctlDetail = (value: unknown): string | null => {
     return 'NXCTL admin secret is not configured.'
   }
 
+  if (code === 'restart_disabled') {
+    return 'Restart is disabled for this challenge.'
+  }
+
   if (message) return message
   if (code) return code
 
@@ -161,21 +191,83 @@ const getNxctlErrorMessage = (data: any) => {
 
 const getNxctlStatusName = (item: any) => String(item?.name || item?.challenge?.name || '').trim()
 
-const normalizeNxctlStatusDetail = (item: any) => ({
-  challenge: {
-    name: getNxctlStatusName(item),
-    type: item?.type || item?.challenge?.type || null,
-  },
-  runtime: {
-    status: item?.runtime?.status || item?.status || 'unknown',
-    container_id: item?.runtime?.container_id || item?.container_id || null,
-    remaining_seconds: item?.runtime?.remaining_seconds ?? item?.remaining_seconds ?? null,
-    restart_cooldown: item?.runtime?.restart_cooldown ?? item?.restart_cooldown ?? 0,
-    extend_cooldown: item?.runtime?.extend_cooldown ?? item?.extend_cooldown ?? 0,
-    extend: item?.runtime?.extend || item?.extend || null,
-  },
-  exports: Array.isArray(item?.exports) ? item.exports : [],
-})
+const getRestartState = (details: any) => {
+  const restart = details?.runtime?.restart || details?.restart || null
+  const enabled = firstBoolean(
+    restart?.enabled,
+    details?.runtime?.can_restart,
+    details?.challenge?.can_restart,
+    details?.can_restart
+  )
+  const cooldownSeconds = firstNumber(
+    restart?.cooldown_remaining_seconds,
+    details?.runtime?.restart_cooldown,
+    details?.restart_cooldown
+  )
+
+  return {
+    enabled: enabled ?? true,
+    cooldownSeconds: Math.max(0, Math.floor(cooldownSeconds ?? 0)),
+    restart,
+  }
+}
+
+const getExtendState = (details: any, remainingSec: number | null, timeSinceFetch: number) => {
+  const extend = details?.runtime?.extend || details?.extend || null
+  const thresholdSeconds = Math.max(0, Math.floor(firstNumber(extend?.threshold_seconds) ?? 300))
+  const rawCooldownSeconds = firstNumber(
+    extend?.cooldown_remaining_seconds,
+    details?.runtime?.extend_cooldown,
+    details?.extend_cooldown
+  ) ?? 0
+  const cooldownSeconds = Math.max(0, Math.floor(rawCooldownSeconds - timeSinceFetch))
+  const isWindowOpen = remainingSec !== null && remainingSec <= thresholdSeconds
+  const waitSeconds = remainingSec !== null && remainingSec > thresholdSeconds
+    ? remainingSec - thresholdSeconds
+    : 0
+  const backendCanExtend = firstBoolean(extend?.can_extend) === true
+
+  return {
+    canExtend: backendCanExtend || (remainingSec !== null && isWindowOpen && cooldownSeconds === 0),
+    cooldownSeconds,
+    thresholdSeconds,
+    waitSeconds,
+  }
+}
+
+const normalizeNxctlStatusDetail = (item: any) => {
+  const restart = item?.runtime?.restart || item?.restart || null
+  const restartEnabled = firstBoolean(
+    restart?.enabled,
+    item?.runtime?.can_restart,
+    item?.challenge?.can_restart,
+    item?.can_restart
+  )
+  const restartCooldown = firstNumber(
+    restart?.cooldown_remaining_seconds,
+    item?.runtime?.restart_cooldown,
+    item?.restart_cooldown
+  )
+
+  return {
+    challenge: {
+      name: getNxctlStatusName(item),
+      type: item?.type || item?.challenge?.type || null,
+      can_restart: restartEnabled,
+    },
+    runtime: {
+      status: item?.runtime?.status || item?.status || 'unknown',
+      container_id: item?.runtime?.container_id || item?.container_id || null,
+      remaining_seconds: item?.runtime?.remaining_seconds ?? item?.remaining_seconds ?? null,
+      can_restart: restartEnabled,
+      restart_cooldown: restartCooldown ?? 0,
+      restart,
+      extend_cooldown: item?.runtime?.extend_cooldown ?? item?.extend_cooldown ?? 0,
+      extend: item?.runtime?.extend || item?.extend || null,
+    },
+    exports: Array.isArray(item?.exports) ? item.exports : [],
+  }
+}
 
 const isNxctlNotFoundError = (status: number, data: any): boolean => {
   const getCode = (val: any): string | null => {
@@ -198,7 +290,7 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
   services = [],
 }) => {
   const serviceActionButtonClass =
-    'inline-flex h-8 items-center justify-center gap-1 rounded-lg border border-gray-200/80 bg-white/50 px-2.5 text-[11px] font-medium text-gray-600 shadow-sm backdrop-blur-md transition-all hover:border-blue-500/40 hover:bg-white/80 disabled:opacity-40 dark:border-gray-700/80 dark:bg-[#111622]/60 dark:text-gray-300 dark:hover:bg-[#151b2a]'
+    'inline-flex h-8 items-center justify-center gap-1 rounded-lg border border-gray-200/80 bg-white/50 px-2.5 text-[11px] font-medium text-gray-600 shadow-sm backdrop-blur-md transition-all hover:border-blue-500/40 hover:bg-white/80 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700/80 dark:bg-[#111622]/60 dark:text-gray-300 dark:hover:bg-[#151b2a]'
   const serviceActionButtonIconClass = 'shrink-0'
   const rawServicesKey = services.join('\u0000')
   const parsedServices = useMemo(
@@ -474,6 +566,27 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
   }
 
   const handleServiceAction = async (service: NxctlServiceEntry, action: ServiceAction) => {
+    if (action === 'restart') {
+      const details = serviceDetails[service.name]
+      const restartState = getRestartState(details)
+      const isRunning = details?.runtime?.status === 'running'
+
+      if (!restartState.enabled) {
+        toast.error('Restart is disabled for this challenge.')
+        return
+      }
+
+      if (!isRunning) {
+        toast.error('Cannot restart: service is not running.')
+        return
+      }
+
+      if (restartState.cooldownSeconds > 0) {
+        toast.error(`Restart cooldown active. Wait ${formatDuration(restartState.cooldownSeconds)}.`)
+        return
+      }
+    }
+
     setServiceActionLoading((prev) => ({ ...prev, [service.name]: action }))
     const toastId = toast.loading(`${action}ing ${service.name}...`)
 
@@ -552,17 +665,21 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
           const fetchTime = serviceDetailsFetchTime[service.name] ?? nowTick
           const timeSinceFetch = Math.max(0, (nowTick - fetchTime) / 1000)
           const remainingSec = remainingSecFromApi !== null ? Math.max(0, remainingSecFromApi - timeSinceFetch) : null
-          const restartCooldownSec = typeof details?.runtime?.restart_cooldown === 'number' ? details.runtime.restart_cooldown : (details?.runtime?.restart_cooldown ? Number(details.runtime.restart_cooldown) : 0)
 
-          // Use backend's extend availability, but only show the next extend window in the UI.
-          const extendAvailability = details?.runtime?.extend
-          const thresholdSec = extendAvailability?.threshold_seconds || 300 // fallback to 5 minutes
-          const canExtend = extendAvailability?.can_extend || false
-          const extendWaitSec = !canExtend && remainingSec !== null && remainingSec > thresholdSec
-            ? remainingSec - thresholdSec
-            : 0
+          const extendState = getExtendState(details, remainingSec, timeSinceFetch)
+          const thresholdSec = extendState.thresholdSeconds
+          const canExtend = extendState.canExtend
+          const restartState = getRestartState(details)
+          const restartEnabled = restartState.enabled
+          const restartCooldownSec = restartState.cooldownSeconds
           const restartCooldownLabel = formatShortDuration(restartCooldownSec)
-          const extendDelayLabel = !canExtend ? formatExtendWaitDuration(extendWaitSec) : null
+          const restartDisabledLabel = !restartEnabled ? 'Off' : null
+          const extendCooldownLabel = extendState.cooldownSeconds > 0
+            ? formatShortDuration(extendState.cooldownSeconds)
+            : null
+          const extendDelayLabel = !canExtend
+            ? extendCooldownLabel || formatExtendWaitDuration(extendState.waitSeconds)
+            : null
 
           const formatSecs = (s: number) => {
             if (s <= 0) return '0s'
@@ -622,6 +739,7 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
                       if (isLoading) return 'Checking status...'
                       if (errorMessage) return `Error: ${errorMessage}`
                       if (isActionLoading) return 'Please wait...'
+                      if (!restartEnabled) return 'Restart is disabled for this challenge'
                       if (!isRunning) return 'Cannot restart: service is not running'
                       if (restartCooldownSec && restartCooldownSec > 0) return `Restart cooldown: ${formatSecs(restartCooldownSec)}`
                       return 'Restart Service'
@@ -630,6 +748,7 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
                       isLoading ||
                       !!errorMessage ||
                       isActionLoading ||
+                      !restartEnabled ||
                       !isRunning ||
                       !!(restartCooldownSec && restartCooldownSec > 0)
                     }
@@ -639,6 +758,11 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
                     {restartCooldownLabel && (
                       <span className="rounded bg-yellow-500/10 px-1 text-[9px] font-bold text-yellow-300">
                         {restartCooldownLabel}
+                      </span>
+                    )}
+                    {restartDisabledLabel && (
+                      <span className="rounded bg-red-500/10 px-1 text-[9px] font-bold text-red-300">
+                        {restartDisabledLabel}
                       </span>
                     )}
                   </button>
@@ -651,8 +775,9 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
                       if (errorMessage) return `Error: ${errorMessage}`
                       if (isActionLoading) return 'Please wait...'
                       if (!isRunning) return 'Cannot extend: service is not running'
-                      if (!remainingSec) return 'No expiration available to extend'
+                      if (remainingSec === null) return 'No expiration available to extend'
                       if (!canExtend) {
+                        if (extendCooldownLabel) return `Extend cooldown: ${formatSecs(extendState.cooldownSeconds)}`
                         if (extendDelayLabel) return `Can extend in about ${extendDelayLabel}`
                         return `Can extend when remaining <= ${formatSecs(thresholdSec)}`
                       }
@@ -663,7 +788,7 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
                       !!errorMessage ||
                       isActionLoading ||
                       !isRunning ||
-                      !remainingSec ||
+                      remainingSec === null ||
                       !canExtend
                     }
                   >

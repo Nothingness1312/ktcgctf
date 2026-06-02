@@ -28,6 +28,7 @@ export function useNotifications() {
   const [notifLoading, setNotifLoading] = useState(false)
   const [notifUnreadCount, setNotifUnreadCount] = useState(0)
   const [notifItems, setNotifItems] = useState<Array<{ id: string; title: string; message: string; level: string; created_at: string }>>([])
+  const [notifSeenIds, setNotifSeenIds] = useState<Set<string>>(() => new Set())
 
   const [notifTitle, setNotifTitle] = useState('')
   const [notifMessage, setNotifMessage] = useState('')
@@ -62,8 +63,13 @@ export function useNotifications() {
   const getSeenNotifIds = useCallback(() => new Set<string>(getNotifSeenIds(user?.id || 'anon')), [user?.id])
 
   const markNotificationsSeen = useCallback((ids: string[]) => {
-    addNotifSeenIds(user?.id || 'anon', ids)
+    const merged = addNotifSeenIds(user?.id || 'anon', ids)
+    setNotifSeenIds(new Set(merged))
   }, [user?.id])
+
+  useEffect(() => {
+    setNotifSeenIds(getSeenNotifIds())
+  }, [getSeenNotifIds])
 
   const markAllNotificationsRead = useCallback(async () => {
     const items = await getNotifications(50, 0)
@@ -72,6 +78,17 @@ export function useNotifications() {
     }
     setNotifUnreadCount(0)
   }, [markNotificationsSeen])
+
+  const markNotificationRead = useCallback((id: string) => {
+    const notificationId = String(id || '').trim()
+    if (!notificationId) return
+
+    const seen = getSeenNotifIds()
+    if (notifSeenIds.has(notificationId) || seen.has(notificationId)) return
+
+    markNotificationsSeen([notificationId])
+    setNotifUnreadCount((count) => Math.max(0, count - 1))
+  }, [getSeenNotifIds, markNotificationsSeen, notifSeenIds])
 
   const openNotifPanel = useCallback(async () => {
     setNotifOpen((v) => !v)
@@ -124,9 +141,10 @@ export function useNotifications() {
   }, [])
 
   const isNotifRead = useCallback((id: string) => {
+    if (notifSeenIds.has(id)) return true
     const seen = getSeenNotifIds()
     return seen.has(id)
-  }, [getSeenNotifIds])
+  }, [getSeenNotifIds, notifSeenIds])
 
   const getLevelBadgeClass = (level: string) => {
     switch (level) {
@@ -252,6 +270,7 @@ export function useNotifications() {
     notifPanelRef,
     notifButtonRef,
     markAllNotificationsRead,
+    markNotificationRead,
     openNotifPanel,
     handleSendNotif,
     handleDeleteNotif,

@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react'
 import { getChallengesList } from '@/shared/lib/challenges'
 import { useAuth } from '@/shared/contexts/AuthContext'
-import { addLogsSeenIds, getLogsSeenIds } from '@/lib/storage/user-state'
+import { USER_STATE_CHANGED_EVENT, addLogsSeenIds, getLogsSeenIds } from '@/lib/storage/user-state'
 import { getLogs, getRecentSolves, subscribeToLogSignals } from '@/features/logs/lib/log-service'
 
 type LogShape = {
@@ -239,6 +239,21 @@ export function LogsProvider({ children }: { children: React.ReactNode }) {
     logsCacheRef.current = null
     lastSignalRefreshAtRef.current = 0
     refresh()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId])
+
+  useEffect(() => {
+    if (!userId) return
+
+    const handleUserStateChanged = (event: Event) => {
+      const detail = (event as CustomEvent<{ userId?: string; section?: string }>).detail
+      if (detail?.section !== 'logs') return
+      if (detail?.userId && detail.userId !== userId) return
+      refresh()
+    }
+
+    window.addEventListener(USER_STATE_CHANGED_EVENT, handleUserStateChanged)
+    return () => window.removeEventListener(USER_STATE_CHANGED_EVENT, handleUserStateChanged)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId])
 

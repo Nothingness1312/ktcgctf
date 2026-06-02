@@ -31,6 +31,7 @@ type NotificationPanelProps = {
   notifPanelRef: React.RefObject<HTMLDivElement>
   setNotifOpen: (open: boolean) => void
   markAllNotificationsRead: () => void
+  markNotificationRead: (id: string) => void
   solveSoundEnabled: boolean
   setSolveSoundEnabled: (enabled: boolean) => void
   globalAdminStatus: boolean
@@ -53,6 +54,7 @@ export default function NotificationPanel({
   notifPanelRef,
   setNotifOpen,
   markAllNotificationsRead,
+  markNotificationRead,
   solveSoundEnabled,
   setSolveSoundEnabled,
   globalAdminStatus,
@@ -234,7 +236,10 @@ export default function NotificationPanel({
                             theme={theme}
                             globalAdminStatus={globalAdminStatus}
                             getLevelBadgeClass={getLevelBadgeClass}
-                            onClick={() => setSelectedNotif(n)}
+                            onClick={() => {
+                              markNotificationRead(n.id)
+                              setSelectedNotif(n)
+                            }}
                           />
                         ))}
                       </div>
@@ -308,7 +313,10 @@ export default function NotificationPanel({
                       globalAdminStatus={globalAdminStatus}
                       getLevelBadgeClass={getLevelBadgeClass}
                       onDelete={handleDeleteNotif}
-                      onClick={() => setSelectedNotif(n)}
+                      onClick={() => {
+                        markNotificationRead(n.id)
+                        setSelectedNotif(n)
+                      }}
                     />
                   ))}
                 </div>

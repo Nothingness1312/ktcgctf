@@ -24,6 +24,7 @@ type EventFilterPillsProps = {
   hideMainEventOption: boolean
   includeEndedEvents: boolean
   showEventState: boolean
+  eventNavigationMode: 'scroll' | 'select'
   upcomingVisibilityWindowDays: number | null
   isEventDirty: boolean
   anyFilterDirty: boolean
@@ -38,12 +39,14 @@ export default function EventFilterPills({
   hideMainEventOption,
   includeEndedEvents,
   showEventState,
+  eventNavigationMode,
   upcomingVisibilityWindowDays,
   isEventDirty,
   anyFilterDirty,
   className,
 }: EventFilterPillsProps) {
   const scrollRef = React.useRef<HTMLDivElement>(null)
+  const optionButtonRefs = React.useRef(new Map<EventSelectorValue, HTMLButtonElement>())
   const [scrollState, setScrollState] = React.useState({
     hasOverflow: false,
     canScrollLeft: false,
@@ -59,6 +62,28 @@ export default function EventFilterPills({
       upcomingVisibilityWindowDays,
     })
   }, [events, includeEndedEvents, selectedEventId, showEventState, upcomingVisibilityWindowDays])
+
+  const eventOptions = React.useMemo(() => {
+    const options: Array<{ value: EventSelectorValue; label: string }> = []
+
+    if (!hideAllEventOption) {
+      options.push({ value: 'all', label: 'All' })
+    }
+
+    if (!hideMainEventOption && !APP.hideEventMain) {
+      options.push({ value: null, label: mainLabel })
+    }
+
+    sortedEvents.forEach((event) => {
+      options.push({ value: event.id, label: event.name })
+    })
+
+    return options
+  }, [hideAllEventOption, hideMainEventOption, mainLabel, sortedEvents])
+
+  const selectedOptionIndex = React.useMemo(() => {
+    return eventOptions.findIndex((option) => option.value === selectedEventId)
+  }, [eventOptions, selectedEventId])
 
   const selectedEvent = React.useMemo(() => {
     if (typeof selectedEventId !== 'string') return null
@@ -90,6 +115,16 @@ export default function EventFilterPills({
     })
   }, [])
 
+  const setOptionButtonRef = React.useCallback((value: EventSelectorValue) => {
+    return (node: HTMLButtonElement | null) => {
+      if (node) {
+        optionButtonRefs.current.set(value, node)
+      } else {
+        optionButtonRefs.current.delete(value)
+      }
+    }
+  }, [])
+
   React.useEffect(() => {
     updateScrollState()
 
@@ -106,6 +141,17 @@ export default function EventFilterPills({
     }
   }, [sortedEvents, hideAllEventOption, hideMainEventOption, updateScrollState])
 
+  React.useEffect(() => {
+    if (eventNavigationMode !== 'select') return
+
+    const selectedNode = optionButtonRefs.current.get(selectedEventId ?? null)
+    selectedNode?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'nearest',
+      inline: 'center',
+    })
+  }, [eventNavigationMode, eventOptions, selectedEventId])
+
   const scrollEvents = (direction: 'left' | 'right') => {
     const node = scrollRef.current
     if (!node) return
@@ -116,16 +162,43 @@ export default function EventFilterPills({
     })
   }
 
+  const navigateEvent = (direction: 'left' | 'right') => {
+    if (eventOptions.length === 0) return
+
+    const fallbackIndex = direction === 'right' ? 0 : eventOptions.length - 1
+    const nextIndex = selectedOptionIndex === -1
+      ? fallbackIndex
+      : direction === 'right'
+        ? selectedOptionIndex + 1
+        : selectedOptionIndex - 1
+
+    if (nextIndex < 0 || nextIndex >= eventOptions.length) return
+
+    onEventChange(eventOptions[nextIndex].value)
+  }
+
+  const isSelectNavigation = eventNavigationMode === 'select'
+  const hasSelectableEvents = sortedEvents.length > 0 && eventOptions.length > 1
+  const canNavigateLeft = selectedOptionIndex === -1
+    ? hasSelectableEvents
+    : selectedOptionIndex > 0
+  const canNavigateRight = selectedOptionIndex === -1
+    ? hasSelectableEvents
+    : selectedOptionIndex < eventOptions.length - 1
+  const showNavigationButtons = isSelectNavigation
+    ? hasSelectableEvents
+    : scrollState.hasOverflow
+
   return (
     <div data-tour="challenge-event-selector" className={cn('flex min-w-0 items-center gap-1.5', className)}>
-      {scrollState.hasOverflow && (
+      {showNavigationButtons && (
         <button
           type="button"
-          onClick={() => scrollEvents('left')}
-          disabled={!scrollState.canScrollLeft}
+          onClick={() => isSelectNavigation ? navigateEvent('left') : scrollEvents('left')}
+          disabled={isSelectNavigation ? !canNavigateLeft : !scrollState.canScrollLeft}
           className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition disabled:opacity-35 ${SURFACE_FILTER_ITEM_CLASS}`}
-          aria-label="Scroll events left"
-          title="Scroll events left"
+          aria-label={isSelectNavigation ? 'Previous event' : 'Scroll events left'}
+          title={isSelectNavigation ? 'Previous event' : 'Scroll events left'}
         >
           <ChevronLeft size={15} />
         </button>
@@ -139,6 +212,7 @@ export default function EventFilterPills({
         {!hideAllEventOption && (
           <button
             type="button"
+            ref={setOptionButtonRef('all')}
             onClick={() => onEventChange('all')}
             className={`shrink-0 whitespace-nowrap rounded-lg px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide transition ${selectedEventId === 'all' ? SURFACE_FILTER_ITEM_ACTIVE_CLASS : SURFACE_FILTER_ITEM_CLASS} ${!isEventDirty && anyFilterDirty ? 'opacity-90' : ''}`}
           >
@@ -148,6 +222,7 @@ export default function EventFilterPills({
         {!hideMainEventOption && !APP.hideEventMain && (
           <button
             type="button"
+            ref={setOptionButtonRef(null)}
             onClick={() => onEventChange(null)}
             className={`shrink-0 whitespace-nowrap rounded-lg px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide transition ${!selectedEventId ? SURFACE_FILTER_ITEM_ACTIVE_CLASS : SURFACE_FILTER_ITEM_CLASS}`}
           >
@@ -168,6 +243,7 @@ export default function EventFilterPills({
             <button
               key={event.id}
               type="button"
+              ref={setOptionButtonRef(event.id)}
               onClick={() => onEventChange(event.id)}
               className={`
                 flex shrink-0 items-center gap-1 whitespace-nowrap rounded-lg px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide transition
@@ -208,14 +284,14 @@ export default function EventFilterPills({
         })}
       </div>
 
-      {scrollState.hasOverflow && (
+      {showNavigationButtons && (
         <button
           type="button"
-          onClick={() => scrollEvents('right')}
-          disabled={!scrollState.canScrollRight}
+          onClick={() => isSelectNavigation ? navigateEvent('right') : scrollEvents('right')}
+          disabled={isSelectNavigation ? !canNavigateRight : !scrollState.canScrollRight}
           className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition disabled:opacity-35 ${SURFACE_FILTER_ITEM_CLASS}`}
-          aria-label="Scroll events right"
-          title="Scroll events right"
+          aria-label={isSelectNavigation ? 'Next event' : 'Scroll events right'}
+          title={isSelectNavigation ? 'Next event' : 'Scroll events right'}
         >
           <ChevronRight size={15} />
         </button>

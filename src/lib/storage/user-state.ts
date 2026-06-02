@@ -6,6 +6,8 @@ export type CtfUserStateV1 = {
   logs?: { seen_ids?: string[] }
 }
 
+export const USER_STATE_CHANGED_EVENT = 'nxctf:user-state-changed'
+
 const STORE_KEY_PREFIX = 'nxctf_user_state_v1:'
 
 const safeJsonParse = <T,>(raw: string | null): T | null => {
@@ -30,6 +32,16 @@ const readStateNoMigrate = (userId: Nullable<string>): CtfUserStateV1 => {
 const writeState = (userId: Nullable<string>, state: CtfUserStateV1) => {
   if (typeof window === 'undefined') return
   window.localStorage.setItem(getStoreKey(userId), JSON.stringify(state))
+}
+
+const emitUserStateChanged = (userId: Nullable<string>, section: 'notif' | 'logs') => {
+  if (typeof window === 'undefined') return
+  window.dispatchEvent(new CustomEvent(USER_STATE_CHANGED_EVENT, {
+    detail: {
+      userId: userId ? String(userId) : 'anon',
+      section,
+    },
+  }))
 }
 
 const migrateLegacyKeysIfNeeded = (userId: Nullable<string>): CtfUserStateV1 => {
@@ -101,6 +113,7 @@ export const addNotifSeenIds = (userId: Nullable<string>, ids: string[]): string
     merged = Array.from(new Set([...current, ...incoming]))
     return { ...prev, notif: { ...(prev.notif || {}), seen_ids: merged } }
   })
+  emitUserStateChanged(userId, 'notif')
   return merged
 }
 
@@ -120,5 +133,6 @@ export const addLogsSeenIds = (userId: Nullable<string>, ids: string[]): string[
     merged = Array.from(new Set([...current, ...incoming]))
     return { ...prev, logs: { ...(prev.logs || {}), seen_ids: merged } }
   })
+  emitUserStateChanged(userId, 'logs')
   return merged
 }
