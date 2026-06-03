@@ -58,7 +58,7 @@ export function useScoreboardPageData() {
 
       // Check if we already have sufficient data for the current context to avoid refetching
       const isSameContext = lastFetch.event === selectedEvent && lastFetch.fb === firstBloodMode
-      if (isSameContext && lastFetch.limit >= targetLimit && leaderboard.length > 0) {
+      if (isSameContext && lastFetch.limit >= targetLimit && leaderboardLengthRef.current > 0) {
         return
       }
 

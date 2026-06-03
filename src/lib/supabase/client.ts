@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { createSupabaseConfigErrorMessage, getSupabaseConfigStatus } from '@/lib/supabase/config'
+import type { Database } from '@/lib/supabase/database.types'
 
 type SupabaseErrorResult = {
   data: null
@@ -112,7 +113,7 @@ function createAuthFallback() {
   })
 }
 
-function createUnavailableClient(): SupabaseClient {
+function createUnavailableClient(): SupabaseClient<Database> {
   const client = {
     from: () => queryProxy,
     rpc: async () => createErrorResult(),
@@ -129,7 +130,7 @@ function createUnavailableClient(): SupabaseClient {
     getChannels: () => [],
   }
 
-  return client as unknown as SupabaseClient
+  return client as unknown as SupabaseClient<Database>
 }
 
 if (!configStatus.isConfigured) {
@@ -138,8 +139,8 @@ if (!configStatus.isConfigured) {
 
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from '@/const'
 
-export const supabase: SupabaseClient = configStatus.isConfigured
-  ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+export const supabase: SupabaseClient<Database> = configStatus.isConfigured
+  ? createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY)
   : createUnavailableClient()
 
 export const isSupabaseConfigured = configStatus.isConfigured

@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
 import { SUPABASE_URL, SUPABASE_ANON_KEY, MAINTENANCE_MODE } from './const'
 
 // Cache untuk menyimpan status maintenance
@@ -17,6 +16,44 @@ let maintenanceCache: {
 }
 
 const CACHE_TTL = 30000 // 30 detik
+
+type SupabaseRestError = {
+  code?: string
+  message?: string
+  details?: string
+  hint?: string
+}
+
+async function parseSupabaseRestError(response: Response): Promise<SupabaseRestError> {
+  try {
+    return await response.json()
+  } catch {
+    return {
+      message: await response.text().catch(() => `HTTP ${response.status}`),
+    }
+  }
+}
+
+async function checkKeepAliveTable(): Promise<SupabaseRestError | null> {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    return {
+      message: 'Supabase URL or anon key is not configured',
+      code: 'SUPABASE_CONFIG',
+    }
+  }
+
+  const restUrl = `${SUPABASE_URL.replace(/\/$/, '')}/rest/v1/keep-alive?select=id&limit=1`
+  const response = await fetch(restUrl, {
+    cache: 'no-store',
+    headers: {
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+    },
+  })
+
+  if (response.ok) return null
+  return parseSupabaseRestError(response)
+}
 
 async function checkMaintenance(): Promise<{ isActive: boolean; errorType: 'manual' | 'database' | null; errorMessage: string }> {
   const mode = MAINTENANCE_MODE
@@ -39,11 +76,7 @@ async function checkMaintenance(): Promise<{ isActive: boolean; errorType: 'manu
 
   // Check database connection
   try {
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-    const { error } = await supabase
-      .from('keep-alive')
-      .select('id')
-      .limit(1)
+    const error = await checkKeepAliveTable()
 
     let errorMessage = ''
     let hasConnectionError = false
@@ -69,6 +102,7 @@ async function checkMaintenance(): Promise<{ isActive: boolean; errorType: 'manu
         errorMsg.includes('network') ||
         errorMsg.includes('Failed to fetch') ||
         errorMsg.includes('TypeError') ||
+        errorCode === 'SUPABASE_CONFIG' ||
         errorCode === 'PGRST301' ||
         errorCode === 'PGRST204'
       )

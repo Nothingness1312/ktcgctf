@@ -14,7 +14,7 @@ export async function getLogs(
     p_offset: offset,
     p_event_id: eventId ?? null,
     p_event_mode: eventMode,
-  });
+  } as any);
   if (error) {
     console.error('Error fetching logs:', error);
     return [];
@@ -36,7 +36,7 @@ export async function getRecentSolves(
     p_offset: offset,
     p_event_id: eventId ?? null,
     p_event_mode: eventMode,
-  });
+  } as any);
 
   if (error) {
     console.error('Error fetching recent solves:', error);

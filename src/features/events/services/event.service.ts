@@ -1,6 +1,20 @@
 import { supabase } from '@/lib/supabase/client'
 import { Event, EventJoinRequestRow, EventJoinSettings, EventMembershipStatus, EventMemberRow } from '@/shared/types'
 
+function normalizeEventJoinMode(value: string | null): Event['join_mode'] {
+  if (value === 'open' || value === 'request' || value === 'key') return value
+  return undefined
+}
+
+function normalizeEvent(row: any): Event {
+  return {
+    ...row,
+    join_mode: normalizeEventJoinMode(row.join_mode),
+    created_at: row.created_at ?? undefined,
+    updated_at: row.updated_at ?? undefined,
+  }
+}
+
 export async function getEvents(): Promise<Event[]> {
   const { data, error } = await supabase
     .from('events')
@@ -13,7 +27,7 @@ export async function getEvents(): Promise<Event[]> {
     return []
   }
 
-  return data || []
+  return (data || []).map(normalizeEvent)
 }
 
 export async function addEvent(payload: {
@@ -31,7 +45,7 @@ export async function addEvent(payload: {
     p_end_time: payload.end_time ?? null,
     p_always_show_challenges: payload.always_show_challenges ?? false,
     p_image_url: payload.image_url ?? null,
-  })
+  } as any)
 
   if (error) {
     console.error('Error adding event:', error)
@@ -57,7 +71,7 @@ export async function updateEvent(eventId: string, payload: {
     p_end_time: payload.end_time ?? null,
     p_always_show_challenges: payload.always_show_challenges ?? null,
     p_image_url: payload.image_url ?? null,
-  })
+  } as any)
 
   if (error) {
     console.error('Error updating event:', error)
@@ -84,7 +98,7 @@ export async function setChallengesEvent(eventId: string | null, challengeIds: s
   const { data, error } = await supabase.rpc('set_challenges_event', {
     p_event_id: eventId,
     p_challenge_ids: challengeIds,
-  })
+  } as any)
 
   if (error) {
     console.error('Error setting challenges event:', error)
@@ -107,7 +121,7 @@ export async function getActiveEvents(now: string = new Date().toISOString()): P
     return []
   }
 
-  return data || []
+  return (data || []).map(normalizeEvent)
 }
 
 function eventHasStarted(event: Event, referenceTimeMs: number) {
@@ -141,7 +155,7 @@ export async function getEventJoinSettings(eventId: string): Promise<EventJoinSe
     return null
   }
 
-  return (data as EventJoinSettings) || null
+  return (data as unknown as EventJoinSettings) || null
 }
 
 export async function getMyEventMembership(eventId: string): Promise<EventMembershipStatus | null> {
@@ -154,7 +168,7 @@ export async function getMyEventMembership(eventId: string): Promise<EventMember
     return null
   }
 
-  return (data as EventMembershipStatus) || null
+  return (data as unknown as EventMembershipStatus) || null
 }
 
 export async function getAllMyEventMemberships(): Promise<EventMembershipStatus[]> {
@@ -165,7 +179,7 @@ export async function getAllMyEventMemberships(): Promise<EventMembershipStatus[
     return []
   }
 
-  return (data as EventMembershipStatus[]) || []
+  return (data as unknown as EventMembershipStatus[]) || []
 }
 
 export async function joinEvent(eventId: string, joinKey?: string | null, note?: string | null) {
@@ -173,14 +187,14 @@ export async function joinEvent(eventId: string, joinKey?: string | null, note?:
     p_event_id: eventId,
     p_join_key: joinKey ?? null,
     p_note: note ?? null,
-  })
+  } as any)
 
   if (error) {
     console.error('Error joining event:', error)
     throw error
   }
 
-  return data as { success: boolean; status?: string; message?: string }
+  return data as unknown as { success: boolean; status?: string; message?: string }
 }
 
 export async function setEventJoinSettings(
@@ -192,14 +206,14 @@ export async function setEventJoinSettings(
     p_event_id: eventId,
     p_join_mode: joinMode,
     p_join_key: joinKey ?? null,
-  })
+  } as any)
 
   if (error) {
     console.error('Error setting event join settings:', error)
     throw error
   }
 
-  return data as EventJoinSettings
+  return data as unknown as EventJoinSettings
 }
 
 export async function regenerateEventJoinKey(eventId: string): Promise<string> {
@@ -229,7 +243,7 @@ export async function listEventJoinRequests(
     return []
   }
 
-  return (data || []) as EventJoinRequestRow[]
+  return (data || []) as unknown as EventJoinRequestRow[]
 }
 
 export async function reviewEventJoinRequest(requestId: string, approve: boolean) {
@@ -243,7 +257,7 @@ export async function reviewEventJoinRequest(requestId: string, approve: boolean
     throw error
   }
 
-  return data as { success: boolean; status?: 'approved' | 'rejected'; message?: string }
+  return data as unknown as { success: boolean; status?: 'approved' | 'rejected'; message?: string }
 }
 
 export async function listEventMembers(eventId: string): Promise<EventMemberRow[]> {
@@ -256,7 +270,7 @@ export async function listEventMembers(eventId: string): Promise<EventMemberRow[
     return []
   }
 
-  return (data || []) as EventMemberRow[]
+  return (data || []) as unknown as EventMemberRow[]
 }
 
 export async function adminAddEventMember(eventId: string, userId: string): Promise<boolean> {

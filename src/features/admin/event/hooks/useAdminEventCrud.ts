@@ -15,6 +15,15 @@ import {
 } from '../lib'
 import type { Event, EventFormData } from '../types'
 
+function getCreatedEventId(created: unknown) {
+  if (typeof created === 'string') return created
+  if (Array.isArray(created)) return created[0]?.id
+  if (created && typeof created === 'object' && 'id' in created) {
+    return String(created.id || '')
+  }
+  return ''
+}
+
 interface UseAdminEventCrudOptions {
   onEventsLoaded?: (events: Event[]) => void
 }
@@ -87,7 +96,7 @@ export function useAdminEventCrud({ onEventsLoaded }: UseAdminEventCrudOptions =
         toast.success('Event updated')
       } else {
         const created = await addEvent(payload)
-        const createdEventId = Array.isArray(created) ? created[0]?.id : created?.id
+        const createdEventId = getCreatedEventId(created)
         if (createdEventId) {
           await setEventJoinSettings(createdEventId, formData.join_mode, formData.join_mode === 'key' ? formData.join_key.trim() : null)
         }

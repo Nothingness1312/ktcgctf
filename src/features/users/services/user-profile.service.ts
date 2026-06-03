@@ -2,6 +2,10 @@ import { PostgrestSingleResponse } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase/client'
 import { User, ChallengeWithSolve } from '@/shared/types'
 
+function callUserRpc<T = any>(name: string, args?: Record<string, unknown>) {
+  return (supabase as any).rpc(name, args) as Promise<PostgrestSingleResponse<T>>
+}
+
 export type UserDetail = {
   id: string
   username: string
@@ -41,7 +45,7 @@ const normalizeTimestamp = (value?: string | null): string | null => {
 
 export async function getUserDetail(userId: string, eventId?: string | null, eventMode?: string): Promise<UserDetail | null> {
   try {
-    const { data, error }: PostgrestSingleResponse<any> = await supabase.rpc('detail_user', {
+    const { data, error } = await callUserRpc('detail_user', {
       p_id: userId,
       p_event_id: eventId ?? null,
       p_event_mode: eventMode ?? (eventId ? 'equals' : 'any')
@@ -79,7 +83,7 @@ export async function getUserDetail(userId: string, eventId?: string | null, eve
 
 export async function getUserProfileLite(userId: string): Promise<UserProfileLite | null> {
   try {
-    const { data, error } = await supabase.rpc('get_user_profile', { p_id: userId })
+    const { data, error } = await callUserRpc('get_user_profile', { p_id: userId })
     if (error) {
       console.error('Error fetching user profile:', error)
       return null
@@ -118,7 +122,16 @@ export async function getUserByUsername(username: string): Promise<User | null> 
       return null
     }
 
-    return data
+    return {
+      id: data.id,
+      username: data.username,
+      score: 0,
+      is_admin: data.is_admin ?? undefined,
+      created_at: data.created_at ?? '',
+      updated_at: data.updated_at ?? '',
+      profile_picture_url: data.profile_picture_url ?? null,
+      picture: data.profile_picture_url ?? undefined,
+    }
   } catch (error) {
     console.error('Error fetching user by username:', error)
     return null
@@ -127,7 +140,7 @@ export async function getUserByUsername(username: string): Promise<User | null> 
 
 export async function updateUsername(userId: string, newUsername: string): Promise<{ error: string | null, username?: string }> {
   try {
-    const { data, error } = await supabase.rpc('update_username', {
+    const { data, error } = await callUserRpc('update_username', {
       p_id: userId,
       p_username: newUsername
     })
@@ -145,7 +158,7 @@ export async function updateUsername(userId: string, newUsername: string): Promi
 
 export async function updateBio(userId: string, newBio: string): Promise<{ error: string | null, bio?: string }> {
   try {
-    const { data, error } = await supabase.rpc('update_bio', {
+    const { data, error } = await callUserRpc('update_bio', {
       p_id: userId,
       p_bio: newBio
     })
@@ -163,7 +176,7 @@ export async function updateBio(userId: string, newBio: string): Promise<{ error
 
 export async function updateSosmed(userId: string, newSosmed: Record<string, string>): Promise<{ error: string | null, sosmed?: Record<string, string> }> {
   try {
-    const { data, error } = await supabase.rpc('update_sosmed', {
+    const { data, error } = await callUserRpc('update_sosmed', {
       p_id: userId,
       p_sosmed: newSosmed
     })
@@ -181,7 +194,7 @@ export async function updateSosmed(userId: string, newSosmed: Record<string, str
 
 export async function updateProfilePicture(userId: string, profilePictureUrl: string): Promise<{ error: string | null, profile_picture_url?: string | null }> {
   try {
-    const { data, error } = await supabase.rpc('update_profile_picture', {
+    const { data, error } = await callUserRpc('update_profile_picture', {
       p_id: userId,
       p_profile_picture_url: profilePictureUrl
     })

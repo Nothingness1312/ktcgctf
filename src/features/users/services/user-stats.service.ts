@@ -10,7 +10,7 @@ export async function getCategoryTotals(eventId?: string | null, eventMode?: str
     const { data, error } = await supabase.rpc('get_category_totals', {
       p_event_id: eventId ?? null,
       p_event_mode: eventMode ?? (eventId ? 'equals' : 'any')
-    })
+    } as any)
 
     if (error) {
       console.error('Error fetching category totals:', error)
@@ -34,7 +34,7 @@ export async function getDifficultyTotals(eventId?: string | null, eventMode?: s
     const { data, error } = await supabase.rpc('get_difficulty_totals', {
       p_event_id: eventId ?? null,
       p_event_mode: eventMode ?? (eventId ? 'equals' : 'any')
-    })
+    } as any)
 
     if (error) {
       console.error('Error fetching difficulty totals:', error)

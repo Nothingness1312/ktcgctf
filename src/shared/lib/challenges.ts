@@ -3,6 +3,11 @@ import { Challenge, ChallengeWithSolve, Attachment } from '@/shared/types'
 import { getLogs } from '@/features/logs/lib/log-service'
 
 type ChallengeListResult = (ChallengeWithSolve & { has_first_blood: boolean; is_new: boolean; has_questions: boolean })[]
+type SubmitFlagResult = { success: boolean; message: string }
+
+function callChallengeRpc<T = any>(name: string, args?: Record<string, unknown>) {
+  return (supabase as any).rpc(name, args) as Promise<{ data: T | null; error: { message: string } | null }>
+}
 
 const challengesListInflight = new Map<string, Promise<ChallengeListResult>>()
 
@@ -147,7 +152,7 @@ export async function getChallengesList(
       const hasQuestionIds = new Set<string>()
 
       if (challengeIds.length > 0) {
-        const { data: subChallenges, error: subError } = await supabase.rpc('get_challenges_with_sub_challenges', {
+        const { data: subChallenges, error: subError } = await callChallengeRpc('get_challenges_with_sub_challenges', {
           p_challenge_ids: challengeIds,
         })
 
@@ -218,7 +223,7 @@ export async function getChallengeDetail(challengeId: string): Promise<Challenge
  */
 export async function getChallengePlaceholder(challengeId: string): Promise<string | null> {
   try {
-    const { data, error } = await supabase.rpc('get_challenge_placeholder', {
+    const { data, error } = await callChallengeRpc('get_challenge_placeholder', {
       p_challenge_id: challengeId
     });
     if (error) throw new Error(error.message);
@@ -253,8 +258,8 @@ export async function getChallengeServices(challengeId: string): Promise<string[
 /**
  * Submit flag for a challenge
  */
-export async function submitFlag(challengeId: string, flag: string) {
-  const { data, error } = await supabase.rpc('submit_flag', {
+export async function submitFlag(challengeId: string, flag: string): Promise<SubmitFlagResult> {
+  const { data, error } = await callChallengeRpc('submit_flag', {
     // p_user_id: userId,
     p_challenge_id: challengeId,
     p_flag: flag,
@@ -265,7 +270,11 @@ export async function submitFlag(challengeId: string, flag: string) {
     return { success: false, message: 'Failed to submit flag' };
   }
 
-  return data;
+  const result = data as Partial<SubmitFlagResult> | null;
+  return {
+    success: Boolean(result?.success),
+    message: String(result?.message || ''),
+  };
 }
 
 /**
@@ -296,7 +305,7 @@ export async function addChallenge(challengeData: {
     } else if (typeof challengeData.hint === 'string' && challengeData.hint.trim() !== '') {
       hintValue = JSON.stringify([challengeData.hint]);
     }
-    const { data, error } = await supabase.rpc('add_challenge', {
+    const { data, error } = await callChallengeRpc('add_challenge', {
       p_title: challengeData.title,
       p_description: challengeData.description,
       p_category: challengeData.category,
@@ -353,7 +362,7 @@ export async function updateChallenge(challengeId: string, challengeData: {
     } else if (typeof challengeData.hint === 'string' && challengeData.hint.trim() !== '') {
       hintValue = JSON.stringify([challengeData.hint]);
     }
-    const { error } = await supabase.rpc('update_challenge', {
+    const { error } = await callChallengeRpc('update_challenge', {
       p_challenge_id: challengeId,
       p_title: challengeData.title,
       p_description: challengeData.description,
@@ -387,7 +396,7 @@ export async function updateChallenge(challengeId: string, challengeData: {
  */
 export async function deleteChallenge(challengeId: string): Promise<void> {
   try {
-    const { error } = await supabase.rpc('delete_challenge', {
+    const { error } = await callChallengeRpc('delete_challenge', {
       p_challenge_id: challengeId
     });
     if (error) {
@@ -435,7 +444,10 @@ export async function getChallengesLite(showAll: boolean = true) {
 
     const { data, error } = await query
     if (error) throw error
-    return data || []
+    return (data || []).map((challenge) => ({
+      ...challenge,
+      is_active: challenge.is_active ?? undefined,
+    }))
   } catch (err) {
     console.error('Error fetching challenges (lite):', err)
     return []
@@ -465,7 +477,7 @@ export async function getLeaderboard(limit = 100, offset = 0, eventId?: string |
     p_event_id = eventId
   }
 
-  const { data, error } = await supabase.rpc('get_leaderboard', {
+  const { data, error } = await callChallengeRpc('get_leaderboard', {
     limit_rows: limit,
     offset_rows: offset,
     p_event_id,
@@ -513,7 +525,7 @@ export async function getTopProgress(topUsers: string[], eventId?: string | null
       p_event_id = eventId
     }
 
-    const { data, error } = await supabase.rpc('get_top_progress', {
+    const { data, error } = await callChallengeRpc('get_top_progress', {
       p_user_ids: topUsers,
       p_limit: batchSize,
       p_offset: offset,
@@ -797,7 +809,7 @@ export async function getSolversByChallenge(challengeId: string) {
  */
 export async function getFirstBloodChallengeIds(userId: string): Promise<string[]> {
   try {
-    const { data, error } = await supabase.rpc('get_user_first_bloods', { p_user_id: userId })
+    const { data, error } = await callChallengeRpc('get_user_first_bloods', { p_user_id: userId })
     // console.log(data, error)
     if (error) throw error
     // data is expected to be array of { challenge_id }
@@ -813,7 +825,7 @@ export async function getFirstBloodChallengeIds(userId: string): Promise<string[
  */
 export async function getFlag(challengeId: string): Promise<string | null> {
   try {
-    const { data, error } = await supabase.rpc('get_flag', {
+    const { data, error } = await callChallengeRpc('get_flag', {
       p_challenge_id: challengeId
     });
 
@@ -835,7 +847,7 @@ export async function getFlag(challengeId: string): Promise<string | null> {
  */
 export async function setChallengeActive(challengeId: string, isActive: boolean): Promise<boolean> {
   try {
-    const { data, error } = await supabase.rpc('set_challenge_active', {
+    const { data, error } = await callChallengeRpc('set_challenge_active', {
       p_challenge_id: challengeId,
       p_active: isActive,
     });
@@ -857,7 +869,7 @@ export async function setChallengeActive(challengeId: string, isActive: boolean)
  */
 export async function setChallengeMaintenance(challengeId: string, isMaintenance: boolean): Promise<boolean> {
   try {
-    const { data, error } = await supabase.rpc('set_challenge_maintenance', {
+    const { data, error } = await callChallengeRpc('set_challenge_maintenance', {
       p_challenge_id: challengeId,
       p_maintenance: isMaintenance,
     });
@@ -878,7 +890,7 @@ export async function setChallengeMaintenance(challengeId: string, isMaintenance
  * Get all solvers (Admin only) with pagination
  */
 export async function getSolversAll(limit = 250, offset = 0) {
-  const { data, error } = await supabase.rpc('get_solvers_all', {
+  const { data, error } = await callChallengeRpc('get_solvers_all', {
     p_limit: limit,
     p_offset: offset,
   });
@@ -895,7 +907,7 @@ export async function getSolversAll(limit = 250, offset = 0) {
  * Get solvers for a specific username
  */
 export async function getSolversByUsername(username: string) {
-  const { data, error } = await supabase.rpc('get_solves_by_name', {
+  const { data, error } = await callChallengeRpc('get_solves_by_name', {
     p_username: username,
   });
 
@@ -911,7 +923,7 @@ export async function getSolversByUsername(username: string) {
  * Get solvers for a specific challenge title (exact match)
  */
 export async function getSolversByChallengeTitle(challengeTitle: string) {
-  const { data, error } = await supabase.rpc('get_solves_by_challenge', {
+  const { data, error } = await callChallengeRpc('get_solves_by_challenge', {
     p_challenge_title: challengeTitle,
   });
 
@@ -926,7 +938,7 @@ export async function getSolversByChallengeTitle(challengeTitle: string) {
 /** Delete a solver entry by solve ID (Admin only)
  */
 export async function deleteSolver(solveId: string) {
-  const { data, error } = await supabase.rpc("delete_solver", {
+  const { data, error } = await callChallengeRpc("delete_solver", {
     p_solve_id: solveId,
   })
 
@@ -939,7 +951,7 @@ export async function deleteSolver(solveId: string) {
  * Notifications (manual broadcast)
  */
 export async function getNotifications(limit = 50, offset = 0) {
-  const { data, error } = await supabase.rpc('get_notifications', {
+  const { data, error } = await callChallengeRpc('get_notifications', {
     p_limit: limit,
     p_offset: offset,
   });
@@ -951,7 +963,7 @@ export async function getNotifications(limit = 50, offset = 0) {
 }
 
 export async function createNotification(title: string, message: string, level: 'info' | 'info_platform' | 'info_challenges' = 'info') {
-  const { data, error } = await supabase.rpc('create_notification', {
+  const { data, error } = await callChallengeRpc('create_notification', {
     p_title: title,
     p_message: message,
     p_level: level,
@@ -961,7 +973,7 @@ export async function createNotification(title: string, message: string, level: 
 }
 
 export async function deleteNotification(id: string) {
-  const { data, error } = await supabase.rpc('delete_notification', {
+  const { data, error } = await callChallengeRpc('delete_notification', {
     p_id: id,
   });
   if (error) throw error;

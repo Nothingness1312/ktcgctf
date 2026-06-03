@@ -36,7 +36,7 @@ export const APP = {
   notifSolves: true, // notifikasi global saat ada yang solve challenge
 
   teams: {
-    enabled: false,
+    enabled: true,
     hideScoreboardIndividual: false,
     hidescoreboardTotal: false,
   },

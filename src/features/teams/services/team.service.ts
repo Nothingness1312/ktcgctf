@@ -1,5 +1,9 @@
 import { supabase } from '@/lib/supabase/client'
 
+function callTeamRpc<T = any>(name: string, args?: Record<string, unknown>) {
+	return (supabase as any).rpc(name, args) as Promise<{ data: T | null; error: { message: string } | null }>
+}
+
 export type TeamMember = {
 	user_id: string
 	username: string
@@ -19,7 +23,7 @@ export type TeamInfo = {
 
 export async function createTeam(name: string): Promise<{ teamId?: string; error?: string }> {
 	try {
-		const { data, error } = await supabase.rpc('create_team', { p_name: name })
+		const { data, error } = await callTeamRpc('create_team', { p_name: name })
 		if (error) return { error: error.message }
 		return { teamId: data as string }
 	} catch (err: any) {
@@ -29,7 +33,7 @@ export async function createTeam(name: string): Promise<{ teamId?: string; error
 
 export async function joinTeam(inviteCode: string): Promise<{ teamId?: string; error?: string }> {
 	try {
-		const { data, error } = await supabase.rpc('join_team', { p_invite_code: inviteCode })
+		const { data, error } = await callTeamRpc('join_team', { p_invite_code: inviteCode })
 		if (error) return { error: error.message }
 		return { teamId: data as string }
 	} catch (err: any) {
@@ -39,7 +43,7 @@ export async function joinTeam(inviteCode: string): Promise<{ teamId?: string; e
 
 export async function leaveTeam(): Promise<{ success: boolean; error?: string }> {
 	try {
-		const { data, error } = await supabase.rpc('leave_team')
+		const { data, error } = await callTeamRpc('leave_team')
 		if (error) return { success: false, error: error.message }
 		return { success: Boolean(data) }
 	} catch (err: any) {
@@ -49,7 +53,7 @@ export async function leaveTeam(): Promise<{ success: boolean; error?: string }>
 
 export async function deleteTeam(teamId: string): Promise<{ success: boolean; error?: string }> {
 	try {
-		const { data, error } = await supabase.rpc('delete_team', { p_team_id: teamId })
+		const { data, error } = await callTeamRpc('delete_team', { p_team_id: teamId })
 		if (error) return { success: false, error: error.message }
 		return { success: Boolean(data) }
 	} catch (err: any) {
@@ -59,7 +63,7 @@ export async function deleteTeam(teamId: string): Promise<{ success: boolean; er
 
 export async function regenerateTeamInviteCode(teamId: string): Promise<{ invite_code?: string; error?: string }> {
 	try {
-		const { data, error } = await supabase.rpc('regenerate_team_invite_code', { p_team_id: teamId })
+		const { data, error } = await callTeamRpc('regenerate_team_invite_code', { p_team_id: teamId })
 		if (error) return { error: error.message }
 		return { invite_code: data as string }
 	} catch (err: any) {
@@ -69,7 +73,7 @@ export async function regenerateTeamInviteCode(teamId: string): Promise<{ invite
 
 export async function getMyTeam(p_event_id?: string | null, p_event_mode: string = 'any'): Promise<{ team: TeamInfo | null; members: TeamMember[]; solved_event_ids?: string[]; has_main_solved?: boolean; error?: string }> {
 	try {
-		const { data, error } = await supabase.rpc('get_my_team', { p_event_id: p_event_id ?? null, p_event_mode })
+		const { data, error } = await callTeamRpc('get_my_team', { p_event_id: p_event_id ?? null, p_event_mode })
 		if (error) return { team: null, members: [], error: error.message }
 
 		const team = data?.team ?? null
@@ -207,7 +211,7 @@ const fetchTeamProgressByNames = async (
 			if (rpcName === 'get_team_unique_solves_by_names') {
 				params.p_show_name_chall = includeChallengeDetails
 			}
-			const { data, error } = await supabase.rpc(rpcName, params)
+			const { data, error } = await callTeamRpc(rpcName, params)
 			if (error) throw error
 			const rows: TeamProgressRow[] = (data as TeamProgressRow[]) || []
 			mergeTeamProgress(progress, buildTeamProgress(rows))
@@ -221,7 +225,7 @@ const fetchTeamProgressByNames = async (
 
 export async function getMyTeamSummary(p_event_id?: string | null, p_event_mode: string = 'any'): Promise<{ team: TeamInfo | null; stats: TeamSummary | null; error?: string }> {
 	try {
-		const { data, error } = await supabase.rpc('get_my_team_summary', { p_event_id: p_event_id ?? null, p_event_mode })
+		const { data, error } = await callTeamRpc('get_my_team_summary', { p_event_id: p_event_id ?? null, p_event_mode })
 		if (error) return { team: null, stats: null, error: error.message }
 		return { team: data?.team ?? null, stats: data?.stats ?? null }
 	} catch (err: any) {
@@ -231,7 +235,7 @@ export async function getMyTeamSummary(p_event_id?: string | null, p_event_mode:
 
 export async function getMyTeamChallenges(p_event_id?: string | null, p_event_mode: string = 'any'): Promise<{ challenges: TeamChallenge[]; error?: string }> {
 	try {
-		const { data, error } = await supabase.rpc('get_my_team_challenges', { p_event_id: p_event_id ?? null, p_event_mode })
+		const { data, error } = await callTeamRpc('get_my_team_challenges', { p_event_id: p_event_id ?? null, p_event_mode })
 		if (error) return { challenges: [], error: error.message }
 		return { challenges: (data as TeamChallenge[]) || [] }
 	} catch (err: any) {
@@ -241,7 +245,7 @@ export async function getMyTeamChallenges(p_event_id?: string | null, p_event_mo
 
 export async function getTeamByName(name: string, p_event_id?: string | null, p_event_mode: string = 'any'): Promise<{ team: TeamInfo | null; members: TeamMember[]; stats: TeamSummary | null; solved_event_ids?: string[]; has_main_solved?: boolean; error?: string }> {
 	try {
-		const { data, error } = await supabase.rpc('get_team_by_name', { p_name: name, p_event_id: p_event_id ?? null, p_event_mode })
+		const { data, error } = await callTeamRpc('get_team_by_name', { p_name: name, p_event_id: p_event_id ?? null, p_event_mode })
 		if (error) return { team: null, members: [], stats: null, error: error.message }
 		if (!data?.success) return { team: null, members: [], stats: null, error: data?.message || 'Team not found' }
 		return {
@@ -258,7 +262,7 @@ export async function getTeamByName(name: string, p_event_id?: string | null, p_
 
 export async function getTeamChallengesByName(name: string, p_event_id?: string | null, p_event_mode: string = 'any'): Promise<{ challenges: TeamChallenge[]; error?: string }> {
 	try {
-		const { data, error } = await supabase.rpc('get_team_challenges_by_name', { p_name: name, p_event_id: p_event_id ?? null, p_event_mode })
+		const { data, error } = await callTeamRpc('get_team_challenges_by_name', { p_name: name, p_event_id: p_event_id ?? null, p_event_mode })
 		if (error) return { challenges: [], error: error.message }
 		return { challenges: (data as TeamChallenge[]) || [] }
 	} catch (err: any) {
@@ -274,7 +278,7 @@ export async function getTeamScoreboard(
 ): Promise<{ entries: TeamScoreboardEntry[]; error?: string }> {
 	try {
 		const params = { limit_rows: limit, offset_rows: offset, p_event_id: p_event_id ?? null, p_event_mode }
-		const { data, error } = await supabase.rpc('get_team_scoreboard', params)
+		const { data, error } = await callTeamRpc('get_team_scoreboard', params)
 		if (error) return { entries: [], error: error.message }
 		return { entries: (data as TeamScoreboardEntry[]) || [] }
 	} catch (err: any) {
@@ -291,7 +295,7 @@ export async function getTeamUniqueSolvesByNames(
 ): Promise<{ rows: TeamUniqueSolveRow[]; error?: string }> {
 	if (!teamNames || teamNames.length === 0) return { rows: [] }
 	try {
-		const { data, error } = await supabase.rpc('get_team_unique_solves_by_names', {
+		const { data, error } = await callTeamRpc('get_team_unique_solves_by_names', {
 			p_names: teamNames,
 			p_event_id: p_event_id ?? null,
 			p_event_mode,
@@ -314,7 +318,7 @@ export async function getTopTeamUniqueProgressByNames(teamNames: string[], p_eve
 
 export async function getAllTeamSolves(p_event_id?: string | null, p_event_mode: string = 'any') {
 	try {
-		const { data, error } = await supabase.rpc('get_team_solves', { p_event_id: p_event_id ?? null, p_event_mode })
+		const { data, error } = await callTeamRpc('get_team_solves', { p_event_id: p_event_id ?? null, p_event_mode })
 		if (error) throw error
 		return (data as any[]) || []
 	} catch (err: any) {
@@ -325,7 +329,7 @@ export async function getAllTeamSolves(p_event_id?: string | null, p_event_mode:
 
 export async function getAllTeamUniqueSolves(p_event_id?: string | null, p_event_mode: string = 'any') {
 	try {
-		const { data, error } = await supabase.rpc('get_team_unique_solves', { p_event_id: p_event_id ?? null, p_event_mode })
+		const { data, error } = await callTeamRpc('get_team_unique_solves', { p_event_id: p_event_id ?? null, p_event_mode })
 		if (error) throw error
 		return (data as any[]) || []
 	} catch (err: any) {
@@ -336,7 +340,7 @@ export async function getAllTeamUniqueSolves(p_event_id?: string | null, p_event
 
 export async function kickTeamMember(teamId: string, userId: string): Promise<{ success: boolean; error?: string }> {
 	try {
-		const { data, error } = await supabase.rpc('kick_team_member', {
+		const { data, error } = await callTeamRpc('kick_team_member', {
 			p_team_id: teamId,
 			p_user_id: userId,
 		})
@@ -349,7 +353,7 @@ export async function kickTeamMember(teamId: string, userId: string): Promise<{ 
 
 export async function transferTeamCaptain(teamId: string, newCaptainUserId: string): Promise<{ success: boolean; error?: string }> {
 	try {
-		const { data, error } = await supabase.rpc('transfer_team_captain', {
+		const { data, error } = await callTeamRpc('transfer_team_captain', {
 			p_team_id: teamId,
 			p_new_captain_user_id: newCaptainUserId,
 		})
@@ -362,7 +366,7 @@ export async function transferTeamCaptain(teamId: string, newCaptainUserId: stri
 
 export async function renameTeam(teamId: string, newName: string): Promise<{ success: boolean; error?: string }> {
 	try {
-		const { data, error } = await supabase.rpc('rename_team', {
+		const { data, error } = await callTeamRpc('rename_team', {
 			p_team_id: teamId,
 			p_new_name: newName,
 		})
@@ -375,7 +379,7 @@ export async function renameTeam(teamId: string, newName: string): Promise<{ suc
 
 export async function getTeamByUserId(userId: string): Promise<{ team: TeamInfo | null; members: TeamMember[]; error?: string }> {
 	try {
-		const { data, error } = await supabase.rpc('get_team_by_user_id', { p_user_id: userId })
+		const { data, error } = await callTeamRpc('get_team_by_user_id', { p_user_id: userId })
 
 		if (error) {
 			console.error('RPC error:', error)

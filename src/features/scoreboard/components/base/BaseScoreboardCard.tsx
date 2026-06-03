@@ -5,6 +5,7 @@ import { SURFACE_GLASS_CARD_INTERACTIVE_BLUE_CLASS } from '@/shared/styles'
 
 type BaseScoreboardCardProps = {
   title?: string
+  description?: React.ReactNode
   icon?: LucideIcon
   headerCenter?: React.ReactNode
   action?: React.ReactNode
@@ -17,6 +18,7 @@ type BaseScoreboardCardProps = {
 
 export default function BaseScoreboardCard({
   title,
+  description,
   icon: Icon,
   headerCenter,
   action,
@@ -39,15 +41,22 @@ export default function BaseScoreboardCard({
         >
           <div className="min-w-0">
             {title && (
-              <CardTitle
-                className={cn(
-                  'flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white',
-                  titleClassName
+              <div className="space-y-1">
+                <CardTitle
+                  className={cn(
+                    'flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white',
+                    titleClassName
+                  )}
+                >
+                  {Icon && <Icon size={18} className="text-blue-500 dark:text-blue-400" />}
+                  {title}
+                </CardTitle>
+                {description && (
+                  <p className="text-sm font-medium leading-5 text-gray-500 dark:text-gray-400">
+                    {description}
+                  </p>
                 )}
-              >
-                {Icon && <Icon size={18} className="text-blue-500 dark:text-blue-400" />}
-                {title}
-              </CardTitle>
+              </div>
             )}
           </div>
           {headerCenter && (

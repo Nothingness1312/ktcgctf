@@ -21,6 +21,20 @@ export { getUsernameByEmail } from '@/features/admin/overview/services/audit-use
 export { getInfo } from '@/features/admin/overview/services/site-info.service'
 export type { SiteInfo } from '@/features/admin/overview/services/site-info.service'
 
+function normalizeUser(row: any): User {
+  return {
+    id: row.id,
+    username: row.username,
+    score: Number(row.score || 0),
+    rank: typeof row.rank === 'number' ? row.rank : undefined,
+    is_admin: row.is_admin ?? undefined,
+    created_at: row.created_at ?? '',
+    updated_at: row.updated_at ?? '',
+    profile_picture_url: row.profile_picture_url ?? null,
+    picture: row.picture ?? row.profile_picture_url ?? undefined,
+  }
+}
+
 export async function getUserChallenges(userId: string): Promise<ChallengeWithSolve[]> {
   try {
     const { data: challenges, error: challengesError } = await supabase
@@ -48,11 +62,11 @@ export async function getUserChallenges(userId: string): Promise<ChallengeWithSo
 
     const solvedChallengeIds = new Set(solves.map(solve => solve.challenge_id))
 
-    return challenges.map(challenge => ({
+    return ((challenges || []) as any[]).map(challenge => ({
       ...challenge,
       is_solved: solvedChallengeIds.has(challenge.id),
       attachments: challenge.attachments || []
-    }))
+    })) as ChallengeWithSolve[]
   } catch (error) {
     console.error('Error fetching user challenges:', error)
     return []
@@ -71,7 +85,7 @@ export async function getAllUsers(): Promise<User[]> {
       return []
     }
 
-    return data || []
+    return ((data || []) as any[]).map(normalizeUser)
   } catch (error) {
     console.error('Error fetching users:', error)
     return []

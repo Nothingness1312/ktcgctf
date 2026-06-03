@@ -15,6 +15,32 @@ export interface AuditLogEntry {
   }
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+}
+
+function normalizeAuditLog(row: any): AuditLogEntry {
+  const payload = isRecord(row.payload) ? row.payload : {}
+  const traits = isRecord(payload.traits) ? payload.traits : undefined
+
+  return {
+    id: String(row.id || ''),
+    created_at: String(row.created_at || ''),
+    ip_address: row.ip_address ?? null,
+    payload: {
+      action: typeof payload.action === 'string' ? payload.action : '',
+      actor_username: typeof payload.actor_username === 'string' ? payload.actor_username : undefined,
+      traits: traits
+        ? {
+            provider: typeof traits.provider === 'string' ? traits.provider : undefined,
+            user_id: typeof traits.user_id === 'string' ? traits.user_id : undefined,
+            user_email: typeof traits.user_email === 'string' ? traits.user_email : undefined,
+          }
+        : undefined,
+    },
+  }
+}
+
 /**
  * Fetch audit logs via RPC (auto pagination, adaptive limit)
  */
@@ -32,7 +58,7 @@ export async function getAuditLogs(limit = 1000): Promise<AuditLogEntry[]> {
       return []
     }
 
-    return data ?? []
+    return (data ?? []).map(normalizeAuditLog)
   }
 
   const batchCount = Math.ceil(limit / batchSize)
@@ -44,7 +70,7 @@ export async function getAuditLogs(limit = 1000): Promise<AuditLogEntry[]> {
   )
 
   const results = await Promise.all(promises)
-  const logs = results.flatMap(({ data }) => data ?? [])
+  const logs = results.flatMap(({ data }) => data ?? []).map(normalizeAuditLog)
 
   return logs.slice(0, limit)
 }
