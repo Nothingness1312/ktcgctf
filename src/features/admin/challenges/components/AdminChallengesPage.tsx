@@ -58,6 +58,7 @@ export default function AdminChallengesPage() {
     scope: "all",
     visibility: "all",
     service: "all",
+    sortBy: "points_desc",
   })
 
   const isGlobalAdmin = adminScope?.is_global_admin ?? false

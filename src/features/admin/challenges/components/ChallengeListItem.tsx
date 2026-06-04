@@ -26,12 +26,12 @@ const ChallengeListItem: React.FC<ChallengeListItemProps> = ({
   };
 
   return (
-    <div className="w-full px-5 py-4">
+    <div className="w-full px-5 py-3">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0 order-2 sm:order-1">
           <DifficultyBadge difficulty={challenge.difficulty} width={92} />
 
-          <div className="min-w-0">
+          <div className="min-w-0 pl-3">
             <div className="font-medium truncate text-gray-900 dark:text-white">{challenge.title}</div>
             <div className="text-xs text-muted-foreground dark:text-gray-300 truncate flex items-center gap-2">
               <span className="truncate">{challenge.category} • {challenge.points} pts</span>
@@ -49,7 +49,7 @@ const ChallengeListItem: React.FC<ChallengeListItemProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-1 justify-start sm:justify-end order-1 sm:order-2">
+        <div className="flex items-center gap-1 justify-end order-1 sm:order-2 w-[180px] shrink-0">
           <Button
             variant="ghost"
             size="icon"

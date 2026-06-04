@@ -59,25 +59,50 @@ export function getFilteredAdminChallenges({
       if (filters.scope === 'service' && !hasServices) return false
     }
 
-    // 6. Visibility filter ('all' | 'active' | 'inactive')
+    // 6. Visibility filter ('all' | 'active' | 'inactive' | 'maintenance')
     if (filters.visibility !== 'all') {
       if (filters.visibility === 'active' && !challenge.is_active) return false
       if (filters.visibility === 'inactive' && challenge.is_active) return false
+      if (filters.visibility === 'maintenance' && !challenge.is_maintenance) return false
     }
 
-    // 7. Service filter ('all' | 'has_service' | 'no_service')
+    // 7. Service filter ('all' | 'services' | 'placeholder' | 'tasks')
     if (filters.service !== 'all') {
       const hasServices = Array.isArray(challenge.services) && challenge.services.length > 0
-      if (filters.service === 'has_service' && !hasServices) return false
-      if (filters.service === 'no_service' && hasServices) return false
+      const isPlaceholder = !!challenge.flag_placeholder
+      const hasQuestions = !!challenge.has_questions
+      if (filters.service === 'services' && !hasServices) return false
+      if (filters.service === 'placeholder' && !isPlaceholder) return false
+      if (filters.service === 'tasks' && !hasQuestions) return false
     }
 
     return true
   }).sort((a, b) => {
-    if (b.points !== a.points) return b.points - a.points
-    const aIdx = categoryOrder.findIndex(category => category.toLowerCase() === (a.category || '').toLowerCase())
-    const bIdx = categoryOrder.findIndex(category => category.toLowerCase() === (b.category || '').toLowerCase())
-    if (aIdx !== -1 && bIdx !== -1) return aIdx - bIdx
-    return (a.category || '').localeCompare(b.category || '')
+    const sortBy = filters.sortBy || 'points_desc'
+    
+    if (sortBy === 'points_desc') {
+      return (b.points || 0) - (a.points || 0)
+    }
+    if (sortBy === 'points_asc') {
+      return (a.points || 0) - (b.points || 0)
+    }
+    
+    if (sortBy === 'difficulty_asc' || sortBy === 'difficulty_desc') {
+      const diffOrder: Record<string, number> = { easy: 1, medium: 2, hard: 3, insane: 4 }
+      const aVal = diffOrder[(a.difficulty || '').toLowerCase()] || 99
+      const bVal = diffOrder[(b.difficulty || '').toLowerCase()] || 99
+      return sortBy === 'difficulty_asc' ? aVal - bVal : bVal - aVal
+    }
+    
+    if (sortBy === 'title_asc') {
+      return (a.title || '').localeCompare(b.title || '')
+    }
+    if (sortBy === 'title_desc') {
+      return (b.title || '').localeCompare(a.title || '')
+    }
+
+    // Default fallback sorting
+    if (b.points !== a.points) return (b.points || 0) - (a.points || 0)
+    return (a.title || '').localeCompare(b.title || '')
   })
 }

@@ -54,28 +54,27 @@ const ChallengeListPanel: React.FC<ChallengeListPanelProps> = ({
   ) : null
 
   return (
-    <motion.div className="order-1 xl:col-span-3 space-y-5" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-      <AdminPageSurface>
-        <AdminChallengesToolbar
-          filters={filters}
-          onFiltersChange={onFiltersChange}
-          categories={Array.from(new Set(challenges.map(c => c.category))).filter(Boolean).sort()}
-          difficulties={Array.from(new Set(challenges.map(c => c.difficulty))).filter(Boolean).sort()}
-          events={events}
-          selectedEventId={selectedEventId}
-          onEventChange={onEventChange}
-          isGlobalAdmin={isGlobalAdmin}
-          actions={headerActions}
-          status={syncStatus}
-          onClear={() => onFiltersChange({
-            category: "all",
-            difficulty: "all",
-            search: "",
-            scope: "all",
-            visibility: "all",
-            service: "all"
-          })}
-        />
+    <motion.div className="order-1 xl:col-span-3" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+      <div className="w-full">
+        <div className="sticky top-14 z-30 bg-white/95 dark:bg-[#0b0f19]/95 backdrop-blur-md -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 py-2.5 border-b border-gray-200/60 dark:border-gray-800/60">
+          <AdminChallengesToolbar
+            filters={filters}
+            onFiltersChange={onFiltersChange}
+            categories={Array.from(new Set(challenges.map(c => c.category))).filter(Boolean).sort()}
+            difficulties={Array.from(new Set(challenges.map(c => c.difficulty))).filter(Boolean).sort()}
+            actions={headerActions}
+            status={syncStatus}
+            onClear={() => onFiltersChange({
+              category: "all",
+              difficulty: "all",
+              search: "",
+              scope: "all",
+              visibility: "all",
+              service: "all",
+              sortBy: "points_desc",
+            })}
+          />
+        </div>
 
         {filteredChallenges.length === 0 ? (
           <div className="p-6">
@@ -85,21 +84,23 @@ const ChallengeListPanel: React.FC<ChallengeListPanelProps> = ({
             />
           </div>
         ) : (
-          <AdminListSurface>
-            {filteredChallenges.map(challenge => (
-              <ChallengeListItem
-                key={challenge.id}
-                challenge={challenge}
-                onEdit={onEdit}
-                onDelete={onDelete}
-                onViewFlag={onViewFlag}
-                onToggleMaintenance={onToggleMaintenance}
-                onToggleActive={onToggleActive}
-              />
-            ))}
-          </AdminListSurface>
+          <div className="w-full">
+            <AdminListSurface>
+              {filteredChallenges.map(challenge => (
+                <ChallengeListItem
+                  key={challenge.id}
+                  challenge={challenge}
+                  onEdit={onEdit}
+                  onDelete={onDelete}
+                  onViewFlag={onViewFlag}
+                  onToggleMaintenance={onToggleMaintenance}
+                  onToggleActive={onToggleActive}
+                />
+              ))}
+            </AdminListSurface>
+          </div>
         )}
-      </AdminPageSurface>
+      </div>
     </motion.div>
   )
 }

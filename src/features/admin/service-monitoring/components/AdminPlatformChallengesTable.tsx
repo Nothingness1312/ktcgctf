@@ -222,13 +222,6 @@ export default function AdminPlatformChallengesTable({
     <>
       <AdminTableSurface>
         <Table>
-          <TableHeader>
-            <TableRow className="border-b border-gray-200/80 hover:bg-transparent dark:border-gray-800">
-              <TableHead className="pl-6">Challenge / Service</TableHead>
-              <TableHead className="w-28 text-center">Valid Key</TableHead>
-              <TableHead className="w-28 pr-6 text-center">Invalid Key</TableHead>
-            </TableRow>
-          </TableHeader>
           <TableBody>
             {sortedGroups.map((group) => {
               const isExpanded = expandedId === group.id
@@ -282,7 +275,7 @@ export default function AdminPlatformChallengesTable({
 
                   {isExpanded && (
                     <TableRow className="border-b border-gray-100/80 hover:bg-transparent dark:border-gray-800/70">
-                      <TableCell colSpan={3} className="bg-gray-50/70 px-4 py-3 dark:bg-[#0d121d]/70">
+                      <TableCell colSpan={3} className="bg-gray-50/70 px-3 py-2 dark:bg-[#0d121d]/70">
                         <div className="space-y-1.5">
                           {[...group.keyGroups]
                             .sort((a, b) => {
@@ -298,12 +291,16 @@ export default function AdminPlatformChallengesTable({
                               return (
                                 <div
                                   key={`${group.id}:${keyGroup.key}`}
-                                  className="grid gap-2 rounded-lg border border-gray-200/80 bg-white/70 px-2.5 py-2 dark:border-gray-800/80 dark:bg-[#111622]/70 md:grid-cols-[180px_minmax(0,1fr)]"
+                                  className="grid gap-2 rounded-lg border border-gray-200/80 bg-white/70 px-2.5 py-1.5 dark:border-gray-800/80 dark:bg-[#111622]/70 md:grid-cols-[180px_minmax(0,1fr)]"
                                 >
-                                  <div className="flex min-w-0 items-center justify-center gap-2 md:justify-start">
-                                    {!isNoKeyGroup && (
-                                      <KeyRound className={keyInvalid ? 'h-4 w-4 shrink-0 text-red-500' : 'h-4 w-4 shrink-0 text-blue-600 dark:text-blue-300'} />
-                                    )}
+                                  <div className="flex min-w-0 items-center justify-start gap-2">
+                                    <KeyRound className={
+                                      isNoKeyGroup
+                                        ? 'h-4 w-4 shrink-0 text-gray-400 dark:text-gray-600'
+                                        : keyInvalid
+                                          ? 'h-4 w-4 shrink-0 text-red-500'
+                                          : 'h-4 w-4 shrink-0 text-blue-600 dark:text-blue-300'
+                                    } />
                                     <code className={
                                       isNoKeyGroup
                                         ? 'min-w-0 truncate rounded-md border border-gray-300/70 bg-transparent px-2 py-1 text-center text-xs font-semibold text-gray-500 dark:border-gray-700 dark:text-gray-400'
@@ -315,7 +312,7 @@ export default function AdminPlatformChallengesTable({
                                     </code>
                                   </div>
 
-                                  <div className="space-y-1.5">
+                                  <div className="space-y-1">
                                     {sortEntries(keyGroup.entries).map((entry) => {
                                       const challengeRowsForEntry = sortChallengeRows(entry.matchedServiceRows)
 
@@ -323,7 +320,7 @@ export default function AdminPlatformChallengesTable({
                                         return (
                                           <div
                                             key={entry.id}
-                                            className="flex items-center justify-between gap-3 rounded-md border border-red-500/20 bg-red-500/5 px-2.5 py-1.5"
+                                            className="flex items-center justify-between gap-3 rounded-md bg-red-500/5 px-2.5 py-1.5"
                                           >
                                             <div className="min-w-0">
                                               <div className="truncate text-sm font-semibold text-red-700 dark:text-red-300">
@@ -343,13 +340,16 @@ export default function AdminPlatformChallengesTable({
                                         return (
                                           <div
                                             key={`${entry.id}:${row.challenge.id}`}
-                                            className={rowInvalid ? 'flex flex-col gap-2 rounded-md border border-red-500/20 bg-red-500/5 px-2.5 py-1.5 sm:flex-row sm:items-center sm:justify-between' : 'flex flex-col gap-2 rounded-md border border-gray-200/70 bg-white/50 px-2.5 py-1.5 dark:border-gray-800/70 dark:bg-[#0d121d]/60 sm:flex-row sm:items-center sm:justify-between'}
+                                            className={rowInvalid ? 'flex flex-col gap-2 rounded-md bg-red-500/5 px-2.5 py-1.5 sm:flex-row sm:items-center sm:justify-between' : 'flex flex-col gap-2 px-2.5 py-1.5 sm:flex-row sm:items-center sm:justify-between hover:bg-gray-100/30 dark:hover:bg-gray-800/20 rounded-md transition-colors'}
                                           >
-                                            <div className="min-w-0">
-                                              <div className={rowInvalid ? 'truncate text-sm font-semibold text-red-700 dark:text-red-300' : 'truncate text-sm font-semibold text-gray-900 dark:text-gray-100'}>
+                                            <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                                              <div className={rowInvalid ? 'shrink-0 text-sm font-semibold text-red-700 dark:text-red-300' : 'shrink-0 text-sm font-semibold text-gray-900 dark:text-gray-100'}>
                                                 {row.challenge.title}
                                               </div>
-                                              <div className="flex flex-wrap gap-1.5 pt-1">
+                                              {rowInvalid && (
+                                                <span className="text-gray-400 dark:text-gray-600 text-sm">-</span>
+                                              )}
+                                              <div className="flex flex-wrap gap-1.5">
                                                 <ReasonBadge active={!hasActualService(entry)} label="Missing actual service" tone="invalid" />
                                                 <ReasonBadge active={hasActualService(entry) && isEntryMissingKey(entry)} label="Missing key" tone="invalid" />
                                                 <ReasonBadge active={hasActualService(entry) && entry.comparison === 'missing_from_platform'} label="Invalid key" tone="invalid" />

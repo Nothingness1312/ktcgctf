@@ -1,6 +1,10 @@
-import type { Attachment, Challenge, Event } from '@/shared/types'
+import type { Attachment, Challenge as SharedChallenge, Event } from '@/shared/types'
 
-export type { Attachment, Challenge, Event } from '@/shared/types'
+export type Challenge = SharedChallenge & {
+  has_questions?: boolean
+}
+
+export type { Attachment, Event } from '@/shared/types'
 
 export type SolverRow = {
   solve_id: string
@@ -56,8 +60,9 @@ export type AdminChallengeFilterState = {
   difficulty: string
   search: string
   scope: 'all' | 'main' | 'private' | 'service'
-  visibility: 'all' | 'active' | 'inactive'
-  service: 'all' | 'has_service' | 'no_service'
+  visibility: 'all' | 'active' | 'inactive' | 'maintenance'
+  service: 'all' | 'services' | 'placeholder' | 'tasks'
+  sortBy: string
 }
 
 export type ChallengePayload = {

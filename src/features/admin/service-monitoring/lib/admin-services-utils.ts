@@ -371,6 +371,46 @@ export function getServiceEndpoints(row: AdminServiceRow): AdminServiceEndpoint[
     .filter((item): item is AdminServiceEndpoint => Boolean(item))
 }
 
+export function getLiveServiceEndpoints(row: AdminLiveServiceRow): (AdminServiceEndpoint & { isSsh: boolean; password?: string })[] {
+  const exports = row.details?.exports || []
+  const serviceType = String(row.details?.challenge.type || '').toLowerCase()
+  const serviceRow = row.matchedServiceRows[0]
+  const serviceOptions = serviceRow?.service.options || {}
+
+  return exports
+    .map((item: any, index) => {
+      const endpoint = getExportEndpoint(item)
+      if (!endpoint) return null
+
+      const endpointType = String(item?.type || serviceType || '').toLowerCase()
+      const isHttp = isHttpEndpoint(endpoint)
+      const isReturnedTcp =
+        endpointType === 'tcp' ||
+        endpoint.toLowerCase().startsWith('tcp://') ||
+        (!isHttp && parseTcpEndpoint(endpoint) !== null)
+      const isSsh = isReturnedTcp && serviceOptions.type === 'ssh'
+      const label = isSsh
+        ? toSshCommand(endpoint, serviceOptions.user)
+        : isReturnedTcp
+          ? toTcpCommand(endpoint)
+          : endpoint
+
+      return {
+        key: `${row.id}:${index}`,
+        endpoint,
+        label,
+        copyText: isSsh ? toSshCopyCommand(endpoint, serviceOptions.user) : label,
+        type: endpointType || (isHttp ? 'http' : isReturnedTcp ? 'tcp' : 'unknown'),
+        provider: item?.provider ? String(item.provider) : '',
+        isHttp,
+        isSsh,
+        password: isSsh ? serviceOptions.pass || '' : '',
+      }
+    })
+    .filter((item): item is any => Boolean(item))
+}
+
+
 export function getServiceType(row: AdminServiceRow) {
   if (row.service.options.type) return row.service.options.type
   const endpoints = getServiceEndpoints(row)
@@ -760,7 +800,7 @@ function valuesMatchKeyword(values: Array<string | null | undefined>, keyword: s
 }
 
 function matchesPlatformFilters(entries: AdminPlatformChallengeEntry[], filters: AdminServicesFilters) {
-  if (filters.key === 'no_key' && !entries.some((entry) => !entry.key)) return false
+  if (filters.key === 'no_key' && entries.some((entry) => !!entry.key && entry.key.trim() !== '')) return false
   if (filters.key !== 'all' && filters.key !== 'no_key' && !entries.some((entry) => entry.key === filters.key)) return false
   if (filters.enabled === 'enabled' && !entries.some((entry) => entry.enabled)) return false
   if (filters.enabled === 'disabled' && !entries.some((entry) => !entry.enabled)) return false

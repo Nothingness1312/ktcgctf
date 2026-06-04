@@ -166,53 +166,66 @@ export default function AdminServicesPage() {
   return (
     <>
       <AdminPageShell>
-        <div className="space-y-5">
+        <div className="space-y-0">
           {platformError && (
-            <SafeStatusNotice
-              title="Platform config unavailable"
-              message={platformError}
-            />
+            <div className="mb-4">
+              <SafeStatusNotice
+                title="Platform config unavailable"
+                message={platformError}
+              />
+            </div>
           )}
 
           {runtimeStatus.error && (
-            <SafeStatusNotice
-              title={runtimeStatus.isComplete ? 'Runtime status warning' : 'Full live inventory unavailable'}
-              message={runtimeStatus.isComplete ? runtimeStatus.error : `${runtimeStatus.error}. Showing any fallback runtime data that could be loaded.`}
-            />
+            <div className="mb-4">
+              <SafeStatusNotice
+                title={runtimeStatus.isComplete ? 'Runtime status warning' : 'Full live inventory unavailable'}
+                message={runtimeStatus.isComplete ? runtimeStatus.error : `${runtimeStatus.error}. Showing any fallback runtime data that could be loaded.`}
+              />
+            </div>
           )}
 
-          <AdminTabsBar
-            tabs={
-              <SegmentedTabs
-                value={activeTab}
-                onChange={setActiveTab}
-                variant="panel"
-                items={[
-                  {
-                    value: 'platform',
-                    label: 'Platform Services',
-                    icon: Server,
-                  },
-                  {
-                    value: 'live',
-                    label: 'Live Services',
-                    icon: Activity,
-                  },
-                ]}
+          <div className="sticky top-14 z-30 bg-white/95 dark:bg-[#0b0f19]/95 backdrop-blur-md -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 py-2.5 border-b border-gray-200/60 dark:border-gray-800/60">
+            <div className="flex flex-col gap-2.5">
+              <AdminTabsBar
+                className="mb-0 pb-2 border-b border-gray-100/50 dark:border-gray-800/30"
+                tabs={
+                  <SegmentedTabs
+                    value={activeTab}
+                    onChange={setActiveTab}
+                    variant="panel"
+                    items={[
+                      {
+                        value: 'platform',
+                        label: 'Platform Services',
+                        icon: Server,
+                      },
+                      {
+                        value: 'live',
+                        label: 'Live Services',
+                        icon: Activity,
+                      },
+                    ]}
+                  />
+                }
               />
-            }
-          />
 
-          <AdminPageSurface>
-            <AdminServicesToolbar
-              filters={filters}
-              keyOptions={keyOptions}
-              isRefreshing={isRefreshing}
-              statusLoading={statusLoading}
-              onFiltersChange={setFilters}
-              onRefresh={() => void refresh()}
-            />
+              <AdminServicesToolbar
+                filters={filters}
+                keyOptions={keyOptions}
+                isRefreshing={isRefreshing}
+                statusLoading={statusLoading}
+                onFiltersChange={setFilters}
+                onRefresh={() => void refresh()}
+                activeTab={activeTab}
+                isGlobalAdmin={isGlobalAdmin}
+                globalActionLoading={globalActionLoading}
+                onGlobalAction={(action) => void runGlobalServiceAction(action)}
+              />
+            </div>
+          </div>
 
+          <div className="w-full">
             {activeTab === 'platform' ? (
               <AdminPlatformChallengesTable
                 groups={filteredPlatformGroups}
@@ -228,7 +241,7 @@ export default function AdminServicesPage() {
                 onGlobalAction={(action) => void runGlobalServiceAction(action)}
               />
             )}
-          </AdminPageSurface>
+          </div>
         </div>
       </AdminPageShell>
 

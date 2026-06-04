@@ -25,6 +25,11 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     aliases: ['/admin'],
   },
   {
+    href: '/admin/event',
+    label: 'Events',
+    icon: CalendarDays,
+  },
+  {
     href: '/admin/challenges',
     label: 'Challenges',
     icon: Flag,
@@ -43,11 +48,6 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     href: '/admin/users',
     label: 'Users',
     icon: Users,
-  },
-  {
-    href: '/admin/event',
-    label: 'Events',
-    icon: CalendarDays,
   },
   {
     href: '/admin/audit-logs',
