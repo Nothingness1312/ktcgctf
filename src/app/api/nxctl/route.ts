@@ -71,8 +71,15 @@ function getBearerToken(request: Request) {
 }
 
 async function isGlobalAdminRequest(request: Request) {
+  const scope = await getAdminScopeForRequest(request)
+  return scope.is_global_admin
+}
+
+async function getAdminScopeForRequest(request: Request) {
   const token = getBearerToken(request)
-  if (!token || !SUPABASE_URL || !SUPABASE_ANON_KEY) return false
+  if (!token || !SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    return { is_global_admin: false, event_ids: [] as string[] }
+  }
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: {
@@ -86,8 +93,14 @@ async function isGlobalAdminRequest(request: Request) {
     },
   })
 
-  const { data, error } = await supabase.rpc('is_admin')
-  return !error && data === true
+  const { data, error } = await supabase.rpc('get_admin_scope')
+  if (error || !data) return { is_global_admin: false, event_ids: [] as string[] }
+
+  const rawEventIds = (data as any).event_ids
+  return {
+    is_global_admin: !!(data as any).is_global_admin,
+    event_ids: Array.isArray(rawEventIds) ? rawEventIds.map((id) => String(id)) : [],
+  }
 }
 
 function servicePath(name: string) {
@@ -188,6 +201,29 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const action = searchParams.get('action')
   const challengeKey = challengeKeyFromRequest(request, searchParams.get('key'))
+
+  if (action === 'admin-challenges') {
+    const isAdmin = await isGlobalAdminRequest(request)
+    if (!isAdmin) return jsonError('Global admin access required', 403)
+
+    const result = await safeFetch(`${apiUrl}/admin/challenges`, {
+      headers: buildNxctlHeaders(null, true),
+    })
+
+    return jsonResponse(result)
+  }
+
+  if (action === 'live-services') {
+    const isAdmin = await isGlobalAdminRequest(request)
+    if (!isAdmin) return jsonError('Global admin access required', 403)
+
+    const result = await fetchStatus(
+      parseStatusFilter(searchParams),
+      buildNxctlHeaders(challengeKey, true)
+    )
+
+    return jsonResponse(result)
+  }
 
   if (action === 'inspect') {
     const name = searchParams.get('name')

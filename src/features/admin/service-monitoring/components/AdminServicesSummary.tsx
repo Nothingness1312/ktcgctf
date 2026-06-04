@@ -1,4 +1,4 @@
-import { Activity, AlertTriangle, Clock, Power, Server, ShieldCheck } from 'lucide-react'
+import { Activity, AlertTriangle, Server, ShieldCheck } from 'lucide-react'
 import { AdminStatCard } from '@/features/admin/ui'
 import type { AdminServicesSummaryCounts } from '../types'
 
@@ -8,46 +8,33 @@ type AdminServicesSummaryProps = {
 
 export default function AdminServicesSummary({ summary }: AdminServicesSummaryProps) {
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-6">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
       <AdminStatCard
-        label="Total Services"
-        value={summary.total}
-        description="Configured NXCTL services"
+        label="Platform Services"
+        value={summary.platformGroups}
+        description={`${summary.platformEntries} service config entries`}
         icon={Server}
       />
       <AdminStatCard
-        label="Running"
-        value={summary.running}
-        description="Visible as active"
-        icon={Activity}
+        label="Valid"
+        value={summary.valid}
+        description="No issue detected"
+        icon={ShieldCheck}
         iconClassName="bg-emerald-500/10 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300"
       />
       <AdminStatCard
-        label="Stopped"
-        value={summary.stopped}
-        description="Down or inactive"
-        icon={Power}
-        iconClassName="bg-gray-500/10 text-gray-600 dark:bg-gray-500/20 dark:text-gray-300"
-      />
-      <AdminStatCard
-        label="Expired"
-        value={summary.expired}
-        description="Timer reached zero"
-        icon={Clock}
-        iconClassName="bg-yellow-500/10 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-300"
-      />
-      <AdminStatCard
-        label="Error"
-        value={summary.error}
-        description="Unhealthy or unavailable"
+        label="Invalid"
+        value={summary.invalid}
+        description="Needs admin review"
         icon={AlertTriangle}
         iconClassName="bg-red-500/10 text-red-700 dark:bg-red-500/20 dark:text-red-300"
       />
       <AdminStatCard
-        label="Challenges"
-        value={summary.challengesWithService}
-        description="With service config"
-        icon={ShieldCheck}
+        label="Actual Services"
+        value={summary.liveServices}
+        description="Runtime status rows"
+        icon={Activity}
+        iconClassName="bg-blue-500/10 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300"
       />
     </div>
   )

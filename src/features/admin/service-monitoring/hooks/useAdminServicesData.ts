@@ -11,13 +11,29 @@ import { getEvents } from '@/features/events/services/event.service'
 import type { Event } from '@/shared/types'
 import {
   buildNxctlHeaders,
+  buildLiveServicesUrl,
   buildNxctlStatusHeaders,
   buildNxctlStatusUrl,
   buildServiceRows,
   getNxctlErrorMessage,
   getNxctlStatusMap,
+  normalizeNxctlStatusList,
+  normalizePlatformChallengeEntries,
 } from '../lib/admin-services-utils'
-import type { AdminServiceAction, AdminServiceRow } from '../types'
+import type {
+  AdminNxctlActionTarget,
+  AdminPlatformChallengeEntry,
+  AdminRuntimeStatusSnapshot,
+  AdminServiceAction,
+  AdminServiceRow,
+} from '../types'
+
+const EMPTY_RUNTIME_STATUS: AdminRuntimeStatusSnapshot = {
+  details: [],
+  fetchedAt: null,
+  error: null,
+  isComplete: false,
+}
 
 export function useAdminServicesData() {
   const router = useRouter()
@@ -27,45 +43,116 @@ export function useAdminServicesData() {
   const [adminScope, setAdminScope] = useState<AdminScope | null>(null)
   const [events, setEvents] = useState<Event[]>([])
   const [serviceRows, setServiceRows] = useState<AdminServiceRow[]>([])
+  const [platformEntries, setPlatformEntries] = useState<AdminPlatformChallengeEntry[]>([])
+  const [platformError, setPlatformError] = useState<string | null>(null)
+  const [runtimeStatus, setRuntimeStatus] = useState<AdminRuntimeStatusSnapshot>(EMPTY_RUNTIME_STATUS)
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [statusLoading, setStatusLoading] = useState(false)
   const [accessReady, setAccessReady] = useState(false)
   const [actionLoading, setActionLoading] = useState<Record<string, AdminServiceAction | null>>({})
+  const [globalActionLoading, setGlobalActionLoading] = useState<'up' | 'down' | null>(null)
 
   const isAllowed = Boolean(adminScope?.is_global_admin || adminScope?.event_ids.length)
   const isGlobalAdmin = Boolean(adminScope?.is_global_admin)
 
-  const loadStatus = useCallback(async (rows: AdminServiceRow[]) => {
-    if (rows.length === 0) {
-      setServiceRows([])
-      return
+  const loadPlatformEntries = useCallback(async (accessToken?: string | null) => {
+    if (!accessToken) {
+      return {
+        entries: [] as AdminPlatformChallengeEntry[],
+        error: 'Admin session not found',
+      }
     }
 
+    try {
+      const res = await fetch('/api/nxctl?action=admin-challenges', {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      })
+      const data = await res.json()
+
+      if (!res.ok || !Array.isArray(data)) {
+        return {
+          entries: [] as AdminPlatformChallengeEntry[],
+          error: getNxctlErrorMessage(data),
+        }
+      }
+
+      return {
+        entries: normalizePlatformChallengeEntries(data),
+        error: null,
+      }
+    } catch (error: any) {
+      console.error('Failed to fetch NXCTL platform challenges', error)
+      return {
+        entries: [] as AdminPlatformChallengeEntry[],
+        error: error?.message || 'Failed to fetch NXCTL platform challenges',
+      }
+    }
+  }, [])
+
+  const loadStatus = useCallback(async (rows: AdminServiceRow[], accessToken?: string | null) => {
     const runId = statusRunRef.current + 1
     statusRunRef.current = runId
     setStatusLoading(true)
 
     try {
-      const res = await fetch(buildNxctlStatusUrl(rows), {
-        headers: buildNxctlStatusHeaders(rows),
-      })
-      const data = await res.json()
-      if (statusRunRef.current !== runId) return
+      let data: unknown = null
+      let statusError: string | null = null
+      let isComplete = false
 
-      if (!res.ok || !Array.isArray(data)) {
-        const message = getNxctlErrorMessage(data)
+      if (accessToken) {
+        const liveRes = await fetch(buildLiveServicesUrl([]), {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        })
+        data = await liveRes.json()
+        if (statusRunRef.current !== runId) return
+
+        if (liveRes.ok && Array.isArray(data)) {
+          isComplete = true
+        } else {
+          statusError = getNxctlErrorMessage(data)
+          data = null
+        }
+      }
+
+      if (!Array.isArray(data) && rows.length > 0) {
+        const res = await fetch(buildNxctlStatusUrl(rows), {
+          headers: buildNxctlStatusHeaders(rows),
+        })
+        data = await res.json()
+        if (statusRunRef.current !== runId) return
+
+        if (!res.ok || !Array.isArray(data)) {
+          statusError = getNxctlErrorMessage(data)
+          data = []
+        }
+      }
+
+      const fetchedAt = Date.now()
+      const details = normalizeNxctlStatusList(data)
+      setRuntimeStatus({
+        details,
+        fetchedAt,
+        error: statusError,
+        isComplete,
+      })
+
+      if (!Array.isArray(data) || details.length === 0) {
+        const message = statusError || 'No NXCTL runtime data returned'
         setServiceRows(rows.map((row) => ({
           ...row,
           details: null,
           error: message,
-          fetchedAt: Date.now(),
+          fetchedAt,
         })))
         return
       }
 
-      const statusByName = getNxctlStatusMap(data)
-      const fetchedAt = Date.now()
+      const statusByName = getNxctlStatusMap(details)
 
       setServiceRows(rows.map((row) => {
         const detail = statusByName.get(row.service.name)
@@ -80,6 +167,12 @@ export function useAdminServicesData() {
       if (statusRunRef.current !== runId) return
       console.error('Failed to fetch NXCTL services status', error)
       const message = error?.message || 'Failed to fetch NXCTL services status'
+      setRuntimeStatus({
+        details: [],
+        fetchedAt: Date.now(),
+        error: message,
+        isComplete: false,
+      })
       setServiceRows(rows.map((row) => ({
         ...row,
         details: null,
@@ -109,6 +202,8 @@ export function useAdminServicesData() {
         getChallengesList(undefined, true, 'all'),
         getEvents(),
       ])
+      const { data: sessionData } = await supabase.auth.getSession()
+      const accessToken = sessionData.session?.access_token || null
 
       const allowedSet = new Set(scope.event_ids || [])
       const visibleEvents = scope.is_global_admin
@@ -123,9 +218,13 @@ export function useAdminServicesData() {
 
       setEvents(visibleEvents)
       const rows = buildServiceRows(visibleChallenges, visibleEvents)
+      const platformResult = await loadPlatformEntries(accessToken)
+
+      setPlatformEntries(platformResult.entries)
+      setPlatformError(platformResult.error)
       setServiceRows(rows)
       setActionLoading(Object.fromEntries(rows.map((row) => [row.id, null])))
-      await loadStatus(rows)
+      await loadStatus(rows, accessToken)
     } catch (error) {
       console.error('Failed to load admin services data:', error)
       toast.error('Failed to load Services dashboard')
@@ -133,42 +232,92 @@ export function useAdminServicesData() {
       setIsLoading(false)
       setIsRefreshing(false)
     }
-  }, [loadStatus, router])
+  }, [loadPlatformEntries, loadStatus, router])
 
   const refresh = useCallback(async () => {
     await initServicesData(true)
   }, [initServicesData])
 
-  const runServiceAction = useCallback(async (row: AdminServiceRow, action: AdminServiceAction) => {
-    if (action === 'down' && !window.confirm(`Stop NXCTL service "${row.service.name}"?`)) return
+  const runNxctlAction = useCallback(async (target: AdminNxctlActionTarget, action: AdminServiceAction) => {
+    if (action === 'down' && !window.confirm(`Stop NXCTL service "${target.name}"?`)) return
 
-    setActionLoading((prev) => ({ ...prev, [row.id]: action }))
+    setActionLoading((prev) => ({ ...prev, [target.id]: action }))
     const actionLabel = action === 'up' ? 'start' : action
-    const toastId = toast.loading(`${actionLabel}ing ${row.service.name}...`)
+    const toastId = toast.loading(`${actionLabel}ing ${target.name}...`)
 
     try {
       const { data: sessionData } = await supabase.auth.getSession()
       const accessToken = sessionData.session?.access_token
       const res = await fetch('/api/nxctl', {
         method: 'POST',
-        headers: buildNxctlHeaders(row.service.key, true, accessToken),
-        body: JSON.stringify({ action, name: row.service.name }),
+        headers: buildNxctlHeaders(target.key, true, accessToken),
+        body: JSON.stringify({ action, name: target.name }),
       })
       const data = await res.json()
 
       if (!res.ok) {
-        toast.error(`Failed to ${actionLabel} ${row.service.name}: ${getNxctlErrorMessage(data)}`, { id: toastId })
+        toast.error(`Failed to ${actionLabel} ${target.name}: ${getNxctlErrorMessage(data)}`, { id: toastId })
         return
       }
 
       toast.success(`NXCTL service ${actionLabel} request completed`, { id: toastId })
       await new Promise((resolve) => setTimeout(resolve, 500))
-      await loadStatus(serviceRows)
+      await loadStatus(serviceRows, accessToken)
     } catch (error) {
-      console.error(`Failed to run NXCTL ${action} for ${row.service.name}`, error)
-      toast.error(`Failed to ${actionLabel} ${row.service.name}`, { id: toastId })
+      console.error(`Failed to run NXCTL ${action} for ${target.name}`, error)
+      toast.error(`Failed to ${actionLabel} ${target.name}`, { id: toastId })
     } finally {
-      setActionLoading((prev) => ({ ...prev, [row.id]: null }))
+      setActionLoading((prev) => ({ ...prev, [target.id]: null }))
+    }
+  }, [loadStatus, serviceRows])
+
+  const runServiceAction = useCallback(async (row: AdminServiceRow, action: AdminServiceAction) => {
+    await runNxctlAction({
+      id: row.id,
+      name: row.service.name,
+      key: row.service.key,
+      details: row.details,
+      error: row.error,
+      fetchedAt: row.fetchedAt,
+    }, action)
+  }, [runNxctlAction])
+
+  const runGlobalServiceAction = useCallback(async (action: 'up' | 'down') => {
+    if (action === 'down' && !window.confirm('Stop all NXCTL services?')) return
+
+    setGlobalActionLoading(action)
+    const actionLabel = action === 'up' ? 'Starting' : 'Stopping'
+    const toastId = toast.loading(`${actionLabel} all NXCTL services...`)
+
+    try {
+      const { data: sessionData } = await supabase.auth.getSession()
+      const accessToken = sessionData.session?.access_token
+
+      if (!accessToken) {
+        toast.error('Admin session not found', { id: toastId })
+        return
+      }
+
+      const res = await fetch('/api/nxctl', {
+        method: 'POST',
+        headers: buildNxctlHeaders(undefined, true, accessToken),
+        body: JSON.stringify({ action, all: true }),
+      })
+      const data = await res.json()
+
+      if (!res.ok) {
+        toast.error(`NXCTL ${action} all failed: ${getNxctlErrorMessage(data)}`, { id: toastId })
+        return
+      }
+
+      toast.success(`NXCTL ${action} all completed`, { id: toastId })
+      await new Promise((resolve) => setTimeout(resolve, 500))
+      await loadStatus(serviceRows, accessToken)
+    } catch (error) {
+      console.error(`Failed to run NXCTL ${action} all`, error)
+      toast.error(`NXCTL ${action} all failed`, { id: toastId })
+    } finally {
+      setGlobalActionLoading(null)
     }
   }, [loadStatus, serviceRows])
 
@@ -193,11 +342,17 @@ export function useAdminServicesData() {
     adminScope,
     events,
     serviceRows,
+    platformEntries,
+    platformError,
+    runtimeStatus,
     isLoading,
     isRefreshing,
     statusLoading,
     actionLoading,
+    globalActionLoading,
     refresh,
     runServiceAction,
+    runNxctlAction,
+    runGlobalServiceAction,
   }
 }

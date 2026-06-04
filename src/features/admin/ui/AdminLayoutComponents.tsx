@@ -1,5 +1,7 @@
 import React, { type ReactNode } from 'react'
+import { AlertTriangle } from 'lucide-react'
 import { cn } from '@/shared/lib/utils'
+import EmptyState from '@/shared/components/EmptyState'
 
 interface AdminPageSurfaceProps {
   children: ReactNode
@@ -44,7 +46,7 @@ interface AdminTabsBarProps {
 
 export function AdminTabsBar({ tabs, actions, className }: AdminTabsBarProps) {
   return (
-    <div className={cn("flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-200/50 dark:border-gray-800/60 mb-5", className)}>
+    <div className={cn("flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5", className)}>
       <div className="min-w-0 flex-1">
         {tabs}
       </div>
@@ -106,6 +108,63 @@ export function AdminSection({ title, description, children, className }: AdminS
       <div>
         {children}
       </div>
+    </div>
+  )
+}
+
+interface AdminFilterBarProps {
+  children: ReactNode
+  className?: string
+}
+
+export function AdminFilterBar({ children, className }: AdminFilterBarProps) {
+  return (
+    <div
+      className={cn(
+        "px-5 py-4 border-b border-gray-200/80 dark:border-gray-700/80 bg-gray-50/50 dark:bg-gray-900/30",
+        className
+      )}
+    >
+      {children}
+    </div>
+  )
+}
+
+interface AdminTableCardProps {
+  toolbar?: ReactNode
+  children: ReactNode
+  className?: string
+}
+
+export function AdminTableCard({ toolbar, children, className }: AdminTableCardProps) {
+  return (
+    <AdminPageSurface className={className}>
+      {toolbar}
+      {children}
+    </AdminPageSurface>
+  )
+}
+
+interface AdminErrorStateProps {
+  title?: string
+  description?: React.ReactNode
+  action?: React.ReactNode
+}
+
+export function AdminErrorState({
+  title = "Something went wrong",
+  description = "There was an error loading the data. Please try again.",
+  action,
+}: AdminErrorStateProps) {
+  return (
+    <div className="py-10 border border-dashed border-red-200/40 dark:border-red-900/40 rounded-2xl bg-red-50/10 dark:bg-red-950/5 flex items-center justify-center">
+      <EmptyState
+        icon={<AlertTriangle className="w-8 h-8 text-red-500 dark:text-red-400" />}
+        title={title}
+        description={description}
+        containerHeight="py-2"
+        action={action}
+      />
     </div>
   )
 }

@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Trash2 } from 'lucide-react'
 import { Button } from '@/shared/ui'
-import { AdminPageSurface, AdminPageToolbar, AdminListSurface, AdminEmptyState } from '../../ui'
+import { AdminPageSurface, AdminFilterBar, AdminListSurface, AdminEmptyState } from '../../ui'
 import { formatRelativeDate } from '../lib'
 import type { SolverRow } from '../types'
 
@@ -35,12 +35,8 @@ const SolversListCard: React.FC<SolversListCardProps> = ({
   onLoadMore,
 }) => {
   return (
-    <div className="space-y-5">
-      <AdminPageToolbar
-        title={<h1 className="text-xl font-bold text-gray-900 dark:text-white">All Solves</h1>}
-      />
-
-      <div className="flex flex-wrap items-center gap-2">
+    <AdminPageSurface>
+      <AdminFilterBar className="flex flex-wrap items-center gap-2 border-b border-gray-200/80 dark:border-gray-700/80">
         <input
           type="text"
           placeholder="Search by user or challenge..."
@@ -59,9 +55,7 @@ const SolversListCard: React.FC<SolversListCardProps> = ({
         <Button variant="outline" size="sm" onClick={onReset} className="h-9 px-4 rounded-xl">
           Reset
         </Button>
-      </div>
-
-      <AdminPageSurface>
+      </AdminFilterBar>
         {solvers.length === 0 ? (
           <div className="p-6">
             <AdminEmptyState
@@ -119,7 +113,6 @@ const SolversListCard: React.FC<SolversListCardProps> = ({
           </div>
         )}
       </AdminPageSurface>
-    </div>
   )
 }
 

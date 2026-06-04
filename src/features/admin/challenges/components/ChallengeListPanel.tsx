@@ -1,8 +1,8 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import { Loader2, Power, PowerOff } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import { Button } from '@/shared/ui'
-import { AdminPageSurface, AdminPageToolbar, AdminListSurface, AdminEmptyState } from '@/features/admin/ui'
+import { AdminPageSurface, AdminListSurface, AdminEmptyState } from '@/features/admin/ui'
 import AdminChallengesToolbar from './AdminChallengesToolbar'
 import ChallengeListItem from './ChallengeListItem'
 import type { AdminChallengeEventId, AdminChallengeFilterState, Challenge, Event } from '../types'
@@ -18,8 +18,6 @@ interface ChallengeListPanelProps {
   onFiltersChange: React.Dispatch<React.SetStateAction<AdminChallengeFilterState>>
   onEventChange: (eventId: AdminChallengeEventId) => void
   onAdd: () => void
-  nxctlGlobalAction?: 'up' | 'down' | null
-  onNxctlGlobalAction?: (action: 'up' | 'down') => void
   onEdit: (challenge: Challenge) => void
   onDelete: (id: string) => void
   onViewFlag: (id: string) => void
@@ -38,8 +36,6 @@ const ChallengeListPanel: React.FC<ChallengeListPanelProps> = ({
   onFiltersChange,
   onEventChange,
   onAdd,
-  nxctlGlobalAction,
-  onNxctlGlobalAction,
   onEdit,
   onDelete,
   onViewFlag,
@@ -47,76 +43,40 @@ const ChallengeListPanel: React.FC<ChallengeListPanelProps> = ({
   onToggleMaintenance,
 }) => {
   const headerActions = (
-    <div className="flex flex-wrap items-center justify-end gap-2">
-      {isGlobalAdmin && (
-        <>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onNxctlGlobalAction?.('up')}
-            disabled={!!nxctlGlobalAction}
-            title="Start all NXCTL services"
-            className="rounded-xl animate-none"
-          >
-            <Power size={14} />
-            Up All
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onNxctlGlobalAction?.('down')}
-            disabled={!!nxctlGlobalAction}
-            title="Stop all NXCTL services"
-            className="hover:border-red-500/40 hover:text-red-600 dark:hover:text-red-300 rounded-xl"
-          >
-            <PowerOff size={14} />
-            Down All
-          </Button>
-        </>
-      )}
-      <Button onClick={onAdd} size="sm" className="rounded-xl">+ Add Challenge</Button>
-    </div>
+    <Button onClick={onAdd} size="sm" className="rounded-xl">+ Add Challenge</Button>
   )
+
+  const syncStatus = isRefreshing ? (
+    <p className="inline-flex items-center gap-1.5 text-xs text-orange-500">
+      <Loader2 className="h-3 w-3 animate-spin" />
+      Synchronizing...
+    </p>
+  ) : null
 
   return (
     <motion.div className="order-1 xl:col-span-3 space-y-5" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-      {/* Page Toolbar */}
-      <AdminPageToolbar
-        title={
-          <>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">Challenges</h1>
-            {isRefreshing && (
-              <p className="mt-0.5 inline-flex items-center gap-1.5 text-xs text-orange-500">
-                <Loader2 className="h-3 w-3 animate-spin" />
-                Synchronizing services...
-              </p>
-            )}
-          </>
-        }
-        actions={headerActions}
-      />
-
-      <AdminChallengesToolbar
-        filters={filters}
-        onFiltersChange={onFiltersChange}
-        categories={Array.from(new Set(challenges.map(c => c.category))).filter(Boolean).sort()}
-        difficulties={Array.from(new Set(challenges.map(c => c.difficulty))).filter(Boolean).sort()}
-        events={events}
-        selectedEventId={selectedEventId}
-        onEventChange={onEventChange}
-        isGlobalAdmin={isGlobalAdmin}
-        onClear={() => onFiltersChange({
-          category: "all",
-          difficulty: "all",
-          search: "",
-          scope: "all",
-          visibility: "all",
-          service: "all"
-        })}
-      />
-
-      {/* Main List Surface */}
       <AdminPageSurface>
+        <AdminChallengesToolbar
+          filters={filters}
+          onFiltersChange={onFiltersChange}
+          categories={Array.from(new Set(challenges.map(c => c.category))).filter(Boolean).sort()}
+          difficulties={Array.from(new Set(challenges.map(c => c.difficulty))).filter(Boolean).sort()}
+          events={events}
+          selectedEventId={selectedEventId}
+          onEventChange={onEventChange}
+          isGlobalAdmin={isGlobalAdmin}
+          actions={headerActions}
+          status={syncStatus}
+          onClear={() => onFiltersChange({
+            category: "all",
+            difficulty: "all",
+            search: "",
+            scope: "all",
+            visibility: "all",
+            service: "all"
+          })}
+        />
+
         {filteredChallenges.length === 0 ? (
           <div className="p-6">
             <AdminEmptyState

@@ -11,7 +11,7 @@ import { getAuditLogs } from '@/features/logs/lib/audit-service'
 import type { AuditLogEntry } from '@/features/logs/lib/audit-service'
 import type { ActionType } from '../../overview/types'
 import { EmailWithUsernameTooltip } from './AuditLog/EmailWithUsernameTooltip'
-import { AdminPageSurface, AdminPageToolbar, AdminListSurface } from '../../ui'
+import { AdminPageSurface, AdminFilterBar, AdminListSurface } from '../../ui'
 
 interface AuditLogListProps {
   logs?: AuditLogEntry[]
@@ -82,26 +82,6 @@ const AuditLogList: React.FC<AuditLogListProps> = ({ logs: propLogs, isLoading: 
     setUsernameCache(prev => new Map(prev).set(email, username))
   }, [])
 
-  if (isLoading) return (
-    <div className="space-y-5">
-      <AdminPageToolbar
-        title={<h1 className="text-xl font-bold text-gray-900 dark:text-white">Audit Logs</h1>}
-        actions={
-          <select
-            value={limit}
-            onChange={e => setLimit(Number(e.target.value))}
-            className="text-xs bg-transparent border border-gray-200/80 dark:border-gray-800/80 rounded-xl px-2.5 py-1.5 outline-none font-semibold text-gray-700 dark:text-gray-200 transition-all hover:border-blue-500/40"
-          >
-            {[50, 100, 250, 500, 1000].map(v => <option key={v} value={v} className="dark:bg-[#111622]">Last {v}</option>)}
-          </select>
-        }
-      />
-      <AdminPageSurface className="flex justify-center py-12">
-        <Loader />
-      </AdminPageSurface>
-    </div>
-  )
-
   const actionSelector = (
     <select
       value={limit}
@@ -112,15 +92,16 @@ const AuditLogList: React.FC<AuditLogListProps> = ({ logs: propLogs, isLoading: 
     </select>
   )
 
-  return (
-    <div className="space-y-5">
-      <AdminPageToolbar
-        title={<h1 className="text-xl font-bold text-gray-900 dark:text-white">Audit Logs</h1>}
-        actions={actionSelector}
-      />
+  if (isLoading) return (
+    <AdminPageSurface className="flex justify-center py-12">
+      <Loader />
+    </AdminPageSurface>
+  )
 
-      <div className="space-y-4">
-        <div className="flex flex-col gap-3">
+  return (
+    <AdminPageSurface>
+      <AdminFilterBar className="flex flex-col gap-3 border-b border-gray-200/80 dark:border-gray-700/80">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex flex-wrap gap-2">
             {ACTION_OPTIONS.map(opt => (
               <Button
@@ -134,59 +115,58 @@ const AuditLogList: React.FC<AuditLogListProps> = ({ logs: propLogs, isLoading: 
               </Button>
             ))}
           </div>
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            placeholder="Filter by email..."
-            className="w-full text-sm px-4 py-2 rounded-xl border border-gray-200/80 bg-white/70 dark:border-gray-700/80 dark:bg-[#111622]/80 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 shadow-sm outline-none transition-all hover:border-blue-500/40 focus:border-blue-500/70 focus:ring-2 focus:ring-blue-500/30"
-          />
+          {actionSelector}
         </div>
-      </div>
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+          placeholder="Filter by email..."
+          className="w-full text-sm px-4 py-2 rounded-xl border border-gray-200/80 bg-white/70 dark:border-gray-700/80 dark:bg-[#111622]/80 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 shadow-sm outline-none transition-all hover:border-blue-500/40 focus:border-blue-500/70 focus:ring-2 focus:ring-blue-500/30"
+        />
+      </AdminFilterBar>
 
-      <AdminPageSurface>
-        {filteredLogs.length === 0 ? (
-          <div className="px-5 py-8 text-center text-sm font-medium text-muted-foreground">
-            No audit logs match the current filters.
-          </div>
-        ) : (
-          <AdminListSurface>
-            {filteredLogs.map((log, idx) => {
-              const isUserDeleted = log.payload.action === 'user_deleted'
-              const userEmail = isUserDeleted ? log.payload.traits?.user_email : log.payload.actor_username
-              const style = getActionStyle(log.payload.action)
+      {filteredLogs.length === 0 ? (
+        <div className="px-5 py-8 text-center text-sm font-medium text-muted-foreground">
+          No audit logs match the current filters.
+        </div>
+      ) : (
+        <AdminListSurface>
+          {filteredLogs.map((log, idx) => {
+            const isUserDeleted = log.payload.action === 'user_deleted'
+            const userEmail = isUserDeleted ? log.payload.traits?.user_email : log.payload.actor_username
+            const style = getActionStyle(log.payload.action)
 
-              return (
-                <motion.div key={log.id || idx} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-6 py-3.5 hover:bg-gray-55/50 dark:hover:bg-gray-900/10 transition-colors">
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2 min-w-[140px]">
-                      <span className={cn(style.color, "font-black text-lg")}>{style.icon}</span>
-                      <span className={cn(style.color, "text-[10px] font-black uppercase tracking-widest")}>
-                        {formatActionLabel(log.payload.action)}
-                      </span>
-                    </div>
-
-                    <div className="flex-1 flex items-center gap-2">
-                      {userEmail ? (
-                        <EmailWithUsernameTooltip
-                          email={userEmail}
-                          cachedUsername={usernameCache.get(userEmail)}
-                          onUsernameLoaded={handleUsernameLoaded}
-                        />
-                      ) : <span className="text-gray-500 italic text-sm">Unknown</span>}
-                    </div>
-
-                    <span className="text-[10px] text-gray-500 font-mono">
-                      {formatRelativeDate(log.created_at)}
+            return (
+              <motion.div key={log.id || idx} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-6 py-3.5 hover:bg-gray-55/50 dark:hover:bg-gray-900/10 transition-colors">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2 min-w-[140px]">
+                    <span className={cn(style.color, "font-black text-lg")}>{style.icon}</span>
+                    <span className={cn(style.color, "text-[10px] font-black uppercase tracking-widest")}>
+                      {formatActionLabel(log.payload.action)}
                     </span>
                   </div>
-                </motion.div>
-              )
-            })}
-          </AdminListSurface>
-        )}
-      </AdminPageSurface>
-    </div>
+
+                  <div className="flex-1 flex items-center gap-2">
+                    {userEmail ? (
+                      <EmailWithUsernameTooltip
+                        email={userEmail}
+                        cachedUsername={usernameCache.get(userEmail)}
+                        onUsernameLoaded={handleUsernameLoaded}
+                      />
+                    ) : <span className="text-gray-500 italic text-sm">Unknown</span>}
+                  </div>
+
+                  <span className="text-[10px] text-gray-500 font-mono">
+                    {formatRelativeDate(log.created_at)}
+                  </span>
+                </div>
+              </motion.div>
+            )
+          })}
+        </AdminListSurface>
+      )}
+    </AdminPageSurface>
   )
 }
 

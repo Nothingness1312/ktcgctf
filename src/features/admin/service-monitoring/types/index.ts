@@ -5,6 +5,20 @@ export type AdminServiceStatus = 'running' | 'stopped' | 'expired' | 'error' | '
 
 export type AdminServiceAction = 'up' | 'down' | 'restart' | 'extend'
 
+export type AdminServiceTab = 'platform' | 'live'
+
+export type AdminServiceComparisonStatus =
+  | 'valid'
+  | 'invalid'
+  | 'key_missing'
+  | 'configured_not_running'
+  | 'missing_from_platform'
+  | 'running_unregistered'
+  | 'disabled_running'
+  | 'unknown'
+
+export type AdminServiceSource = 'platform' | 'live' | 'both'
+
 export type AdminServiceEndpoint = {
   key: string
   endpoint: string
@@ -45,20 +59,104 @@ export type AdminServiceRow = {
   fetchedAt: number | null
 }
 
+export type AdminNxctlActionTarget = {
+  id: string
+  name: string
+  key: string
+  details: AdminNxctlStatusDetail | null
+  error: string | null
+  fetchedAt: number | null
+}
+
+export type AdminPlatformChallengeEntry = {
+  id: string
+  name: string
+  serviceName: string
+  key: string
+  requiresKey: boolean
+  keyAvailable: boolean
+  keySource: string
+  enabled: boolean
+  raw: unknown
+  matchedServiceRows: AdminServiceRow[]
+  challenge: Challenge | null
+  event: Event | null
+  liveDetails: AdminNxctlStatusDetail | null
+  comparison: AdminServiceComparisonStatus
+}
+
+export type AdminPlatformChallengeKeyGroup = {
+  key: string
+  entries: AdminPlatformChallengeEntry[]
+}
+
+export type AdminPlatformChallengeGroup = {
+  id: string
+  name: string
+  entries: AdminPlatformChallengeEntry[]
+  keyGroups: AdminPlatformChallengeKeyGroup[]
+  matchedServiceRows: AdminServiceRow[]
+  challenge: Challenge | null
+  event: Event | null
+  keyCount: number
+  serviceCount: number
+  liveCount: number
+  enabled: boolean | null
+  requiresKey: boolean
+  keyAvailable: boolean | null
+  keyMissingCount: number
+  comparison: AdminServiceComparisonStatus
+  source: AdminServiceSource
+}
+
+export type AdminLiveServiceRow = {
+  id: string
+  name: string
+  serviceName: string
+  details: AdminNxctlStatusDetail
+  status: AdminServiceStatus
+  fetchedAt: number | null
+  platformEntries: AdminPlatformChallengeEntry[]
+  matchedServiceRows: AdminServiceRow[]
+  challenge: Challenge | null
+  event: Event | null
+  comparison: AdminServiceComparisonStatus
+  source: AdminServiceSource
+}
+
+export type AdminRuntimeStatusSnapshot = {
+  details: AdminNxctlStatusDetail[]
+  fetchedAt: number | null
+  error: string | null
+  isComplete: boolean
+}
+
 export type AdminServicesFilters = {
   search: string
-  status: 'all' | AdminServiceStatus
-  eventId: string
-  category: string
-  difficulty: string
-  type: string
+  key: string
+  enabled: 'all' | 'enabled' | 'disabled'
+  requiresKey: 'all' | 'required' | 'not_required'
+  keyAvailable: 'all' | 'available' | 'missing'
+  validity:
+    | 'all'
+    | 'valid'
+    | 'invalid'
+    | 'key_missing'
+    | 'configured_not_running'
+    | 'missing_from_platform'
+    | 'running_unregistered'
+    | 'disabled_running'
+    | 'unknown'
+  source: 'all' | AdminServiceSource
+  runtimeStatus: 'all' | AdminServiceStatus
 }
 
 export type AdminServicesSummaryCounts = {
-  total: number
-  running: number
-  stopped: number
-  expired: number
-  error: number
-  challengesWithService: number
+  platformGroups: number
+  platformEntries: number
+  liveServices: number
+  valid: number
+  invalid: number
+  configuredNotRunning: number
+  runningUnregistered: number
 }

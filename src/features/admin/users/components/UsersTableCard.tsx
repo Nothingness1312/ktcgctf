@@ -20,7 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/shared/ui'
-import { AdminPageSurface, AdminTableSurface, AdminEmptyState } from '@/features/admin/ui'
+import { AdminPageSurface, AdminFilterBar, AdminTableSurface, AdminEmptyState } from '@/features/admin/ui'
 import type { AdminUserRow, UserSocialLinks } from '../types'
 
 type UsersTableCardProps = {
@@ -144,26 +144,9 @@ export default function UsersTableCard({ users }: UsersTableCardProps) {
     }, 1200)
   }
 
-  const panelTitle = (
-    <div className="flex flex-wrap items-center gap-2">
-      <span>Users</span>
-      <Badge variant="outline" className="border-blue-500/20 bg-blue-500/10 text-blue-600 dark:text-blue-300">
-        {users.length} total
-      </Badge>
-      <Badge variant="outline" className="border-gray-300/80 bg-gray-100/60 text-gray-600 dark:border-gray-700 dark:bg-gray-800/80 dark:text-gray-300">
-        {adminCount} admins
-      </Badge>
-    </div>
-  )
-
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col gap-3 pb-2 sm:flex-row sm:items-center sm:justify-between">
-        {panelTitle}
-      </div>
-
-      <AdminPageSurface>
-        <div className="border-b border-gray-200/50 px-5 pb-4 pt-4 dark:border-gray-800/60">
+    <AdminPageSurface>
+      <AdminFilterBar>
           <div className="grid w-full min-w-0 grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
             <div className="relative min-w-0 sm:col-span-2 lg:col-span-1">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -233,7 +216,7 @@ export default function UsersTableCard({ users }: UsersTableCardProps) {
               </SelectContent>
             </Select>
           </div>
-        </div>
+        </AdminFilterBar>
 
         {filteredUsers.length === 0 ? (
           <div className="p-5">
@@ -429,6 +412,5 @@ export default function UsersTableCard({ users }: UsersTableCardProps) {
           </>
         )}
       </AdminPageSurface>
-    </div>
   )
 }
