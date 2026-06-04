@@ -8,12 +8,21 @@ import {
 export type SurfaceVariant = 'default' | 'muted' | 'glass' | 'data' | 'flat' | 'interactive'
 export type SurfacePadding = 'none' | 'sm' | 'md' | 'lg'
 
-type SurfaceCardProps = React.HTMLAttributes<HTMLDivElement> & {
+type SurfaceBaseProps = {
   variant?: SurfaceVariant
   padding?: SurfacePadding
   interactive?: boolean
-  as?: 'div' | 'button'
 }
+
+type SurfaceDivProps = React.HTMLAttributes<HTMLDivElement> & SurfaceBaseProps & {
+  as?: 'div'
+}
+
+type SurfaceButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & SurfaceBaseProps & {
+  as: 'button'
+}
+
+type SurfaceCardProps = SurfaceDivProps | SurfaceButtonProps
 
 const surfaceVariantClass: Record<SurfaceVariant, string> = {
   default: `${SURFACE_GLASS_BASE_CLASS} rounded-2xl shadow-sm`,
@@ -40,17 +49,33 @@ export function SurfaceCard({
   as: Component = 'div',
   ...props
 }: SurfaceCardProps) {
+  const surfaceClassName = cn(
+    surfaceVariantClass[interactive ? 'interactive' : variant],
+    surfacePaddingClass[padding],
+    className
+  )
+
+  if (Component === 'button') {
+    const buttonProps = props as React.ButtonHTMLAttributes<HTMLButtonElement>
+
+    return (
+      <button
+        type={buttonProps.type ?? 'button'}
+        className={surfaceClassName}
+        {...buttonProps}
+      >
+        {children}
+      </button>
+    )
+  }
+
   return (
-    <Component
-      className={cn(
-        surfaceVariantClass[interactive ? 'interactive' : variant],
-        surfacePaddingClass[padding],
-        className
-      )}
-      {...props}
+    <div
+      className={surfaceClassName}
+      {...(props as React.HTMLAttributes<HTMLDivElement>)}
     >
       {children}
-    </Component>
+    </div>
   )
 }
 

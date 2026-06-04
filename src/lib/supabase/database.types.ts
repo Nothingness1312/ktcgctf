@@ -635,6 +635,27 @@ export type Database = {
           question: string;
         }[];
       };
+      get_admin_users_paginated: {
+        Args: {
+          p_limit?: number;
+          p_offset?: number;
+          p_role?: string;
+          p_search?: string | null;
+          p_sort_by?: string;
+        };
+        Returns: {
+          id: string;
+          username: string;
+          email: string | null;
+          is_admin: boolean;
+          bio: string | null;
+          sosmed: Json | null;
+          profile_picture_url: string | null;
+          created_at: string;
+          updated_at: string;
+          total_count: number;
+        }[];
+      };
       get_all_my_event_memberships: { Args: Record<PropertyKey, never>; Returns: Json };
       get_auth_audit_logs: {
         Args: { p_limit?: number; p_offset?: number };

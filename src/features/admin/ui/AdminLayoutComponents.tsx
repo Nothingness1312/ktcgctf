@@ -183,13 +183,15 @@ export function AdminSection({ title, description, children, className }: AdminS
 export const AdminFilterToolbar = FilterToolbar
 export const AdminFilterInput = FilterInput
 
-type AdminFilterSelectProps = Omit<React.ComponentProps<typeof FilterSelect>, 'onChange'> & {
-  onValueChange: (value: string) => void
+type AdminFilterSelectProps<T extends string = string> = Omit<React.ComponentProps<typeof FilterSelect>, 'onChange' | 'value' | 'defaultValue'> & {
+  value: T
+  defaultValue?: T
+  onValueChange: (value: T) => void
   options: FilterSelectOption[]
 }
 
-export function AdminFilterSelect({ onValueChange, ...props }: AdminFilterSelectProps) {
-  return <FilterSelect onChange={onValueChange} {...props} />
+export function AdminFilterSelect<T extends string>({ onValueChange, ...props }: AdminFilterSelectProps<T>) {
+  return <FilterSelect onChange={onValueChange as (value: string) => void} {...props} />
 }
 
 const ADMIN_STATUS_BADGE_CLASS = {
