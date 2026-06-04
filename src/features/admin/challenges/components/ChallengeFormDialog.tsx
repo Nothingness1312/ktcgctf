@@ -6,13 +6,16 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  AppTabs,
 } from '@/shared/ui'
 import { DIALOG_FORM_CONTENT_CLASS } from "@/shared/styles"
+import { cn } from '@/shared/lib/utils'
 import { Attachment, Challenge, ChallengeFormData, Event, SubChallengeFormRow } from '../types'
 import { BasicDetailsSection } from './ChallengeForm/BasicDetailsSection'
 import { ScoringSection } from './ChallengeForm/ScoringSection'
 import { ContentSection } from './ChallengeForm/ContentSection'
 import { HintsAttachmentsSection } from './ChallengeForm/HintsAttachmentsSection'
+import { ChallengeServicesSection } from './ChallengeForm/ChallengeServicesSection'
 import { SubChallengesSection } from './ChallengeForm/SubChallengesSection'
 
 interface ChallengeFormDialogProps {
@@ -82,6 +85,14 @@ const ChallengeFormDialog: React.FC<ChallengeFormDialogProps> = (props) => {
     normalizeQuestionMarkdown
   } = props
 
+  const [activeFormTab, setActiveFormTab] = React.useState<'general' | 'additional' | 'subquestions'>('general')
+
+  const tabItems = [
+    { value: 'general' as const, label: 'General Info' },
+    { value: 'additional' as const, label: 'Additional Info' },
+    { value: 'subquestions' as const, label: 'Sub Questions' },
+  ]
+
   const sortedEvents = React.useMemo(() => {
     if (!events) return []
     const nowMs = Date.now()
@@ -117,60 +128,82 @@ const ChallengeFormDialog: React.FC<ChallengeFormDialogProps> = (props) => {
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent
-          className={DIALOG_FORM_CONTENT_CLASS}
+          className={cn(DIALOG_FORM_CONTENT_CLASS, "overflow-hidden flex flex-col h-[85vh] max-h-[85vh] max-w-3xl p-5 md:p-6")}
         >
-          <DialogHeader>
-            <DialogTitle className="text-gray-900 dark:text-gray-100">{editing ? 'Edit Challenge' : 'Add New Challenge'}</DialogTitle>
+          <DialogHeader className="pb-3 border-b dark:border-gray-800 shrink-0">
+            <DialogTitle className="text-base font-semibold text-gray-900 dark:text-gray-100">{editing ? 'Edit Challenge' : 'Add New Challenge'}</DialogTitle>
           </DialogHeader>
 
-          <form onSubmit={onSubmit} className="space-y-4">
-            <BasicDetailsSection
-              formData={formData}
-              onChange={onChange}
-              events={sortedEvents}
-              categories={categories}
-              hideMainEventOption={hideMainEventOption}
-            />
+          <form onSubmit={onSubmit} className="flex flex-col flex-1 overflow-hidden space-y-4">
+            <div className="flex justify-center border-b pb-2 dark:border-gray-800 shrink-0">
+              <AppTabs
+                items={tabItems}
+                value={activeFormTab}
+                onValueChange={setActiveFormTab}
+                variant="panel"
+                stretch
+              />
+            </div>
 
-            <ScoringSection
-              formData={formData}
-              onChange={onChange}
-            />
+            <div className={cn("flex-1 overflow-y-auto scroll-hidden space-y-4 pr-1", activeFormTab !== 'general' && 'hidden')}>
+              <BasicDetailsSection
+                formData={formData}
+                onChange={onChange}
+                events={sortedEvents}
+                categories={categories}
+                hideMainEventOption={hideMainEventOption}
+              />
 
-            <ContentSection
-              formData={formData}
-              onChange={onChange}
-              showPreview={showPreview}
-              setShowPreview={setShowPreview}
-              flagLoading={flagLoading}
-              handleViewFlag={handleViewFlag}
-              editing={!!editing}
-            />
+              <ScoringSection
+                formData={formData}
+                onChange={onChange}
+              />
 
-            <HintsAttachmentsSection
-              formData={formData}
-              onAddHint={onAddHint}
-              onUpdateHint={onUpdateHint}
-              onRemoveHint={onRemoveHint}
-              onAddAttachment={onAddAttachment}
-              onUpdateAttachment={onUpdateAttachment}
-              onRemoveAttachment={onRemoveAttachment}
-            />
+              <ContentSection
+                formData={formData}
+                onChange={onChange}
+                showPreview={showPreview}
+                setShowPreview={setShowPreview}
+                flagLoading={flagLoading}
+                handleViewFlag={handleViewFlag}
+                editing={!!editing}
+              />
+            </div>
 
-            <SubChallengesSection
-              subChallenges={subChallenges}
-              subChallengesSequential={subChallengesSequential}
-              onAdd={onAddSubChallenge}
-              onUpdate={onUpdateSubChallenge}
-              onRemove={onRemoveSubChallenge}
-              onReorder={onReorderSubChallenge}
-              onToggleSequential={onToggleSequential}
-              questionPreviewRows={questionPreviewRows}
-              setQuestionPreviewRows={setQuestionPreviewRows}
-              normalizeQuestionMarkdown={normalizeQuestionMarkdown}
-            />
+            <div className={cn("flex-1 overflow-y-auto scroll-hidden space-y-6 pr-1", activeFormTab !== 'additional' && 'hidden')}>
+              <HintsAttachmentsSection
+                formData={formData}
+                onAddHint={onAddHint}
+                onUpdateHint={onUpdateHint}
+                onRemoveHint={onRemoveHint}
+                onAddAttachment={onAddAttachment}
+                onUpdateAttachment={onUpdateAttachment}
+                onRemoveAttachment={onRemoveAttachment}
+                mode="all"
+              />
 
-            <DialogFooter className="flex flex-row items-center justify-end gap-2 sticky bottom-0 z-10 pt-2">
+              <ChallengeServicesSection
+                formData={formData}
+                onChange={onChange}
+              />
+            </div>
+
+            <div className={cn("flex-1 overflow-y-auto scroll-hidden pr-1", activeFormTab !== 'subquestions' && 'hidden')}>
+              <SubChallengesSection
+                subChallenges={subChallenges}
+                subChallengesSequential={subChallengesSequential}
+                onAdd={onAddSubChallenge}
+                onUpdate={onUpdateSubChallenge}
+                onRemove={onRemoveSubChallenge}
+                onReorder={onReorderSubChallenge}
+                onToggleSequential={onToggleSequential}
+                questionPreviewRows={questionPreviewRows}
+                setQuestionPreviewRows={setQuestionPreviewRows}
+                normalizeQuestionMarkdown={normalizeQuestionMarkdown}
+              />
+            </div>
+
+            <DialogFooter className="flex flex-row items-center justify-end gap-2 shrink-0 pt-3 border-t dark:border-gray-800">
               <Button
                 type="button"
                 variant="ghost"

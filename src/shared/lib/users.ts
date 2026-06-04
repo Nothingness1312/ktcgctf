@@ -17,7 +17,6 @@ export {
 }
 from '@/features/users/services/user-stats.service'
 export type { CategoryTotal, DifficultyTotal } from '@/features/users/services/user-stats.service'
-export { getUsernameByEmail } from '@/features/admin/overview/services/audit-user-lookup.service'
 export { getInfo } from '@/features/admin/overview/services/site-info.service'
 export type { SiteInfo } from '@/features/admin/overview/services/site-info.service'
 

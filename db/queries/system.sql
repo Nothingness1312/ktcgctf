@@ -31,21 +31,41 @@ RETURNS TABLE (
   id uuid,
   created_at timestamptz,
   ip_address text,
-  payload jsonb
+  payload jsonb,
+  username text
 )
-language sql
+language plpgsql
 security definer
-set search_path = public
+set search_path = public, auth
 as $$
+BEGIN
+  IF NOT is_admin() THEN
+    RAISE EXCEPTION 'Only global admin can view audit logs';
+  END IF;
+
+  RETURN QUERY
   SELECT
-    id,
-    created_at,
-    ip_address::text,
-    payload
-  FROM auth.audit_log_entries
-  WHERE (p_action_filters IS NULL OR payload->>'action' = ANY(p_action_filters))
-  ORDER BY created_at DESC
+    ale.id,
+    ale.created_at,
+    ale.ip_address::text,
+    ale.payload::jsonb,
+    (
+      SELECT u.username::text
+      FROM public.users u
+      JOIN auth.users au ON au.id = u.id
+      WHERE LOWER(au.email) = LOWER(
+        CASE
+          WHEN ale.payload->>'action' = 'user_deleted' THEN COALESCE(ale.payload->'traits'->>'user_email', '')
+          ELSE COALESCE(ale.payload->>'actor_username', '')
+        END
+      )
+      LIMIT 1
+    ) AS username
+  FROM auth.audit_log_entries ale
+  WHERE (p_action_filters IS NULL OR ale.payload->>'action' = ANY(p_action_filters))
+  ORDER BY ale.created_at DESC
   LIMIT p_limit OFFSET p_offset;
+END;
 $$;
 
 grant execute on function public.get_auth_audit_logs(int, int, text[]) to authenticated;

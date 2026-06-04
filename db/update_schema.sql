@@ -117,20 +117,6 @@ END;
 $$ LANGUAGE plpgsql
 SECURITY DEFINER;
 GRANT EXECUTE ON FUNCTION get_email_by_username(text) TO anon, authenticated;
-CREATE OR REPLACE FUNCTION get_username_by_email(p_email TEXT)
-RETURNS TEXT AS $$
-DECLARE v_username TEXT;
-BEGIN
-  SELECT u.username
-  INTO v_username
-  FROM public.users u
-  JOIN auth.users au ON au.id = u.id
-  WHERE LOWER(au.email) = LOWER(p_email);
-  RETURN v_username;
-END;
-$$ LANGUAGE plpgsql
-SECURITY DEFINER;
-GRANT EXECUTE ON FUNCTION get_username_by_email(text) TO anon, authenticated;
 CREATE OR REPLACE FUNCTION get_user_profile(p_id UUID)
 RETURNS TABLE (
   id UUID,
@@ -677,6 +663,83 @@ END;
 $$ LANGUAGE plpgsql
 SECURITY DEFINER;
 GRANT EXECUTE ON FUNCTION cleanup_orphaned_users_and_solves() TO authenticated;
+CREATE OR REPLACE FUNCTION public.get_admin_users_paginated(
+  p_search text default null,
+  p_role text default 'all',
+  p_sort_by text default 'newest',
+  p_limit int default 100,
+  p_offset int default 0
+)
+RETURNS TABLE (
+  id uuid,
+  username text,
+  email text,
+  is_admin boolean,
+  bio text,
+  sosmed jsonb,
+  profile_picture_url text,
+  created_at timestamptz,
+  updated_at timestamptz,
+  total_count bigint
+) AS $$
+BEGIN
+  IF NOT public.is_admin() THEN
+    RAISE EXCEPTION 'Only global admin can list admin users';
+  END IF;
+  RETURN QUERY
+  WITH filtered_users AS (
+    SELECT
+      u.id,
+      u.username::text,
+      au.email::text,
+      COALESCE(u.is_admin, false) AS is_admin,
+      u.bio::text,
+      u.sosmed,
+      u.profile_picture_url::text,
+      u.created_at,
+      u.updated_at
+    FROM public.users u
+    LEFT JOIN auth.users au ON au.id = u.id
+    WHERE (
+      p_search IS NULL OR p_search = '' OR
+      u.username ILIKE '%' || p_search || '%' OR
+      u.bio ILIKE '%' || p_search || '%' OR
+      au.email ILIKE '%' || p_search || '%' OR
+      u.id::text = p_search
+    ) AND (
+      p_role = 'all' OR
+      (p_role = 'admin' AND u.is_admin = true) OR
+      (p_role = 'user' AND u.is_admin = false)
+    )
+  ),
+  total_cnt AS (
+    SELECT COUNT(*) AS cnt FROM filtered_users
+  )
+  SELECT
+    f.id,
+    f.username,
+    f.email,
+    f.is_admin,
+    f.bio,
+    f.sosmed,
+    f.profile_picture_url,
+    f.created_at,
+    f.updated_at,
+    tc.cnt
+  FROM filtered_users f
+  CROSS JOIN total_cnt tc
+  ORDER BY
+    CASE WHEN p_sort_by = 'newest' THEN f.created_at END DESC,
+    CASE WHEN p_sort_by = 'oldest' THEN f.created_at END ASC,
+    CASE WHEN p_sort_by = 'updated_desc' THEN f.updated_at END DESC,
+    CASE WHEN p_sort_by = 'role' THEN f.is_admin END DESC,
+    f.username ASC
+  LIMIT p_limit OFFSET p_offset;
+END;
+$$ LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, auth;
+GRANT EXECUTE ON FUNCTION public.get_admin_users_paginated(text, text, text, int, int) TO authenticated;
 -- RLS/POLICY
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Users can select all" ON public.users;
@@ -4111,21 +4174,40 @@ RETURNS TABLE (
   id uuid,
   created_at timestamptz,
   ip_address text,
-  payload jsonb
+  payload jsonb,
+  username text
 )
-language sql
+language plpgsql
 security definer
-set search_path = public
+set search_path = public, auth
 as $$
+BEGIN
+  IF NOT is_admin() THEN
+    RAISE EXCEPTION 'Only global admin can view audit logs';
+  END IF;
+  RETURN QUERY
   SELECT
-    id,
-    created_at,
-    ip_address::text,
-    payload
-  FROM auth.audit_log_entries
-  WHERE (p_action_filters IS NULL OR payload->>'action' = ANY(p_action_filters))
-  ORDER BY created_at DESC
+    ale.id,
+    ale.created_at,
+    ale.ip_address::text,
+    ale.payload::jsonb,
+    (
+      SELECT u.username::text
+      FROM public.users u
+      JOIN auth.users au ON au.id = u.id
+      WHERE LOWER(au.email) = LOWER(
+        CASE
+          WHEN ale.payload->>'action' = 'user_deleted' THEN COALESCE(ale.payload->'traits'->>'user_email', '')
+          ELSE COALESCE(ale.payload->>'actor_username', '')
+        END
+      )
+      LIMIT 1
+    ) AS username
+  FROM auth.audit_log_entries ale
+  WHERE (p_action_filters IS NULL OR ale.payload->>'action' = ANY(p_action_filters))
+  ORDER BY ale.created_at DESC
   LIMIT p_limit OFFSET p_offset;
+END;
 $$;
 grant execute on function public.get_auth_audit_logs(int, int, text[]) to authenticated;
 CREATE OR REPLACE FUNCTION public.get_flag_placeholder(p_flag TEXT)

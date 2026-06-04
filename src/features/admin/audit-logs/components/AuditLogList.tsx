@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { ShieldCheck } from 'lucide-react'
 import { Loader } from '@/shared/components'
@@ -10,7 +11,6 @@ import { formatRelativeDate } from '@/shared/lib'
 import { getAuditLogs } from '@/features/logs/lib/audit-service'
 import type { AuditLogEntry } from '@/features/logs/lib/audit-service'
 import type { ActionType } from '../../overview/types'
-import { EmailWithUsernameTooltip } from './AuditLog/EmailWithUsernameTooltip'
 import {
   ADMIN_ROW_CLASS,
   AdminDataSurface,
@@ -60,7 +60,6 @@ const AuditLogList: React.FC<AuditLogListProps> = ({ logs: propLogs, isLoading: 
   const [limit, setLimit] = useState(50)
   const [selectedActions, setSelectedActions] = useState<ActionType[]>([])
   const [searchQuery, setSearchQuery] = useState('')
-  const [usernameCache, setUsernameCache] = useState<Map<string, string | null>>(new Map())
 
   const logs = propLogs || internalLogs
   const isLoading = propLoading ?? internalLoading
@@ -83,14 +82,13 @@ const AuditLogList: React.FC<AuditLogListProps> = ({ logs: propLogs, isLoading: 
     return logs.filter(log => {
       if (log.payload.action === 'token_revoked') return false
       const email = log.payload.action === 'user_deleted' ? log.payload.traits?.user_email : log.payload.actor_username
-      const matchesSearch = !searchQuery || email?.toLowerCase().includes(searchQuery.toLowerCase())
+      const username = log.username
+      const matchesSearch = !searchQuery || 
+        email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        username?.toLowerCase().includes(searchQuery.toLowerCase())
       return matchesSearch
     })
   }, [logs, searchQuery])
-
-  const handleUsernameLoaded = useCallback((email: string, username: string | null) => {
-    setUsernameCache(prev => new Map(prev).set(email, username))
-  }, [])
 
   if (isLoading) return (
     <AdminDataSurface>
@@ -138,7 +136,7 @@ const AuditLogList: React.FC<AuditLogListProps> = ({ logs: propLogs, isLoading: 
                 value={searchQuery}
                 defaultValue=""
                 onChange={setSearchQuery}
-                placeholder="Filter by actor email..."
+                placeholder="Filter by actor email or username..."
                 wrapperClassName="max-w-xs"
                 icon={<ShieldCheck className="h-4 w-4 text-gray-400 dark:text-gray-500" />}
               />
@@ -166,27 +164,46 @@ const AuditLogList: React.FC<AuditLogListProps> = ({ logs: propLogs, isLoading: 
               animate={{ opacity: 1 }}
               className={`${ADMIN_ROW_CLASS} px-5 py-3`}
             >
-              <div className="flex items-center gap-4">
-                <div className="flex min-w-[140px] items-center gap-2">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                {/* ACTION TYPE */}
+                <div className="flex min-w-[160px] items-center gap-2">
                   <span className={cn(style.color, 'font-black text-lg')}>{style.icon}</span>
                   <span className={cn(style.color, 'text-[10px] font-black uppercase tracking-widest')}>
                     {formatActionLabel(log.payload.action)}
                   </span>
                 </div>
 
-                <div className="flex flex-1 items-center gap-2">
-                  {userEmail ? (
-                    <EmailWithUsernameTooltip
-                      email={userEmail}
-                      cachedUsername={usernameCache.get(userEmail)}
-                      onUsernameLoaded={handleUsernameLoaded}
-                    />
-                  ) : <span className="text-sm italic text-gray-500">Unknown</span>}
+                {/* USERNAME */}
+                <div className="min-w-[140px] truncate">
+                  {log.username ? (
+                    <Link
+                      href={`/user/${encodeURIComponent(log.username)}`}
+                      className="text-sm font-semibold text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 hover:underline"
+                    >
+                      {log.username}
+                    </Link>
+                  ) : (
+                    <span className="text-sm italic text-gray-500">-</span>
+                  )}
                 </div>
 
-                <span className="font-mono text-[10px] text-gray-500">
-                  {formatRelativeDate(log.created_at)}
-                </span>
+                {/* EMAIL */}
+                <div className="flex-1 truncate">
+                  {userEmail ? (
+                    <span className="font-mono text-xs text-gray-600 dark:text-gray-400">
+                      {userEmail}
+                    </span>
+                  ) : (
+                    <span className="text-xs italic text-gray-500">Unknown</span>
+                  )}
+                </div>
+
+                {/* TIME */}
+                <div className="min-w-[120px] text-left sm:text-right">
+                  <span className="font-mono text-[10px] text-gray-500">
+                    {formatRelativeDate(log.created_at)}
+                  </span>
+                </div>
               </div>
             </motion.div>
           )

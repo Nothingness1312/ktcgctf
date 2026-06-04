@@ -3,6 +3,7 @@ export type UserSocialLinks = Record<string, unknown> | null
 export type AdminUserRow = {
   id: string
   username: string
+  email: string | null
   is_admin: boolean
   bio: string | null
   sosmed: UserSocialLinks

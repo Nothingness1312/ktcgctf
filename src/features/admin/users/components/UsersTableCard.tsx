@@ -146,6 +146,7 @@ export default function UsersTableCard({
                   <TableRow>
                     <TableHead className="pl-6 text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">User</TableHead>
                     <TableHead className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Role</TableHead>
+                    <TableHead className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Email</TableHead>
                     <TableHead className="text-right text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Created</TableHead>
                     <TableHead className="text-right text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Updated</TableHead>
                     <TableHead className="pr-6 text-right text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Actions</TableHead>
@@ -194,6 +195,9 @@ export default function UsersTableCard({
                           <AdminStatusBadge tone={listedUser.is_admin ? 'info' : 'neutral'}>
                             {listedUser.is_admin ? 'Admin' : 'User'}
                           </AdminStatusBadge>
+                        </TableCell>
+                        <TableCell className="font-mono text-xs text-muted-foreground">
+                          {listedUser.email || '-'}
                         </TableCell>
                         <TableCell className="text-right text-xs text-muted-foreground">
                           {formatDate(listedUser.created_at)}

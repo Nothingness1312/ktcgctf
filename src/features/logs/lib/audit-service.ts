@@ -4,6 +4,7 @@ export interface AuditLogEntry {
   id: string
   created_at: string
   ip_address: string | null
+  username: string | null
   payload: {
     action: string
     actor_username?: string
@@ -33,6 +34,7 @@ function normalizeAuditLog(row: any): AuditLogEntry {
     id: String(row.id || ''),
     created_at: String(row.created_at || ''),
     ip_address: row.ip_address ?? null,
+    username: row.username ?? null,
     payload: {
       action: typeof payload.action === 'string' ? payload.action : '',
       actor_username: typeof payload.actor_username === 'string' ? payload.actor_username : undefined,
