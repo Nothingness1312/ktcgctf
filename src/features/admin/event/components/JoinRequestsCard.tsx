@@ -1,7 +1,7 @@
 import React from 'react'
 import { Button, Label } from '@/shared/ui'
 import { ADMIN_NATIVE_SELECT_CLASS } from '@/features/admin/ui/form-field-styles'
-import { AdminPageSurface } from '@/features/admin/ui'
+import { AdminDataSurface } from '@/features/admin/ui'
 import type { Event, EventJoinRequestRow } from '../types'
 
 interface JoinRequestsCardProps {
@@ -24,7 +24,7 @@ const JoinRequestsCard: React.FC<JoinRequestsCardProps> = ({
   onReviewRequest,
 }) => {
   return (
-    <AdminPageSurface className="p-6 space-y-6">
+    <AdminDataSurface className="p-6" contentClassName="space-y-6">
       <div className="border-b border-gray-150 dark:border-gray-800/60 pb-4">
         <h2 className="text-base font-bold text-gray-900 dark:text-white">Join Requests</h2>
       </div>
@@ -51,7 +51,7 @@ const JoinRequestsCard: React.FC<JoinRequestsCardProps> = ({
             <div className="py-6 text-center text-sm text-gray-500 dark:text-gray-400">No pending requests</div>
           ) : (
             joinRequests.map((request) => (
-              <div key={request.request_id} className="px-3.5 py-3.5 flex flex-col md:flex-row md:items-center md:justify-between gap-3 hover:bg-gray-55/40 dark:hover:bg-gray-900/10 transition-colors">
+              <div key={request.request_id} className="flex flex-col gap-3 px-3.5 py-3.5 transition-colors hover:bg-gray-50/40 dark:hover:bg-gray-900/10 md:flex-row md:items-center md:justify-between">
                 <div>
                   <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{request.username || request.user_id}</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Requested at {new Date(request.requested_at).toLocaleString()}</p>
@@ -81,7 +81,7 @@ const JoinRequestsCard: React.FC<JoinRequestsCardProps> = ({
           )}
         </div>
       </div>
-    </AdminPageSurface>
+    </AdminDataSurface>
   )
 }
 

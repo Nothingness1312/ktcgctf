@@ -1,7 +1,7 @@
 import React from 'react'
 import { Button, Input, Label } from '@/shared/ui'
 import { ADMIN_NATIVE_SELECT_CLASS } from '@/features/admin/ui/form-field-styles'
-import { AdminPageSurface } from '@/features/admin/ui'
+import { AdminDataSurface } from '@/features/admin/ui'
 import type { Event, EventMemberRow, UserLite } from '../types'
 
 interface EventMembersCardProps {
@@ -48,7 +48,7 @@ const EventMembersCard: React.FC<EventMembersCardProps> = ({
   onRemoveMember,
 }) => {
   return (
-    <AdminPageSurface className="p-6 space-y-6">
+    <AdminDataSurface className="p-6" contentClassName="space-y-6">
       <div className="border-b border-gray-150 dark:border-gray-800/60 pb-4">
         <h2 className="text-base font-bold text-gray-900 dark:text-white">Event Members</h2>
       </div>
@@ -165,7 +165,7 @@ const EventMembersCard: React.FC<EventMembersCardProps> = ({
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{member.username}</p>
                       <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{member.user_id}</p>
-                      <p className="text-[10px] text-gray-450 dark:text-gray-500 mt-1 font-mono">Joined: {new Date(member.joined_at).toLocaleString()}</p>
+                      <p className="mt-1 font-mono text-[10px] text-gray-500/80 dark:text-gray-500">Joined: {new Date(member.joined_at).toLocaleString()}</p>
                     </div>
                     <Button
                       size="sm"
@@ -183,7 +183,7 @@ const EventMembersCard: React.FC<EventMembersCardProps> = ({
           </div>
         </div>
       </div>
-    </AdminPageSurface>
+    </AdminDataSurface>
   )
 }
 

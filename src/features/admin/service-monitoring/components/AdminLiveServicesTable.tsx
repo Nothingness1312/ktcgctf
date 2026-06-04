@@ -2,16 +2,13 @@ import { ChevronDown, ChevronRight, Clock, Copy, ExternalLink, Loader2, Play, Po
 import { useEffect, useState, Fragment, type ReactNode } from 'react'
 import toast from 'react-hot-toast'
 import {
-  Badge,
   Button,
   Table,
   TableBody,
   TableCell,
-  TableHead,
-  TableHeader,
   TableRow,
 } from '@/shared/ui'
-import { AdminEmptyState, AdminPageSurface, AdminTableSurface } from '@/features/admin/ui'
+import { ADMIN_ROW_CLASS, AdminEmptyState, AdminTableSurface } from '@/features/admin/ui'
 import type { AdminLiveServiceRow, AdminNxctlActionTarget, AdminServiceAction } from '../types'
 import AdminServiceStatusBadge from './AdminServiceStatusBadge'
 import { formatDuration, getRemainingSecondsFromDetail, getLiveServiceEndpoints } from '../lib/admin-services-utils'
@@ -248,7 +245,7 @@ export default function AdminLiveServicesTable({
               return (
                 <Fragment key={row.id}>
                   <TableRow
-                    className={`border-b border-gray-100/80 transition-colors duration-150 ease-in-out hover:bg-blue-50/40 dark:border-gray-800/70 dark:hover:bg-blue-900/10 ${
+                    className={`${ADMIN_ROW_CLASS} ${
                       hasEndpoints ? 'cursor-pointer' : ''
                     }`}
                     onClick={() => hasEndpoints && toggleRow(row.id)}

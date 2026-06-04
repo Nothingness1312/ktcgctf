@@ -108,8 +108,8 @@ export default function InfoPage() {
             className="mb-2 flex flex-row items-center justify-center gap-3 text-3xl font-black tracking-tight sm:text-5xl"
           >
             <ImageWithFallback
-              src={APP.image_logo}
-              alt={`${APP.shortName} logo`}
+              src={APP.nxctf.nxctf_logo}
+              alt={`${APP.nxctf.nxctf_title} logo`}
               size={80}
               rounded={false}
             />

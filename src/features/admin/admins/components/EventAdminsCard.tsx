@@ -9,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/shared/ui'
-import { AdminPageSurface, AdminTableSurface } from '@/features/admin/ui'
+import { ADMIN_ROW_CLASS, AdminDataSurface, AdminEmptyState, AdminTableSurface } from '@/features/admin/ui'
 import type { EventAdminRow } from '../types'
 
 interface EventAdminsCardProps {
@@ -19,17 +19,20 @@ interface EventAdminsCardProps {
 
 const EventAdminsCard: React.FC<EventAdminsCardProps> = ({ admins, onAskRemove }) => {
   return (
-    <AdminPageSurface>
-      <div className="px-5 py-4 border-b border-gray-150 dark:border-gray-800/60 flex items-center gap-2">
+    <AdminDataSurface
+      toolbar={(
+        <div className="flex items-center gap-2 border-b border-gray-150 px-5 py-4 dark:border-gray-800/60">
         <ShieldAlert size={16} className="text-blue-500" />
         <h2 className="text-base font-bold text-gray-900 dark:text-white">Event Admins</h2>
       </div>
-
-      {admins.length === 0 ? (
-        <div className="px-5 py-8 text-center text-sm font-medium text-muted-foreground">
-          No event admins assigned yet.
-        </div>
-      ) : (
+      )}
+      empty={admins.length === 0 ? (
+        <AdminEmptyState
+          title="No event admins assigned yet"
+          description="Event-scoped admins will appear here."
+        />
+      ) : null}
+    >
         <AdminTableSurface>
           <Table>
             <TableHeader>
@@ -41,7 +44,7 @@ const EventAdminsCard: React.FC<EventAdminsCardProps> = ({ admins, onAskRemove }
             </TableHeader>
             <TableBody>
               {admins.map((admin) => (
-                <TableRow key={`${admin.user_id}:${admin.event_id}`} className="border-b border-gray-100/80 transition-colors duration-150 ease-in-out last:border-b-0 hover:bg-blue-50/40 dark:border-gray-800/70 dark:hover:bg-blue-900/10">
+                <TableRow key={`${admin.user_id}:${admin.event_id}`} className={ADMIN_ROW_CLASS}>
                   <TableCell className="font-medium px-5 py-3">{admin.username}</TableCell>
                   <TableCell className="py-3">{admin.event_name}</TableCell>
                   <TableCell className="text-right px-5 py-3">
@@ -54,8 +57,7 @@ const EventAdminsCard: React.FC<EventAdminsCardProps> = ({ admins, onAskRemove }
             </TableBody>
           </Table>
         </AdminTableSurface>
-      )}
-    </AdminPageSurface>
+    </AdminDataSurface>
   )
 }
 

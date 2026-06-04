@@ -2,7 +2,7 @@ import React from 'react'
 import ChallengeFilterBar from '@/features/challenges/components/ChallengeFilterBar'
 import { Button, Label } from '@/shared/ui'
 import { ADMIN_NATIVE_SELECT_CLASS } from '@/features/admin/ui/form-field-styles'
-import { AdminPageSurface, AdminEmptyState } from '@/features/admin/ui'
+import { AdminDataSurface, AdminEmptyState } from '@/features/admin/ui'
 import { DEFAULT_EVENT_FILTERS } from '../lib'
 import type { ChallengeLite, Event, FilterState } from '../types'
 
@@ -42,7 +42,7 @@ const BulkAssignChallengesCard: React.FC<BulkAssignChallengesCardProps> = ({
   onToggleSelect,
 }) => {
   return (
-    <AdminPageSurface className="p-6 space-y-6">
+    <AdminDataSurface className="p-6" contentClassName="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-150 dark:border-gray-800/60 pb-4">
         <div>
           <h2 className="text-base font-bold text-gray-900 dark:text-white">Bulk Assign Challenges</h2>
@@ -119,9 +119,9 @@ const BulkAssignChallengesCard: React.FC<BulkAssignChallengesCardProps> = ({
             ))
           )}
         </div>
-        <div className="text-xs font-semibold text-gray-500 dark:text-gray-450">Selected: {selectedIds.length}</div>
+        <div className="text-xs font-semibold text-gray-500 dark:text-gray-500/80">Selected: {selectedIds.length}</div>
       </div>
-    </AdminPageSurface>
+    </AdminDataSurface>
   )
 }
 

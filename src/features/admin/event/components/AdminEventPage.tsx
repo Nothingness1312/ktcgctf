@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import { CalendarDays, GitBranch, UserPlus, Users } from 'lucide-react'
-import { SegmentedTabs } from '@/shared/components'
 import ConfirmDialog from '@/shared/components/ConfirmDialog'
 import BulkAssignChallengesCard from './BulkAssignChallengesCard'
 import EventFormDialog from './EventFormDialog'
@@ -12,7 +11,7 @@ import EventMembersCard from './EventMembersCard'
 import JoinRequestsCard from './JoinRequestsCard'
 import { Button } from '@/shared/ui'
 import { useAdminEventData } from '../hooks/useAdminEventData'
-import { AdminContentLoading, AdminPageShell, AdminTabsBar } from '../../ui'
+import { AdminContentLoading, AdminPageShell, AdminStickyToolbar, AdminTabs } from '../../ui'
 
 type AdminEventTab = 'event-list' | 'bulk-event' | 'event-members' | 'join-requests'
 
@@ -98,26 +97,22 @@ export default function AdminEventPage() {
   return (
     <>
       <AdminPageShell>
-        <div className="sticky top-14 z-30 bg-white/95 dark:bg-[#0b0f19]/95 backdrop-blur-md -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 py-2.5 border-b border-gray-200/60 dark:border-gray-800/60">
-          <AdminTabsBar
-            className="mb-0"
-            tabs={
-              <SegmentedTabs
+        <AdminStickyToolbar
+          tabs={
+              <AdminTabs
                 items={EVENT_TABS}
                 value={activeTab}
                 onChange={setActiveTab}
-                variant="panel"
               />
-            }
-            actions={
+          }
+          actions={
               activeTab === 'event-list' ? (
                 <Button onClick={openAdd} size="sm" className="rounded-xl">
                   + Add Event
                 </Button>
               ) : null
-            }
-          />
-        </div>
+          }
+        />
 
         <div className="space-y-0 mt-2">
           {activeTab === 'event-list' ? (

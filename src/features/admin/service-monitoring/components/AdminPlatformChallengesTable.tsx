@@ -1,7 +1,6 @@
 import { Fragment, useMemo, useState } from 'react'
 import { ChevronDown, ChevronRight, Edit, KeyRound } from 'lucide-react'
 import {
-  Badge,
   Button,
   Table,
   TableBody,
@@ -10,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/shared/ui'
-import { AdminEmptyState, AdminPageSurface, AdminTableSurface } from '@/features/admin/ui'
+import { ADMIN_ROW_CLASS, AdminEmptyState, AdminStatusBadge, AdminTableSurface } from '@/features/admin/ui'
 import type {
   AdminPlatformChallengeEntry,
   AdminPlatformChallengeGroup,
@@ -122,17 +121,10 @@ function CountBadge({
   count: number
   tone: 'valid' | 'invalid'
 }) {
-  const className =
-    tone === 'valid'
-      ? 'border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
-      : count > 0
-        ? 'border-red-500/25 bg-red-500/10 text-red-700 dark:text-red-300'
-        : 'border-gray-300/80 bg-gray-100/60 text-gray-500 dark:border-gray-700 dark:bg-gray-800/80 dark:text-gray-400'
-
   return (
-    <Badge variant="outline" className={className}>
+    <AdminStatusBadge tone={tone === 'valid' ? 'success' : count > 0 ? 'danger' : 'muted'}>
       {count}
-    </Badge>
+    </AdminStatusBadge>
   )
 }
 
@@ -147,15 +139,10 @@ function ReasonBadge({
 }) {
   if (!active) return null
 
-  const className =
-    tone === 'invalid'
-      ? 'border-red-500/25 bg-red-500/10 text-red-700 dark:text-red-300'
-      : 'border-gray-300/80 bg-gray-100/60 text-gray-600 dark:border-gray-700 dark:bg-gray-800/80 dark:text-gray-300'
-
   return (
-    <Badge variant="outline" className={className}>
+    <AdminStatusBadge tone={tone === 'invalid' ? 'danger' : 'neutral'}>
       {label}
-    </Badge>
+    </AdminStatusBadge>
   )
 }
 
@@ -232,7 +219,7 @@ export default function AdminPlatformChallengesTable({
               return (
                 <Fragment key={group.id}>
                   <TableRow
-                    className="cursor-pointer border-b border-gray-100/80 transition-colors duration-150 ease-in-out hover:bg-blue-50/40 dark:border-gray-800/70 dark:hover:bg-blue-900/10"
+                    className={`${ADMIN_ROW_CLASS} cursor-pointer`}
                     onClick={() => toggleGroup(group.id)}
                   >
                     <TableCell className="pl-6">

@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/shared/ui'
-import { AdminPageSurface } from '@/features/admin/ui'
+import { AdminDataSurface } from '@/features/admin/ui'
 import type { Event, UserLite } from '../types'
 
 interface AddEventAdminCardProps {
@@ -44,7 +44,7 @@ const AddEventAdminCard: React.FC<AddEventAdminCardProps> = ({
   onReset,
 }) => {
   return (
-    <AdminPageSurface className="p-6">
+    <AdminDataSurface className="p-6" contentClassName="space-y-4">
       <div className="border-b border-gray-150 dark:border-gray-800/60 pb-4 mb-4">
         <h2 className="text-base font-bold text-gray-900 dark:text-white">Add Event Admin</h2>
       </div>
@@ -108,7 +108,7 @@ const AddEventAdminCard: React.FC<AddEventAdminCardProps> = ({
           Reset
         </Button>
       </div>
-    </AdminPageSurface>
+    </AdminDataSurface>
   )
 }
 

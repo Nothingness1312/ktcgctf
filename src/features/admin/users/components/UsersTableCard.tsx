@@ -2,25 +2,25 @@
 
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
-import { Check, ChevronLeft, ChevronRight, Copy, ExternalLink, Search } from 'lucide-react'
+import { Check, ChevronLeft, ChevronRight, Copy, ExternalLink } from 'lucide-react'
 import { ImageWithFallback } from '@/shared/components'
 import {
-  Badge,
   Button,
-  Input,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   Table,
   TableBody,
   TableCell,
-  TableHead,
-  TableHeader,
   TableRow,
 } from '@/shared/ui'
-import { AdminPageSurface, AdminFilterBar, AdminTableSurface, AdminEmptyState } from '@/features/admin/ui'
+import {
+  ADMIN_ROW_CLASS,
+  AdminDataSurface,
+  AdminEmptyState,
+  AdminFilterInput,
+  AdminFilterSelect,
+  AdminFilterToolbar,
+  AdminStatusBadge,
+  AdminTableSurface,
+} from '@/features/admin/ui'
 import type { AdminUserRow, UserSocialLinks } from '../types'
 
 type UsersTableCardProps = {
@@ -132,8 +132,6 @@ export default function UsersTableCard({ users }: UsersTableCardProps) {
   const visibleUsers = filteredUsers.slice(startIndex, startIndex + pageSize)
   const firstResult = filteredUsers.length === 0 ? 0 : startIndex + 1
   const lastResult = Math.min(startIndex + pageSize, filteredUsers.length)
-  const adminCount = users.filter((listedUser) => listedUser.is_admin).length
-
   const handleCopyUserId = async (id: string) => {
     if (!navigator.clipboard) return
 
@@ -145,88 +143,73 @@ export default function UsersTableCard({ users }: UsersTableCardProps) {
   }
 
   return (
-    <AdminPageSurface>
-      <AdminFilterBar className="pt-0.5">
-          <div className="flex flex-wrap items-center gap-2 w-full text-xs">
-            <div className="relative w-full max-w-md">
-              <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-              <Input
+    <AdminDataSurface
+      toolbar={
+        <div className="py-2">
+          <AdminFilterToolbar>
+              <AdminFilterInput
                 value={query}
                 onChange={(event) => {
                   setQuery(event.target.value)
                   resetPage()
                 }}
                 placeholder="Search username, ID, bio..."
-                className="rounded-xl pl-9 h-9 w-full bg-transparent"
               />
-            </div>
 
-            <Select
+            <AdminFilterSelect
               value={roleFilter}
               onValueChange={(value) => {
                 setRoleFilter(value as RoleFilter)
                 resetPage()
               }}
-            >
-              <SelectTrigger className="w-[130px] h-9 text-xs rounded-xl bg-white/30 dark:bg-gray-900/40 border border-gray-200/50 dark:border-gray-800/50 font-semibold text-gray-700 dark:text-gray-200 hover:border-blue-500/40">
-                <SelectValue placeholder="Role" />
-              </SelectTrigger>
-              <SelectContent className="bg-white/95 dark:bg-[#111622]/95 border border-gray-200/80 dark:border-gray-800/90 rounded-xl shadow-lg backdrop-blur-xl">
-                <SelectItem value="all">All roles</SelectItem>
-                <SelectItem value="admin">Admin</SelectItem>
-                <SelectItem value="user">User</SelectItem>
-              </SelectContent>
-            </Select>
+              placeholder="Role"
+              options={[
+                { value: 'all', label: 'All roles' },
+                { value: 'admin', label: 'Admin' },
+                { value: 'user', label: 'User' },
+              ]}
+            />
 
-            <Select
+            <AdminFilterSelect
               value={sortMode}
               onValueChange={(value) => {
                 setSortMode(value as SortMode)
                 resetPage()
               }}
-            >
-              <SelectTrigger className="w-[150px] h-9 text-xs rounded-xl bg-white/30 dark:bg-gray-900/40 border border-gray-200/50 dark:border-gray-800/50 font-semibold text-gray-700 dark:text-gray-200 hover:border-blue-500/40">
-                <SelectValue placeholder="Sort" />
-              </SelectTrigger>
-              <SelectContent className="bg-white/95 dark:bg-[#111622]/95 border border-gray-200/80 dark:border-gray-800/90 rounded-xl shadow-lg backdrop-blur-xl">
-                <SelectItem value="newest">Newest</SelectItem>
-                <SelectItem value="oldest">Oldest</SelectItem>
-                <SelectItem value="username_asc">Username</SelectItem>
-                <SelectItem value="updated_desc">Recently updated</SelectItem>
-                <SelectItem value="role">Role</SelectItem>
-              </SelectContent>
-            </Select>
+              placeholder="Sort"
+              triggerClassName="sm:w-[150px]"
+              options={[
+                { value: 'newest', label: 'Newest' },
+                { value: 'oldest', label: 'Oldest' },
+                { value: 'username_asc', label: 'Username' },
+                { value: 'updated_desc', label: 'Recently updated' },
+                { value: 'role', label: 'Role' },
+              ]}
+            />
 
-            <Select
+            <AdminFilterSelect
               value={String(pageSize)}
               onValueChange={(value) => {
                 setPageSize(Number(value))
                 resetPage()
               }}
-            >
-              <SelectTrigger className="w-[120px] h-9 text-xs rounded-xl bg-white/30 dark:bg-gray-900/40 border border-gray-200/50 dark:border-gray-800/50 font-semibold text-gray-700 dark:text-gray-200 hover:border-blue-500/40">
-                <SelectValue placeholder="Rows" />
-              </SelectTrigger>
-              <SelectContent className="bg-white/95 dark:bg-[#111622]/95 border border-gray-200/80 dark:border-gray-800/90 rounded-xl shadow-lg backdrop-blur-xl">
-                {PAGE_SIZE_OPTIONS.map((option) => (
-                  <SelectItem key={option} value={String(option)}>
-                    {option} rows
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </AdminFilterBar>
-
-        {filteredUsers.length === 0 ? (
-          <div className="p-5">
-            <AdminEmptyState
-              title="No users match the current filters"
-              description="Try adjusting your search, role filter, or sort."
+              placeholder="Rows"
+              triggerClassName="sm:w-[120px]"
+              options={PAGE_SIZE_OPTIONS.map((option) => ({
+                value: String(option),
+                label: `${option} rows`,
+              }))}
             />
-          </div>
-        ) : (
-          <>
+          </AdminFilterToolbar>
+        </div>
+      }
+      empty={filteredUsers.length === 0 ? (
+        <AdminEmptyState
+          title="No users match the current filters"
+          description="Try adjusting your search, role filter, or sort."
+        />
+      ) : null}
+    >
             <AdminTableSurface>
               <Table>
                 <TableBody>
@@ -239,7 +222,7 @@ export default function UsersTableCard({ users }: UsersTableCardProps) {
                     return (
                       <TableRow
                         key={listedUser.id}
-                        className="border-b border-gray-100/80 transition-colors duration-150 ease-in-out last:border-b-0 hover:bg-blue-50/40 dark:border-gray-800/70 dark:hover:bg-blue-900/10"
+                        className={ADMIN_ROW_CLASS}
                       >
                         <TableCell className="pl-6">
                           <div className="flex min-w-[180px] items-center gap-3">
@@ -291,16 +274,9 @@ export default function UsersTableCard({ users }: UsersTableCardProps) {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge
-                            variant="outline"
-                            className={
-                              listedUser.is_admin
-                                ? 'border-blue-500/25 bg-blue-500/10 text-blue-600 dark:text-blue-300'
-                                : 'border-gray-300/80 bg-gray-100/60 text-gray-600 dark:border-gray-700 dark:bg-gray-800/80 dark:text-gray-300'
-                            }
-                          >
+                          <AdminStatusBadge tone={listedUser.is_admin ? 'info' : 'neutral'}>
                             {listedUser.is_admin ? 'Admin' : 'User'}
-                          </Badge>
+                          </AdminStatusBadge>
                         </TableCell>
                         <TableCell>
                           {socialItems.length > 0 ? (
@@ -398,8 +374,6 @@ export default function UsersTableCard({ users }: UsersTableCardProps) {
                 </Button>
               </div>
             </div>
-          </>
-        )}
-      </AdminPageSurface>
+    </AdminDataSurface>
   )
 }

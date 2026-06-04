@@ -1,12 +1,6 @@
 import { RefreshCcw, Power, PowerOff, Loader2 } from 'lucide-react'
-import {
-  Button,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/shared/ui'
+import { Button } from '@/shared/ui'
+import { AdminFilterSelect, AdminFilterToolbar } from '@/features/admin/ui'
 import type { AdminServicesFilters, AdminServiceTab } from '../types'
 
 type AdminServicesToolbarProps = {
@@ -50,80 +44,80 @@ export default function AdminServicesToolbar({
   }
 
   const showValidity = activeTab === 'platform'
+  const actionButtonClass = 'h-9 rounded-xl border-gray-200/50 font-semibold text-gray-700 hover:border-blue-500/40 dark:border-gray-800/50 dark:text-gray-200'
 
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between w-full">
-      <div className={`flex flex-wrap items-center gap-2 text-xs`}>
+    <AdminFilterToolbar
+      actions={
+        <>
+          {activeTab === 'live' && (
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className={actionButtonClass}
+                onClick={() => handleGlobalAction('up')}
+                disabled={!isGlobalAdmin || globalActionLoading !== null}
+                title={isGlobalAdmin ? 'Start all NXCTL services' : 'Only global admins can start all services'}
+              >
+                {globalActionLoading === 'up' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Power className="h-3.5 w-3.5" />}
+                Up all
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className={`${actionButtonClass} hover:border-red-500/40 hover:text-red-600 dark:hover:text-red-300`}
+                onClick={() => handleGlobalAction('down')}
+                disabled={!isGlobalAdmin || globalActionLoading !== null}
+                title={isGlobalAdmin ? 'Stop all NXCTL services' : 'Only global admins can stop all services'}
+              >
+                {globalActionLoading === 'down' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <PowerOff className="h-3.5 w-3.5" />}
+                Down all
+              </Button>
+            </>
+          )}
+
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onRefresh}
+            disabled={isRefreshing || statusLoading}
+            className={actionButtonClass}
+          >
+            <RefreshCcw className={(isRefreshing || statusLoading) ? 'h-4 w-4 animate-spin' : 'h-4 w-4'} />
+            Refresh
+          </Button>
+        </>
+      }
+    >
         {showValidity && (
-          <Select value={filters.validity} onValueChange={(value) => updateFilter('validity', value as AdminServicesFilters['validity'])}>
-            <SelectTrigger className="w-[170px] h-9 text-xs rounded-xl bg-white/30 dark:bg-gray-900/40 border border-gray-200/50 dark:border-gray-800/50 font-semibold text-gray-700 dark:text-gray-200 hover:border-blue-500/40">
-              <SelectValue placeholder="Validity" />
-            </SelectTrigger>
-            <SelectContent className="bg-white/95 dark:bg-[#111622]/95 border border-gray-200/80 dark:border-gray-800/90 rounded-xl shadow-lg backdrop-blur-xl">
-              <SelectItem value="all">All services</SelectItem>
-              <SelectItem value="valid">Valid services</SelectItem>
-              <SelectItem value="invalid">Invalid services</SelectItem>
-            </SelectContent>
-          </Select>
+          <AdminFilterSelect
+            value={filters.validity}
+            onValueChange={(value) => updateFilter('validity', value as AdminServicesFilters['validity'])}
+            placeholder="Validity"
+            triggerClassName="sm:w-[170px]"
+            options={[
+              { value: 'all', label: 'All services' },
+              { value: 'valid', label: 'Valid services' },
+              { value: 'invalid', label: 'Invalid services' },
+            ]}
+          />
         )}
 
-        <Select value={filters.key} onValueChange={(value) => updateFilter('key', value)}>
-          <SelectTrigger className="w-[190px] h-9 text-xs rounded-xl bg-white/30 dark:bg-gray-900/40 border border-gray-200/50 dark:border-gray-800/50 font-semibold text-gray-700 dark:text-gray-200 hover:border-blue-500/40">
-            <SelectValue placeholder="Key" />
-          </SelectTrigger>
-          <SelectContent className="bg-white/95 dark:bg-[#111622]/95 border border-gray-200/80 dark:border-gray-800/90 rounded-xl shadow-lg backdrop-blur-xl max-h-[300px] overflow-y-auto">
-            <SelectItem value="all">All keys</SelectItem>
-            <SelectItem value="no_key">No key</SelectItem>
-            {keyOptions.map((key) => (
-              <SelectItem key={key} value={key}>
-                {key}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2 sm:justify-end text-xs">
-        {activeTab === 'live' && (
-          <>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="rounded-xl h-9 font-semibold text-gray-700 dark:text-gray-200 border-gray-200/50 dark:border-gray-800/50 hover:border-blue-500/40"
-              onClick={() => handleGlobalAction('up')}
-              disabled={!isGlobalAdmin || globalActionLoading !== null}
-              title={isGlobalAdmin ? 'Start all NXCTL services' : 'Only global admins can start all services'}
-            >
-              {globalActionLoading === 'up' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Power className="h-3.5 w-3.5" />}
-              Up all
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="rounded-xl h-9 hover:border-red-500/40 hover:text-red-600 dark:hover:text-red-300 font-semibold text-gray-700 dark:text-gray-200 border-gray-200/50 dark:border-gray-800/50"
-              onClick={() => handleGlobalAction('down')}
-              disabled={!isGlobalAdmin || globalActionLoading !== null}
-              title={isGlobalAdmin ? 'Stop all NXCTL services' : 'Only global admins can stop all services'}
-            >
-              {globalActionLoading === 'down' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <PowerOff className="h-3.5 w-3.5" />}
-              Down all
-            </Button>
-          </>
-        )}
-
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onRefresh}
-          disabled={isRefreshing || statusLoading}
-          className="rounded-xl h-9 font-semibold text-gray-700 dark:text-gray-200 border-gray-200/50 dark:border-gray-800/50 hover:border-blue-500/40"
-        >
-          <RefreshCcw className={(isRefreshing || statusLoading) ? 'h-4 w-4 animate-spin' : 'h-4 w-4'} />
-          Refresh
-        </Button>
-      </div>
-    </div>
+        <AdminFilterSelect
+          value={filters.key}
+          onValueChange={(value) => updateFilter('key', value)}
+          placeholder="Key"
+          triggerClassName="sm:w-[190px]"
+          contentClassName="max-h-[300px]"
+          options={[
+            { value: 'all', label: 'All keys' },
+            { value: 'no_key', label: 'No key' },
+            ...keyOptions.map((key) => ({ value: key, label: key })),
+          ]}
+        />
+    </AdminFilterToolbar>
   )
 }

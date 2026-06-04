@@ -1,5 +1,5 @@
 import React from 'react'
-import { SegmentedTabs } from '@/shared/components'
+import { AdminTabs } from '@/features/admin/ui'
 
 type ScopeValue = 'all' | 'main' | 'private' | 'service'
 
@@ -14,7 +14,7 @@ export default function AdminChallengeScopeTabs({
 }: AdminChallengeScopeTabsProps) {
   return (
     <div className="shrink-0">
-      <SegmentedTabs
+      <AdminTabs
         value={value}
         onChange={onChange}
         items={[
@@ -23,7 +23,6 @@ export default function AdminChallengeScopeTabs({
           { value: 'private', label: 'Private' },
           { value: 'service', label: 'Service' },
         ]}
-        variant="panel"
       />
     </div>
   )

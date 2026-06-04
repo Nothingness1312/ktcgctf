@@ -3,7 +3,14 @@ import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Trash2 } from 'lucide-react'
 import { Button } from '@/shared/ui'
-import { AdminPageSurface, AdminFilterBar, AdminListSurface, AdminEmptyState } from '../../ui'
+import {
+  AdminDataSurface,
+  AdminEmptyState,
+  AdminFilterInput,
+  AdminFilterToolbar,
+  AdminListSurface,
+  AdminStickyToolbar,
+} from '../../ui'
 import { formatRelativeDate } from '../lib'
 import type { SolverRow } from '../types'
 
@@ -35,11 +42,24 @@ const SolversListCard: React.FC<SolversListCardProps> = ({
   onLoadMore,
 }) => {
   return (
-    <AdminPageSurface>
-      <div className="sticky top-14 z-30 bg-white/95 dark:bg-[#0b0f19]/95 backdrop-blur-md -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 py-2.5 border-b border-gray-200/60 dark:border-gray-800/60 mb-2">
-        <AdminFilterBar className="pt-0 pb-0">
-          <div className="flex items-center gap-2 w-full max-w-md">
-            <input
+    <AdminDataSurface
+      toolbar={(
+        <AdminStickyToolbar
+          filters={(
+            <AdminFilterToolbar
+              actions={(
+                <>
+                  <Button id="search-btn" variant="outline" size="sm" onClick={onSearch} className="h-9 shrink-0 rounded-xl border-gray-200/50 px-4 text-xs font-semibold text-gray-700 hover:border-blue-500/40 dark:border-gray-800/50 dark:text-gray-200">
+                    {searching ? 'Searching...' : 'Search'}
+                  </Button>
+
+                  <Button variant="outline" size="sm" onClick={onReset} className="h-9 shrink-0 rounded-xl border-gray-200/50 px-4 text-xs font-semibold text-gray-700 hover:border-blue-500/40 dark:border-gray-800/50 dark:text-gray-200">
+                    Reset
+                  </Button>
+                </>
+              )}
+            >
+            <AdminFilterInput
               type="text"
               placeholder="Search by user or challenge..."
               value={searchQuery}
@@ -47,27 +67,18 @@ const SolversListCard: React.FC<SolversListCardProps> = ({
               onKeyDown={(e) => {
                 if (e.key === 'Enter') onSearch()
               }}
-              className="flex-1 px-3.5 h-9 text-xs rounded-xl border border-gray-200/50 dark:border-gray-800/50 bg-white/30 dark:bg-gray-900/40 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 shadow-sm outline-none transition-all hover:border-blue-500/40 focus:border-blue-500/70 focus:ring-2 focus:ring-blue-500/30"
             />
-
-            <Button id="search-btn" variant="outline" size="sm" onClick={onSearch} className="h-9 px-4 rounded-xl text-xs font-semibold text-gray-700 dark:text-gray-200 border-gray-200/50 dark:border-gray-800/50 hover:border-blue-500/40 shrink-0">
-              {searching ? 'Searching...' : 'Search'}
-            </Button>
-
-            <Button variant="outline" size="sm" onClick={onReset} className="h-9 px-4 rounded-xl text-xs font-semibold text-gray-700 dark:text-gray-200 border-gray-200/50 dark:border-gray-800/50 hover:border-blue-500/40 shrink-0">
-              Reset
-            </Button>
-          </div>
-        </AdminFilterBar>
-      </div>
-        {solvers.length === 0 ? (
-          <div className="p-6">
+            </AdminFilterToolbar>
+          )}
+        />
+      )}
+      empty={solvers.length === 0 ? (
             <AdminEmptyState
               title="No solves found"
               description="No one has solved this challenge yet or matches your search."
             />
-          </div>
-        ) : (
+      ) : null}
+    >
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -88,7 +99,7 @@ const SolversListCard: React.FC<SolversListCardProps> = ({
                     </Link>
                     <span className="text-xs text-gray-500 dark:text-gray-400 font-normal"> solved </span>
                     <span className="text-xs text-gray-800 dark:text-gray-200 font-semibold">{s.challenge_title}</span>
-                    <span className="ml-2.5 text-xs text-gray-450 dark:text-gray-500 font-mono font-normal">
+                    <span className="ml-2.5 font-mono text-xs font-normal text-gray-500/80 dark:text-gray-500">
                       {formatRelativeDate(s.solved_at)}
                     </span>
                   </div>
@@ -107,7 +118,6 @@ const SolversListCard: React.FC<SolversListCardProps> = ({
               ))}
             </AdminListSurface>
           </motion.div>
-        )}
 
         {hasMore && (
           <div className="flex justify-center p-4 border-t border-gray-100 dark:border-gray-800">
@@ -116,7 +126,7 @@ const SolversListCard: React.FC<SolversListCardProps> = ({
             </Button>
           </div>
         )}
-      </AdminPageSurface>
+      </AdminDataSurface>
   )
 }
 

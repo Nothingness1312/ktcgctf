@@ -3,8 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { ShieldCheck, Users } from 'lucide-react'
-import { SegmentedTabs } from '@/shared/components'
-import { AdminContentLoading, AdminPageShell, AdminTabsBar } from '../../ui'
+import { AdminContentLoading, AdminPageShell, AdminStickyToolbar, AdminTabs } from '../../ui'
 import { useAdminUsersData } from '../hooks/useAdminUsersData'
 import UserRolesTab from './UserRolesTab'
 import UsersTableCard from './UsersTableCard'
@@ -40,19 +39,15 @@ export default function AdminUsersPage() {
 
   return (
     <AdminPageShell>
-      <div className="sticky top-14 z-30 bg-white/95 dark:bg-[#0b0f19]/95 backdrop-blur-md -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 py-2.5 border-b border-gray-200/60 dark:border-gray-800/60">
-        <AdminTabsBar
-          className="mb-0"
-          tabs={
-            <SegmentedTabs
+      <AdminStickyToolbar
+        tabs={
+            <AdminTabs
               items={USER_TABS}
               value={activeTab}
               onChange={setActiveTab}
-              variant="panel"
             />
-          }
-        />
-      </div>
+        }
+      />
 
       <div className="space-y-0 mt-2">
         {activeTab === 'users' ? (
