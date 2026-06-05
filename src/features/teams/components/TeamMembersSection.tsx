@@ -30,13 +30,13 @@ export default function TeamMembersSection({
 }: TeamMembersSectionProps) {
   return (
     <Card className={SURFACE_GLASS_CARD_INTERACTIVE_CLASS}>
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-lg font-black uppercase tracking-widest text-gray-900 dark:text-white flex items-center gap-2">
-          <Users size={18} className="text-blue-500" /> 
+      <CardHeader className="flex flex-row items-center justify-between !px-4 !pb-0 !sm:px-5">
+        <CardTitle className="text-base font-black uppercase tracking-widest text-gray-900 dark:text-white flex items-center gap-2">
+          <Users size={17} className="text-blue-500" />
           Members
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-1">
+      <CardContent className="space-y-1 px-4 !pt-2 pb-4 sm:px-5">
         {members.length === 0 ? (
           <EmptyState
             icon={<UserX className="w-full h-full" />}
@@ -45,16 +45,16 @@ export default function TeamMembersSection({
             containerHeight="py-8"
           />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 pt-1">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-1">
             {members.map((m) => (
-              <div key={m.user_id} className={`group relative overflow-hidden p-3 ${SURFACE_GLASS_CARD_COMPACT_CLASS} ${SURFACE_INTERACTIVE_HOVER_CLASS}`}>
+              <div key={m.user_id} className={`group relative overflow-hidden p-2.5 ${SURFACE_GLASS_CARD_COMPACT_CLASS} ${SURFACE_INTERACTIVE_HOVER_CLASS}`}>
                 <div className="flex items-center gap-3">
                   <ImageWithFallback
                     src={m.picture}
-                    size={36}
-                    className="h-9 w-9 rounded-lg shadow-sm border border-gray-200/20 dark:border-gray-800/35 shrink-0 overflow-hidden"
+                    size={32}
+                    className="h-8 w-8 rounded-lg shadow-sm border border-gray-200/20 dark:border-gray-800/35 shrink-0 overflow-hidden"
                   />
-                  
+
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <Link
@@ -70,7 +70,7 @@ export default function TeamMembersSection({
                         {m.role}
                       </span>
                     </div>
-                    
+
                     <div className="mt-1 flex items-center gap-3 text-[10px] text-gray-500 dark:text-gray-400">
                       <div className="flex items-center gap-1">
                         <span className="font-bold text-gray-900 dark:text-gray-200">{m.first_solve_count ?? 0}</span> Solves

@@ -39,13 +39,19 @@ export default function TeamScoreboardPage() {
     }
   }, [authLoading, user, router])
 
+  useEffect(() => {
+    if (!authLoading && user && !APP.teams.enabled) {
+      router.replace('/scoreboard')
+    }
+  }, [authLoading, user, router])
+
   const { loading, entries, series, currentTeamName } = useTeamScoreboard(user, showTotalScore, selectedEvent)
 
   if (authLoading) {
     return <Loader fullscreen color="text-blue-500" />
   }
 
-  if (!user) return null
+  if (!user || !APP.teams.enabled) return null
 
   const isDark = theme === 'dark'
   const scoreLabel = showTotalScore ? 'Total Score' : 'Unique Score'

@@ -13,6 +13,7 @@ interface AdminChallengesToolbarProps {
   status?: React.ReactNode
   events: Event[]
   selectedEventId: AdminChallengeEventId
+  isGlobalAdmin: boolean
   onEventChange: (eventId: AdminChallengeEventId) => void
 }
 
@@ -26,6 +27,7 @@ export default function AdminChallengesToolbar({
   status,
   events,
   selectedEventId,
+  isGlobalAdmin,
   onEventChange,
 }: AdminChallengesToolbarProps) {
   const selectedEventValue = selectedEventId === null ? 'main' : selectedEventId
@@ -39,6 +41,7 @@ export default function AdminChallengesToolbar({
             value={selectedEventValue}
             onChange={(val) => onEventChange(val === 'main' ? null : val)}
             events={events}
+            showMain={isGlobalAdmin}
             className="w-full sm:w-[220px]"
           />
           {status}

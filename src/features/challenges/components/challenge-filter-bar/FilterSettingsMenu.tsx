@@ -2,6 +2,7 @@
 
 import { RotateCcw, Settings } from 'lucide-react'
 import { Switch } from '@/shared/ui'
+import { APP } from '@/config'
 import { setChallengeGuideSeenSetting } from '@/shared/lib'
 import { SURFACE_FILTER_ITEM_CLASS } from '@/shared/styles'
 import {
@@ -70,18 +71,20 @@ export default function FilterSettingsMenu({
               }
             />
           </div>
-          <div className="flex items-center justify-between py-2">
-            <div>
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Team solve highlight</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Purple cards for team solves</p>
+          {APP.teams.enabled && (
+            <div className="flex items-center justify-between py-2">
+              <div>
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Team solve highlight</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Purple cards for team solves</p>
+              </div>
+              <Switch
+                checked={settings.highlightTeamSolves}
+                onCheckedChange={(checked) =>
+                  onSettingsChange({ ...settings, highlightTeamSolves: checked })
+                }
+              />
             </div>
-            <Switch
-              checked={settings.highlightTeamSolves}
-              onCheckedChange={(checked) =>
-                onSettingsChange({ ...settings, highlightTeamSolves: checked })
-              }
-            />
-          </div>
+          )}
 
           <div className="mt-2 border-t border-gray-200 pt-3 dark:border-gray-800">
             <button

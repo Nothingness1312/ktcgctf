@@ -8,6 +8,7 @@ import TeamSolves from '@/features/teams/components/TeamSolves'
 import TeamTabs from '@/features/teams/components/TeamTabs'
 import TeamManageSection from '@/features/teams/components/TeamManageSection'
 import TeamMembersSection from '@/features/teams/components/TeamMembersSection'
+import EditTeamModal from '@/features/teams/components/EditTeamModal'
 
 interface TeamPageContentProps {
   team: TeamInfo
@@ -18,7 +19,7 @@ interface TeamPageContentProps {
   canManage?: boolean
   busy?: boolean
   showManageActions?: boolean
-  onRenameTeam?: (newName: string) => Promise<{ success: boolean; error?: string }>
+  onRenameTeam?: (newName: string, pictureUrl?: string | null) => Promise<{ success: boolean; error?: string }>
   onCopyInvite?: () => void
   onRegenerateInvite?: () => void
   onLeaveTeam?: () => void
@@ -70,6 +71,16 @@ export default function TeamPageContent({
         onBack={onBack}
         canManage={canManage}
         isMember={isMember}
+        editAction={
+          canManage && onRenameTeam ? (
+            <EditTeamModal
+              currentName={team.name}
+              currentPictureUrl={team.picture_url}
+              onSave={onRenameTeam}
+              disabled={busy}
+            />
+          ) : null
+        }
       />
 
       <TeamProfileHeader
@@ -85,6 +96,7 @@ export default function TeamPageContent({
         onLeaveTeam={onLeaveTeam}
         busy={busy}
         isMember={isMember}
+        memberCount={members.length}
       />
 
       <div key={activeTab}>
@@ -107,7 +119,6 @@ export default function TeamPageContent({
           <TeamManageSection
             team={team}
             canManage={canManage}
-            onRenameTeam={onRenameTeam}
             onCopyInvite={onCopyInvite}
             onRegenerateInvite={onRegenerateInvite}
             onLeaveTeam={onLeaveTeam}

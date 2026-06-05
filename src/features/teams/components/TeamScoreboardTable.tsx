@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { Trophy, Users } from 'lucide-react'
+import ImageWithFallback from '@/shared/components/ImageWithFallback'
 import {
   BaseScoreboardCard,
   BaseScoreboardColumn,
@@ -44,6 +45,14 @@ export default function TeamScoreboardTable({
       header: 'Team',
       render: (entry) => (
         <div className="flex min-w-[180px] items-center gap-2">
+          <ImageWithFallback
+            src={entry.picture_url}
+            alt={entry.team_name}
+            size={28}
+            rounded={false}
+            className="shrink-0 overflow-hidden rounded-lg ring-1 ring-gray-200/70 dark:ring-gray-800"
+            fallbackBg="bg-blue-600 text-white"
+          />
           <Link
             href={`/teams/${encodeURIComponent(entry.team_name)}`}
             className="block max-w-[120px] truncate whitespace-nowrap font-medium transition-colors hover:text-blue-600 hover:underline dark:hover:text-blue-400 md:max-w-xs"

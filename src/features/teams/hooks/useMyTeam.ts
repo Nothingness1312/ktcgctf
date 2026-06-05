@@ -10,7 +10,7 @@ import {
   regenerateTeamInviteCode,
   kickTeamMember,
   transferTeamCaptain,
-  renameTeam,
+  updateTeamProfile,
 } from '@/features/teams/services/team.service'
 import { TeamInfo, TeamMember, TeamSummary, TeamChallenge } from '../types'
 
@@ -163,10 +163,10 @@ export function useMyTeam(user: any, effectiveSelectedEvent: string | number) {
     }
   }
 
-  const handleRenameTeam = async (teamId: string, newName: string) => {
-    const { success, error } = await renameTeam(teamId, newName)
+  const handleRenameTeam = async (teamId: string, newName: string, pictureUrl?: string | null) => {
+    const { success, error } = await updateTeamProfile(teamId, newName, pictureUrl)
     if (success) {
-      setStatus({ type: 'success', message: 'Team renamed.' })
+      setStatus({ type: 'success', message: 'Team profile updated.' })
       await loadTeamData()
     }
     return { success, error }

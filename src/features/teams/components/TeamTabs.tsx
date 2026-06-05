@@ -13,9 +13,10 @@ type TeamTabsProps = {
   onBack?: () => void
   canManage?: boolean
   isMember?: boolean
+  editAction?: React.ReactNode
 }
 
-export default function TeamTabs({ activeTab, setActiveTab, onBack, canManage, isMember }: TeamTabsProps) {
+export default function TeamTabs({ activeTab, setActiveTab, onBack, canManage, isMember, editAction }: TeamTabsProps) {
   const tabs = [
     { value: 'overview', label: 'Overview', icon: LayoutDashboard },
   ]
@@ -26,10 +27,11 @@ export default function TeamTabs({ activeTab, setActiveTab, onBack, canManage, i
 
   return (
     <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-      <div className="flex items-center justify-center gap-2 sm:justify-start">
+      <div className="flex items-center justify-center gap-3 sm:justify-start">
         {onBack && (
           <BackButton onClick={onBack} label="Go Back" />
         )}
+        {editAction}
       </div>
 
       <UserTabs

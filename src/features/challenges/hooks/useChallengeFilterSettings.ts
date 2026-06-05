@@ -5,6 +5,7 @@ import {
   getChallengeFilterSettings,
   setChallengeFilterSettings,
 } from '@/shared/lib'
+import { APP } from '@/config'
 import type { ChallengeFilterSettings } from '../types'
 
 export function useChallengeFilterSettings() {
@@ -20,7 +21,12 @@ export function useChallengeFilterSettings() {
 
     try {
       const stored = getChallengeFilterSettings()
-      if (stored) setFilterSettings(stored)
+      if (stored) {
+        setFilterSettings({
+          ...stored,
+          highlightTeamSolves: APP.teams.enabled ? stored.highlightTeamSolves : false,
+        })
+      }
     } catch {
       // ignore
     } finally {
@@ -32,7 +38,10 @@ export function useChallengeFilterSettings() {
     if (!settingsLoaded || typeof window === 'undefined') return
 
     try {
-      setChallengeFilterSettings(filterSettings)
+      setChallengeFilterSettings({
+        ...filterSettings,
+        highlightTeamSolves: APP.teams.enabled ? filterSettings.highlightTeamSolves : false,
+      })
     } catch {
       // ignore
     }

@@ -19,6 +19,7 @@ import {
 
 import {
   BaseModal,
+  EditActionButton,
   ModalBody,
   ModalFooter,
   ModalHeader,
@@ -240,13 +241,7 @@ export default function EditProfileModal({
       size="2xl"
       contentClassName="h-auto max-h-[82vh]"
       trigger={
-        <Button
-          variant="outline"
-          className={cn("h-9 gap-2 rounded-full px-4 text-xs font-bold uppercase tracking-wider text-gray-600 sm:h-10 sm:text-sm dark:text-gray-400", triggerButtonClass)}
-        >
-          <PencilLine size={14} aria-hidden="true" />
-          Edit Profile
-        </Button>
+        <EditActionButton label="Edit Profile" className={triggerButtonClass} />
       }
     >
       <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">

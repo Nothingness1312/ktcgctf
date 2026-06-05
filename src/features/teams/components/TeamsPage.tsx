@@ -21,6 +21,7 @@ import {
 } from '@/shared/styles'
 import { useAuth } from '@/shared/contexts/AuthContext'
 import { useEventContext } from '@/features/events/contexts/EventContext'
+import { APP } from '@/config'
 
 import TeamPageContent from './TeamPageContent'
 import { useMyTeam } from '../hooks/useMyTeam'
@@ -169,9 +170,14 @@ export default function TeamsPage() {
     setConfirmOpen(true)
   }
 
-  const onRenameTeamInternal = (newName: string) => {
+  const onRenameTeamInternal = (newName: string, pictureUrl?: string | null) => {
     if (!team) return Promise.resolve({ success: false, error: 'No team' })
-    return handleRenameTeam(team.id, newName)
+    return handleRenameTeam(team.id, newName, pictureUrl)
+  }
+
+  if (!APP.teams.enabled) {
+    router.replace('/challenges')
+    return null
   }
 
   if (authLoading) {

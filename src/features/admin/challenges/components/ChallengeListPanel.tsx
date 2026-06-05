@@ -69,6 +69,7 @@ const ChallengeListPanel: React.FC<ChallengeListPanelProps> = ({
                   status={syncStatus}
                   events={events}
                   selectedEventId={selectedEventId}
+                  isGlobalAdmin={isGlobalAdmin}
                   onEventChange={onEventChange}
                   onClear={() => onFiltersChange({
                     category: "all",

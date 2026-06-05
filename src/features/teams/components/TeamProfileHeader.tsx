@@ -1,8 +1,9 @@
 'use client'
 
 import React from 'react'
-import { Calendar, Flag, Hash, LogOut, Trophy } from 'lucide-react'
+import { Calendar, Flag, Hash, LogOut, Trophy, Users } from 'lucide-react'
 import EventSelect from '@/features/events/components/EventSelect'
+import ImageWithFallback from '@/shared/components/ImageWithFallback'
 import { Button } from '@/shared/ui/button'
 import { SurfaceCard } from '@/shared/ui'
 import {
@@ -27,6 +28,7 @@ interface TeamProfileHeaderProps {
   onLeaveTeam?: () => void
   busy: boolean
   isMember?: boolean
+  memberCount?: number
 }
 
 export default function TeamProfileHeader({
@@ -39,18 +41,29 @@ export default function TeamProfileHeader({
   onLeaveTeam,
   busy,
   isMember = false,
+  memberCount = 0,
 }: TeamProfileHeaderProps) {
   const teamInitials = team.name.slice(0, 2).toUpperCase()
 
   return (
-    <SurfaceCard variant="glass" padding="md" className="relative overflow-hidden rounded-xl">
-      <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-        <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
-          <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 shadow-lg border border-gray-200/50 dark:border-white/10">
-            <div className="flex h-full w-full items-center justify-center text-2xl font-black text-white">
-              {teamInitials}
-            </div>
-            <div className="absolute inset-0 bg-black/5" />
+    <SurfaceCard variant="glass" padding="none" className="relative overflow-hidden rounded-xl p-4 sm:p-5">
+      <div className="relative z-10 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+          <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 shadow-lg border border-gray-200/50 dark:border-white/10">
+            {team.picture_url ? (
+              <ImageWithFallback
+                src={team.picture_url}
+                alt={team.name}
+                size={64}
+                rounded={false}
+                fallbackBg="bg-transparent text-white"
+              />
+            ) : (
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-xl font-black text-white">
+                {teamInitials}
+              </div>
+            )}
+            <div className="pointer-events-none absolute inset-0 bg-black/5" />
           </div>
 
           <div className="min-w-0 flex-1 space-y-1.5">
@@ -60,11 +73,14 @@ export default function TeamProfileHeader({
             <div className={cn("flex items-center gap-1.5", TYPO_METADATA_CLASS)}>
               <Calendar size={13} className="text-blue-500" />
               <span>Created {new Date(team.created_at).toLocaleDateString()}</span>
+              <span className="h-1 w-1 rounded-full bg-gray-300 dark:bg-gray-700" />
+              <Users size={13} className="text-emerald-500" />
+              <span>{memberCount} member{memberCount === 1 ? '' : 's'}</span>
             </div>
           </div>
         </div>
 
-        <div className="flex w-full flex-col gap-3 lg:w-[240px]">
+        <div className="flex w-full flex-col gap-2 lg:w-[240px]">
           <EventSelect
             value={effectiveSelectedEvent}
             onChange={setSelectedEvent}
@@ -90,7 +106,7 @@ export default function TeamProfileHeader({
         </div>
       </div>
 
-      <div className="mt-6 grid grid-cols-3 gap-4 border-t border-gray-200/80 pt-5 dark:border-gray-800">
+      <div className="mt-4 grid grid-cols-3 gap-3 border-t border-gray-200/80 pt-4 dark:border-gray-800">
         <StatItem
           icon={<Hash size={14} className="text-emerald-500" />}
           label="Rank"
@@ -113,15 +129,15 @@ export default function TeamProfileHeader({
 
 function StatItem({ icon, label, value }: { icon: React.ReactNode, label: string, value: string | number }) {
   return (
-    <div className="flex items-center gap-3">
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gray-100/50 dark:bg-gray-800/40">
+    <div className="flex items-center gap-2.5">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-100/50 dark:bg-gray-800/40">
         {icon}
       </div>
       <div className="min-w-0">
         <div className={cn(TYPO_SECTION_TITLE_CLASS, "!text-[10px] leading-none")}>
           {label}
         </div>
-        <div className={cn(TYPO_STAT_VALUE_CLASS, "mt-1 !text-lg sm:!text-xl")}>
+        <div className={cn(TYPO_STAT_VALUE_CLASS, "mt-0.5 !text-base sm:!text-lg")}>
           {value}
         </div>
       </div>

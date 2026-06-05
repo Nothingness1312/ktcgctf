@@ -4,6 +4,9 @@
 -- ==============================================
 
 -- SELECT
+ALTER TABLE public.teams
+  ADD COLUMN IF NOT EXISTS picture_url VARCHAR(2048) DEFAULT NULL;
+
 CREATE OR REPLACE FUNCTION generate_team_invite_code()
 RETURNS TEXT AS $$
 BEGIN
@@ -74,6 +77,7 @@ BEGIN
     'id', t.id,
     'name', t.name,
     'invite_code', CASE WHEN v_can_view_invite THEN t.invite_code ELSE NULL END,
+    'picture_url', t.picture_url,
     'created_at', t.created_at
   )
   INTO v_team
@@ -253,6 +257,7 @@ CREATE OR REPLACE FUNCTION get_team_scoreboard(
 RETURNS TABLE (
   team_id UUID,
   team_name TEXT,
+  picture_url TEXT,
   unique_score BIGINT,
   total_score BIGINT,
   unique_challenges BIGINT,
@@ -263,10 +268,10 @@ RETURNS TABLE (
 BEGIN
   RETURN QUERY
   WITH members_count AS (
-    SELECT t.id AS team_id, t.name AS team_name, COUNT(tm.user_id) AS member_count
+    SELECT t.id AS team_id, t.name AS team_name, t.picture_url, COUNT(tm.user_id) AS member_count
     FROM public.teams t
     LEFT JOIN public.team_members tm ON tm.team_id = t.id
-    GROUP BY t.id, t.name
+    GROUP BY t.id, t.name, t.picture_url
   ),
   solves_filtered AS (
     SELECT tm.team_id AS team_id, s.challenge_id, s.created_at, c.points, c.event_id
@@ -300,6 +305,7 @@ BEGIN
   SELECT
     mc.team_id,
     mc.team_name::TEXT,
+    mc.picture_url::TEXT,
     COALESCE(us.unique_score, 0) AS unique_score,
     COALESCE(a.total_score, 0) AS total_score,
     COALESCE(a.unique_challenges, 0) AS unique_challenges,
@@ -490,6 +496,7 @@ BEGIN
     'id', t.id,
     'name', t.name,
     'invite_code', NULL,
+    'picture_url', t.picture_url,
     'created_at', t.created_at
   )
   INTO v_team
@@ -619,6 +626,64 @@ SECURITY DEFINER
 SET search_path = public, auth;
 
 GRANT EXECUTE ON FUNCTION rename_team(UUID, TEXT) TO authenticated;
+
+CREATE OR REPLACE FUNCTION update_team_profile(
+  p_team_id UUID,
+  p_new_name TEXT,
+  p_picture_url TEXT DEFAULT NULL
+)
+RETURNS JSON AS $$
+DECLARE
+  v_requester UUID := auth.uid()::uuid;
+  v_name TEXT := trim(p_new_name);
+  v_picture_url TEXT := NULLIF(trim(COALESCE(p_picture_url, '')), '');
+BEGIN
+  IF v_requester IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+
+  IF NOT is_admin() AND NOT is_team_captain(p_team_id) THEN
+    RAISE EXCEPTION 'Only captain or admin can update team profile';
+  END IF;
+
+  IF v_name IS NULL OR v_name = '' THEN
+    RAISE EXCEPTION 'Team name cannot be empty';
+  END IF;
+
+  IF length(v_name) > 64 THEN
+    RAISE EXCEPTION 'Team name cannot exceed 64 characters';
+  END IF;
+
+  IF v_picture_url IS NOT NULL AND length(v_picture_url) > 2048 THEN
+    RAISE EXCEPTION 'Team image URL cannot exceed 2048 characters';
+  END IF;
+
+  UPDATE public.teams
+  SET name = v_name,
+      picture_url = v_picture_url,
+      updated_at = now()
+  WHERE id = p_team_id;
+
+  RETURN json_build_object(
+    'success', true,
+    'team', (
+      SELECT json_build_object(
+        'id', t.id,
+        'name', t.name,
+        'invite_code', t.invite_code,
+        'picture_url', t.picture_url,
+        'created_at', t.created_at
+      )
+      FROM public.teams t
+      WHERE t.id = p_team_id
+    )
+  );
+END;
+$$ LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, auth;
+
+GRANT EXECUTE ON FUNCTION update_team_profile(UUID, TEXT, TEXT) TO authenticated;
 
 -- DELETE
 CREATE OR REPLACE FUNCTION delete_team(p_team_id UUID)

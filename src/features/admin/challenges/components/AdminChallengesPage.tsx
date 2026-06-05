@@ -13,9 +13,15 @@ import DeleteChallengeConfirmDialog from './DeleteChallengeConfirmDialog'
 import { FlagPreviewDialog } from './FlagPreviewDialog'
 import { useAdminChallengesData } from '../hooks/useAdminChallengesData'
 import { useChallengeForm } from '../hooks/useChallengeForm'
-import { getFilteredAdminChallenges } from '../lib'
+import { getAdminScope, getEvents, getFilteredAdminChallenges } from '../lib'
 import type { AdminChallengeEventId, AdminChallengeFilterState, Challenge } from '../types'
 import { AdminContentLoading, AdminPageShell } from '../../ui'
+
+function getDefaultManagedEventId(scope: { is_global_admin: boolean; event_ids: string[] } | null, events: Array<{ id: string }>) {
+  if (scope?.is_global_admin) return null
+  const allowedIds = new Set(scope?.event_ids ?? [])
+  return events.find((event) => allowedIds.has(String(event.id)))?.id ?? null
+}
 
 export default function AdminChallengesPage() {
   const router = useRouter()
@@ -77,10 +83,21 @@ export default function AdminChallengesPage() {
       const urlEvent = searchParams.get('event')
       const urlAdd = searchParams.get('add') === '1'
       const resolvedUrlEvent = urlEvent === 'main' ? null : urlEvent
+      const scope = await getAdminScope()
+      const eventList = await getEvents()
+      const defaultManagedEventId = getDefaultManagedEventId(scope, eventList)
+      const allowedEventSet = new Set(scope.event_ids ?? [])
+      const canUseUrlEvent = scope.is_global_admin
+        || (typeof resolvedUrlEvent === 'string' && allowedEventSet.has(resolvedUrlEvent))
 
-      if (urlEvent) setEventId(resolvedUrlEvent)
+      if (urlEvent) {
+        setEventId(canUseUrlEvent ? resolvedUrlEvent : (defaultManagedEventId ?? 'all'))
+      }
       if (urlAdd) {
-        resetForm({ event_id: resolvedUrlEvent && resolvedUrlEvent !== 'all' ? resolvedUrlEvent : null })
+        const addEventId = canUseUrlEvent && resolvedUrlEvent && resolvedUrlEvent !== 'all'
+          ? resolvedUrlEvent
+          : defaultManagedEventId
+        resetForm({ event_id: addEventId })
         setOpenForm(true)
       }
     }
@@ -90,7 +107,9 @@ export default function AdminChallengesPage() {
 
   // Handlers
   const handleOpenAdd = () => {
-    const defaultEventId = !isGlobalAdmin && typeof eventId === 'string' ? eventId : null
+    const defaultEventId = isGlobalAdmin
+      ? (typeof eventId === 'string' && eventId !== 'all' ? eventId : null)
+      : (typeof eventId === 'string' && eventId !== 'all' ? eventId : getDefaultManagedEventId(adminScope, events))
     resetForm({ event_id: defaultEventId })
     setOpenForm(true)
   }

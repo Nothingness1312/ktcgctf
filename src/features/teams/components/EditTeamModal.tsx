@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { Pencil } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -13,23 +12,27 @@ import {
 } from '@/shared/ui/dialog'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
+import { EditActionButton } from '@/shared/components'
 import { DIALOG_GLASS_CONTENT_MD_CLASS } from '@/shared/styles'
 
 interface EditTeamModalProps {
   currentName: string
-  onSave: (newName: string) => Promise<{ success: boolean; error?: string }>
+  currentPictureUrl?: string | null
+  onSave: (newName: string, pictureUrl?: string | null) => Promise<{ success: boolean; error?: string }>
   disabled?: boolean
   trigger?: React.ReactNode
 }
 
 export default function EditTeamModal({
   currentName,
+  currentPictureUrl,
   onSave,
   disabled,
   trigger,
 }: EditTeamModalProps) {
   const [open, setOpen] = useState(false)
   const [name, setName] = useState(currentName)
+  const [pictureUrl, setPictureUrl] = useState(currentPictureUrl || '')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -37,13 +40,15 @@ export default function EditTeamModal({
     setOpen(val)
     if (val) {
       setName(currentName)
+      setPictureUrl(currentPictureUrl || '')
       setError(null)
     }
   }
 
   const handleSave = async () => {
     const trimmed = name.trim()
-    if (!trimmed || trimmed === currentName) {
+    const normalizedPictureUrl = pictureUrl.trim() || null
+    if (!trimmed || (trimmed === currentName && normalizedPictureUrl === (currentPictureUrl || null))) {
       setOpen(false)
       return
     }
@@ -51,7 +56,7 @@ export default function EditTeamModal({
     setLoading(true)
     setError(null)
 
-    const res = await onSave(trimmed)
+    const res = await onSave(trimmed, normalizedPictureUrl)
     setLoading(false)
 
     if (res.success) {
@@ -65,15 +70,7 @@ export default function EditTeamModal({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         {trigger || (
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={disabled}
-            className="gap-2 bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-400 text-white font-semibold border-none"
-          >
-            <Pencil size={14} />
-            Edit Team
-          </Button>
+          <EditActionButton label="Edit Team" disabled={disabled} />
         )}
       </DialogTrigger>
 
@@ -104,6 +101,23 @@ export default function EditTeamModal({
             </p>
           </div>
 
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+              Team Image URL
+            </label>
+            <Input
+              value={pictureUrl}
+              onChange={(e) => setPictureUrl(e.target.value)}
+              disabled={loading}
+              maxLength={2048}
+              placeholder="https://example.com/team.png"
+              className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100"
+            />
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              Leave empty to use initials.
+            </p>
+          </div>
+
           {error && (
             <div className="text-red-500 dark:text-red-400 text-sm text-center font-semibold">
               {error}
@@ -124,7 +138,7 @@ export default function EditTeamModal({
             disabled={
               loading ||
               !name.trim() ||
-              name.trim() === currentName
+              (name.trim() === currentName && (pictureUrl.trim() || null) === (currentPictureUrl || null))
             }
             className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-5 font-bold text-xs uppercase tracking-widest shadow-lg shadow-blue-500/20 transition-all"
           >

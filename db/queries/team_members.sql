@@ -34,6 +34,7 @@ BEGIN
     'id', t.id,
     'name', t.name,
     'invite_code', t.invite_code,
+    'picture_url', t.picture_url,
     'created_at', t.created_at
   )
   INTO v_team
@@ -171,6 +172,7 @@ BEGIN
     'id', t.id,
     'name', t.name,
     'invite_code', t.invite_code,
+    'picture_url', t.picture_url,
     'created_at', t.created_at
   )
   INTO v_team

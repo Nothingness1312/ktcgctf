@@ -19,6 +19,7 @@ export type TeamInfo = {
 	id: string
 	name: string
 	invite_code: string
+	picture_url?: string | null
 	created_at: string
 }
 
@@ -102,6 +103,7 @@ export type TeamSummary = {
 export type TeamScoreboardEntry = {
 	team_id: string
 	team_name: string
+	picture_url?: string | null
 	unique_score: number
 	total_score: number
 	total_solves: number
@@ -375,6 +377,24 @@ export async function renameTeam(teamId: string, newName: string): Promise<{ suc
 		return { success: Boolean(data) }
 	} catch (err: any) {
 		return { success: false, error: err?.message || 'Failed to rename team' }
+	}
+}
+
+export async function updateTeamProfile(
+	teamId: string,
+	newName: string,
+	pictureUrl?: string | null
+): Promise<{ success: boolean; team?: TeamInfo; error?: string }> {
+	try {
+		const { data, error } = await callTeamRpc('update_team_profile', {
+			p_team_id: teamId,
+			p_new_name: newName,
+			p_picture_url: pictureUrl ?? null,
+		})
+		if (error) return { success: false, error: error.message }
+		return { success: !!data?.success, team: data?.team ?? undefined }
+	} catch (err: any) {
+		return { success: false, error: err?.message || 'Failed to update team profile' }
 	}
 }
 

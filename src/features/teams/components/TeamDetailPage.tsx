@@ -8,6 +8,7 @@ import PageBackground from '@/shared/components/PageBackground'
 import { PAGE_MAIN_CONTAINER_6XL, THEME_PRIMARY_SELECTION_CLASS } from '@/shared/styles'
 import { useAuth } from '@/shared/contexts/AuthContext'
 import { useEventContext } from '@/features/events/contexts/EventContext'
+import { APP } from '@/config'
 
 import TeamPageContent from './TeamPageContent'
 import { useTeamDetail } from '../hooks/useTeamDetail'
@@ -23,6 +24,12 @@ export default function TeamDetailPage() {
   useEffect(() => {
     if (!authLoading && !user) {
       router.push('/login')
+    }
+  }, [authLoading, user, router])
+
+  useEffect(() => {
+    if (!authLoading && user && !APP.teams.enabled) {
+      router.replace('/challenges')
     }
   }, [authLoading, user, router])
 
@@ -75,7 +82,7 @@ export default function TeamDetailPage() {
     )
   }
 
-  if (!user) return null
+  if (!user || !APP.teams.enabled) return null
 
   return (
     <PageBackground
