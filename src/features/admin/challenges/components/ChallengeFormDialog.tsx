@@ -145,63 +145,69 @@ const ChallengeFormDialog: React.FC<ChallengeFormDialogProps> = (props) => {
               />
             </div>
 
-            <div className={cn("flex-1 overflow-y-auto scroll-hidden space-y-4 pr-1", activeFormTab !== 'general' && 'hidden')}>
-              <BasicDetailsSection
-                formData={formData}
-                onChange={onChange}
-                events={sortedEvents}
-                categories={categories}
-                hideMainEventOption={hideMainEventOption}
-              />
+            {activeFormTab === 'general' && (
+              <div className="flex-1 overflow-y-auto scroll-hidden space-y-4 pr-1">
+                <BasicDetailsSection
+                  formData={formData}
+                  onChange={onChange}
+                  events={sortedEvents}
+                  categories={categories}
+                  hideMainEventOption={hideMainEventOption}
+                />
 
-              <ScoringSection
-                formData={formData}
-                onChange={onChange}
-              />
+                <ScoringSection
+                  formData={formData}
+                  onChange={onChange}
+                />
 
-              <ContentSection
-                formData={formData}
-                onChange={onChange}
-                showPreview={showPreview}
-                setShowPreview={setShowPreview}
-                flagLoading={flagLoading}
-                handleViewFlag={handleViewFlag}
-                editing={!!editing}
-              />
-            </div>
+                <ContentSection
+                  formData={formData}
+                  onChange={onChange}
+                  showPreview={showPreview}
+                  setShowPreview={setShowPreview}
+                  flagLoading={flagLoading}
+                  handleViewFlag={handleViewFlag}
+                  editing={!!editing}
+                />
+              </div>
+            )}
 
-            <div className={cn("flex-1 overflow-y-auto scroll-hidden space-y-6 pr-1", activeFormTab !== 'additional' && 'hidden')}>
-              <HintsAttachmentsSection
-                formData={formData}
-                onAddHint={onAddHint}
-                onUpdateHint={onUpdateHint}
-                onRemoveHint={onRemoveHint}
-                onAddAttachment={onAddAttachment}
-                onUpdateAttachment={onUpdateAttachment}
-                onRemoveAttachment={onRemoveAttachment}
-                mode="all"
-              />
+            {activeFormTab === 'additional' && (
+              <div className="flex-1 overflow-y-auto scroll-hidden space-y-6 pr-1">
+                <HintsAttachmentsSection
+                  formData={formData}
+                  onAddHint={onAddHint}
+                  onUpdateHint={onUpdateHint}
+                  onRemoveHint={onRemoveHint}
+                  onAddAttachment={onAddAttachment}
+                  onUpdateAttachment={onUpdateAttachment}
+                  onRemoveAttachment={onRemoveAttachment}
+                  mode="all"
+                />
 
-              <ChallengeServicesSection
-                formData={formData}
-                onChange={onChange}
-              />
-            </div>
+                <ChallengeServicesSection
+                  formData={formData}
+                  onChange={onChange}
+                />
+              </div>
+            )}
 
-            <div className={cn("flex-1 overflow-y-auto scroll-hidden pr-1", activeFormTab !== 'subquestions' && 'hidden')}>
-              <SubChallengesSection
-                subChallenges={subChallenges}
-                subChallengesSequential={subChallengesSequential}
-                onAdd={onAddSubChallenge}
-                onUpdate={onUpdateSubChallenge}
-                onRemove={onRemoveSubChallenge}
-                onReorder={onReorderSubChallenge}
-                onToggleSequential={onToggleSequential}
-                questionPreviewRows={questionPreviewRows}
-                setQuestionPreviewRows={setQuestionPreviewRows}
-                normalizeQuestionMarkdown={normalizeQuestionMarkdown}
-              />
-            </div>
+            {activeFormTab === 'subquestions' && (
+              <div className="flex-1 overflow-y-auto scroll-hidden pr-1">
+                <SubChallengesSection
+                  subChallenges={subChallenges}
+                  subChallengesSequential={subChallengesSequential}
+                  onAdd={onAddSubChallenge}
+                  onUpdate={onUpdateSubChallenge}
+                  onRemove={onRemoveSubChallenge}
+                  onReorder={onReorderSubChallenge}
+                  onToggleSequential={onToggleSequential}
+                  questionPreviewRows={questionPreviewRows}
+                  setQuestionPreviewRows={setQuestionPreviewRows}
+                  normalizeQuestionMarkdown={normalizeQuestionMarkdown}
+                />
+              </div>
+            )}
 
             <DialogFooter className="flex flex-row items-center justify-end gap-2 shrink-0 pt-3 border-t dark:border-gray-800">
               <Button

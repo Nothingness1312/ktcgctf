@@ -2,13 +2,12 @@
 
 import { useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
-import { CalendarDays, GitBranch, UserPlus, Users } from 'lucide-react'
+import { CalendarDays, GitBranch, Users } from 'lucide-react'
 import ConfirmDialog from '@/shared/components/ConfirmDialog'
 import BulkAssignChallengesCard from './BulkAssignChallengesCard'
 import EventFormDialog from './EventFormDialog'
 import EventListCard from './EventListCard'
 import EventMembersCard from './EventMembersCard'
-import JoinRequestsCard from './JoinRequestsCard'
 import { Button } from '@/shared/ui'
 import { useAdminEventData } from '../hooks/useAdminEventData'
 import { AdminContentLoading, AdminPageShell, AdminStickyToolbar, AdminTabs } from '../../ui'
@@ -18,8 +17,7 @@ type AdminEventTab = 'event-list' | 'bulk-event' | 'event-members' | 'join-reque
 const EVENT_TABS = [
   { value: 'event-list' as const, label: 'Event List', icon: CalendarDays },
   { value: 'bulk-event' as const, label: 'Bulk Event', icon: GitBranch },
-  { value: 'event-members' as const, label: 'Event Members', icon: Users },
-  { value: 'join-requests' as const, label: 'Join Requests', icon: UserPlus },
+  { value: 'event-members' as const, label: 'Members', icon: Users },
 ]
 
 export default function AdminEventPage() {
@@ -164,14 +162,6 @@ export default function AdminEventPage() {
               loadingEventMembers={loadingEventMembers}
               filteredEventMembers={filteredEventMembers}
               onRemoveMember={handleRemoveMember}
-            />
-          ) : null}
-
-          {activeTab === 'join-requests' ? (
-            <JoinRequestsCard
-              events={sortedEvents}
-              manageEventId={manageEventId}
-              onManageEventChange={setManageEventId}
               joinRequests={joinRequests}
               loadingJoinRequests={loadingJoinRequests}
               reviewingRequestId={reviewingRequestId}

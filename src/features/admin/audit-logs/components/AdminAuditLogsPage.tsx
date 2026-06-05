@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { ClipboardList, KeyRound } from 'lucide-react'
 import { useAuth } from '@/shared/contexts'
 import { AuthService } from '@/features/auth'
-import { AdminContentLoading, AdminPageShell, AdminStickyToolbar, AdminTabs } from '../../ui'
+import { AdminContentLoading, AdminPageShell, AdminTabs } from '../../ui'
 import AuthAuditLogList from './AuthAuditLogList'
 import AuditLogList from './AuditLogList'
 
@@ -43,26 +43,25 @@ export default function AdminAuditLogsPage() {
   if (authLoading || !accessReady) return <AdminContentLoading variant="challenges" />
   if (!user || !isAllowed) return null
 
+  const tabsElement = (
+    <AdminTabs<AuditLogTab>
+      stretch
+      className="w-full sm:w-fit"
+      value={activeTab}
+      onChange={setActiveTab}
+      items={[
+        { value: 'admin', label: 'Admin Logs', icon: ClipboardList },
+        { value: 'auth', label: 'Auth Logs', icon: KeyRound },
+      ]}
+    />
+  )
+
   return (
     <AdminPageShell>
-      <div className="space-y-5">
-        <AdminStickyToolbar
-          tabs={(
-            <AdminTabs<AuditLogTab>
-              stretch
-              className="w-full sm:w-fit"
-              value={activeTab}
-              onChange={setActiveTab}
-              items={[
-                { value: 'admin', label: 'Admin Logs', icon: ClipboardList },
-                { value: 'auth', label: 'Auth Logs', icon: KeyRound },
-              ]}
-            />
-          )}
-        />
-
-        {activeTab === 'admin' ? <AuditLogList /> : <AuthAuditLogList />}
-      </div>
+      {activeTab === 'admin'
+        ? <AuditLogList tabs={tabsElement} />
+        : <AuthAuditLogList tabs={tabsElement} />
+      }
     </AdminPageShell>
   )
 }

@@ -1,12 +1,16 @@
 import React from 'react'
-import { Label, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Switch } from '@/shared/ui'
+import { Label, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui'
+import { CheckCircle2, Wrench } from 'lucide-react'
 import { ChallengeFormData, Event } from '../../types'
 import APP from '@/config'
 import {
+  ADMIN_FORM_FIELD_CLASS,
+  ADMIN_FORM_GRID_CLASS,
   ADMIN_INPUT_CLASS,
   ADMIN_SELECT_CONTENT_CLASS,
   ADMIN_SELECT_TRIGGER_CLASS,
 } from '@/features/admin/ui/form-field-styles'
+import { ChallengeFormToggle } from './ChallengeFormToggle'
 
 interface BasicDetailsSectionProps {
   formData: ChallengeFormData
@@ -24,29 +28,27 @@ export const BasicDetailsSection: React.FC<BasicDetailsSectionProps> = ({
   hideMainEventOption
 }) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+    <div className={ADMIN_FORM_GRID_CLASS}>
       {/* Top row: Switches */}
-      <div className="md:col-span-2 flex items-center gap-4">
-        <Label className="flex items-center gap-2">
-          <Switch
-            checked={formData.is_active !== false}
-            onCheckedChange={v => onChange({ ...formData, is_active: v })}
-            className="mr-2 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500 bg-gray-200 border-gray-300 dark:bg-gray-700 dark:border-gray-500 transition-colors"
-          />
-          Active
-        </Label>
-        <Label className="flex items-center gap-2">
-          <Switch
-            checked={!!formData.is_maintenance}
-            onCheckedChange={v => onChange({ ...formData, is_maintenance: v })}
-            className="mr-2 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500 bg-gray-200 border-gray-300 dark:bg-gray-700 dark:border-gray-500 transition-colors"
-          />
-          Maintenance
-        </Label>
+      <div className="md:col-span-2 flex flex-wrap items-center gap-4">
+        <ChallengeFormToggle
+          checked={formData.is_active !== false}
+          label="Active"
+          icon={CheckCircle2}
+          activeClassName="border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:border-emerald-400/30 dark:bg-emerald-500/15 dark:text-emerald-300"
+          onChange={v => onChange({ ...formData, is_active: v })}
+        />
+        <ChallengeFormToggle
+          checked={!!formData.is_maintenance}
+          label="Maintenance"
+          icon={Wrench}
+          activeClassName="border-amber-500/30 bg-amber-500/10 text-amber-700 dark:border-amber-400/30 dark:bg-amber-500/15 dark:text-amber-300"
+          onChange={v => onChange({ ...formData, is_maintenance: v })}
+        />
       </div>
 
       {/* Row 1: Title & Category */}
-      <div>
+      <div className={ADMIN_FORM_FIELD_CLASS}>
         <Label>Title</Label>
         <Input
           required
@@ -55,7 +57,7 @@ export const BasicDetailsSection: React.FC<BasicDetailsSectionProps> = ({
           className={ADMIN_INPUT_CLASS}
         />
       </div>
-      <div>
+      <div className={ADMIN_FORM_FIELD_CLASS}>
         <Label>Category</Label>
         <Select value={formData.category} onValueChange={v => onChange({ ...formData, category: v })}>
           <SelectTrigger className={ADMIN_SELECT_TRIGGER_CLASS}><SelectValue /></SelectTrigger>
@@ -69,7 +71,7 @@ export const BasicDetailsSection: React.FC<BasicDetailsSectionProps> = ({
 
       {/* Row 2: Event & Difficulty */}
       {events && (
-        <div>
+        <div className={ADMIN_FORM_FIELD_CLASS}>
           <Label>Event</Label>
           <Select
             value={formData.event_id ?? '__main__'}
@@ -87,8 +89,8 @@ export const BasicDetailsSection: React.FC<BasicDetailsSectionProps> = ({
           </Select>
         </div>
       )}
-      <div>
-        <Label className="mb-1">Difficulty</Label>
+      <div className={ADMIN_FORM_FIELD_CLASS}>
+        <Label>Difficulty</Label>
         <Select value={formData.difficulty} onValueChange={v => onChange({ ...formData, difficulty: v })}>
           <SelectTrigger className={ADMIN_SELECT_TRIGGER_CLASS}><SelectValue /></SelectTrigger>
           <SelectContent className={ADMIN_SELECT_CONTENT_CLASS}>

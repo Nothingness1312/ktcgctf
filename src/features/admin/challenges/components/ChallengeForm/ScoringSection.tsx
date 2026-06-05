@@ -1,7 +1,13 @@
 import React from 'react'
-import { Label, Input, Switch } from '@/shared/ui'
+import { Label, Input } from '@/shared/ui'
+import { Gauge } from 'lucide-react'
 import { ChallengeFormData } from '../../types'
-import { ADMIN_INPUT_CLASS } from '@/features/admin/ui/form-field-styles'
+import {
+  ADMIN_FORM_ERROR_CLASS,
+  ADMIN_FORM_FIELD_CLASS,
+  ADMIN_INPUT_CLASS,
+} from '@/features/admin/ui/form-field-styles'
+import { ChallengeFormToggle } from './ChallengeFormToggle'
 
 interface ScoringSectionProps {
   formData: ChallengeFormData
@@ -10,9 +16,9 @@ interface ScoringSectionProps {
 
 export const ScoringSection: React.FC<ScoringSectionProps> = ({ formData, onChange }) => {
   return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3 items-end">
-        <div>
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_auto] md:items-end">
+        <div className={ADMIN_FORM_FIELD_CLASS}>
           <Label>{formData.is_dynamic ? 'Max Points' : 'Points'}</Label>
           <Input
             type="number"
@@ -32,28 +38,27 @@ export const ScoringSection: React.FC<ScoringSectionProps> = ({ formData, onChan
             className={ADMIN_INPUT_CLASS}
           />
         </div>
-        <div className="flex items-center pb-2">
-          <Label className="flex items-center gap-2 cursor-pointer">
-            <Switch
-              checked={!!formData.is_dynamic}
-              onCheckedChange={v => {
-                if (v) {
-                  onChange({ ...formData, is_dynamic: true, max_points: formData.points ?? '' });
-                } else {
-                  onChange({ ...formData, is_dynamic: false, points: formData.max_points ?? '' });
-                }
-              }}
-              className="data-[state=checked]:bg-primary-500 data-[state=checked]:border-primary-500 bg-gray-200 border-gray-300 dark:bg-gray-700 dark:border-gray-500 transition-colors"
-            />
-            <span className="text-sm font-medium">Dynamic Score</span>
-          </Label>
+        <div className="flex items-center">
+          <ChallengeFormToggle
+            checked={!!formData.is_dynamic}
+            label="Dynamic Score"
+            icon={Gauge}
+            activeClassName="border-blue-500/30 bg-blue-500/10 text-blue-700 dark:border-blue-400/30 dark:bg-blue-500/15 dark:text-blue-300"
+            onChange={v => {
+              if (v) {
+                onChange({ ...formData, is_dynamic: true, max_points: formData.points ?? '' });
+              } else {
+                onChange({ ...formData, is_dynamic: false, points: formData.max_points ?? '' });
+              }
+            }}
+          />
         </div>
       </div>
 
       {formData.is_dynamic && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div>
-            <Label htmlFor="min_points" className="mb-1 text-xs">Min Points</Label>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className={ADMIN_FORM_FIELD_CLASS}>
+            <Label htmlFor="min_points" className="text-xs">Min Points</Label>
             <Input
               id="min_points"
               type="number"
@@ -74,11 +79,11 @@ export const ScoringSection: React.FC<ScoringSectionProps> = ({ formData, onChan
               placeholder="Batas minimum"
             />
             {formData.max_points !== '' && Number(formData.min_points) > Number(formData.max_points) && (
-              <p className="text-xs text-red-500 mt-1">Min Points tidak boleh lebih dari Max Points</p>
+              <p className={ADMIN_FORM_ERROR_CLASS}>Min Points tidak boleh lebih dari Max Points</p>
             )}
           </div>
-          <div>
-            <Label htmlFor="decay_per_solve" className="mb-1 text-xs">Decay/Solve</Label>
+          <div className={ADMIN_FORM_FIELD_CLASS}>
+            <Label htmlFor="decay_per_solve" className="text-xs">Decay/Solve</Label>
             <Input
               id="decay_per_solve"
               type="number"

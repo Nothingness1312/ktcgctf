@@ -1,8 +1,8 @@
 import React from 'react'
 import {
   Button,
-  Input,
   Label,
+  SearchInput,
   Select,
   SelectContent,
   SelectItem,
@@ -10,6 +10,14 @@ import {
   SelectValue,
 } from '@/shared/ui'
 import { AdminDataSurface } from '@/features/admin/ui'
+import {
+  ADMIN_FORM_FIELD_CLASS,
+  ADMIN_FORM_GRID_CLASS,
+  ADMIN_FORM_HELPER_CLASS,
+  ADMIN_INPUT_CLASS,
+  ADMIN_SELECT_CONTENT_CLASS,
+  ADMIN_SELECT_TRIGGER_CLASS,
+} from '@/features/admin/ui/form-field-styles'
 import type { Event, UserLite } from '../types'
 
 interface AddEventAdminCardProps {
@@ -49,11 +57,17 @@ const AddEventAdminCard: React.FC<AddEventAdminCardProps> = ({
         <h2 className="text-base font-bold text-gray-900 dark:text-white">Add Event Admin</h2>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
+      <div className={ADMIN_FORM_GRID_CLASS}>
+        <div className={ADMIN_FORM_FIELD_CLASS}>
           <Label>Search Username</Label>
           <div className="relative">
-            <Input value={usernameQuery} onChange={(e) => onUsernameChange(e.target.value)} placeholder="Type username..." />
+            <SearchInput
+              value={usernameQuery}
+              onChange={onUsernameChange}
+              placeholder="Type username..."
+              containerClassName="max-w-none"
+              inputClassName={ADMIN_INPUT_CLASS}
+            />
 
             {userResults.length > 0 && !selectedUser && (
               <div className="absolute z-10 mt-1 w-full rounded-md border bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 overflow-hidden">
@@ -74,16 +88,16 @@ const AddEventAdminCard: React.FC<AddEventAdminCardProps> = ({
             )}
           </div>
 
-          <div className="mt-2 text-xs text-muted-foreground">Choose a user, then select an event.</div>
+          <div className={ADMIN_FORM_HELPER_CLASS}>Choose a user, then select an event.</div>
         </div>
 
-        <div>
+        <div className={ADMIN_FORM_FIELD_CLASS}>
           <Label>Event</Label>
           <Select value={selectedEventId} onValueChange={onEventChange}>
-            <SelectTrigger>
+            <SelectTrigger className={ADMIN_SELECT_TRIGGER_CLASS}>
               <SelectValue placeholder="Pick an event" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className={ADMIN_SELECT_CONTENT_CLASS}>
               {events.map((e) => (
                 <SelectItem key={e.id} value={e.id}>
                   {e.name}
@@ -93,7 +107,7 @@ const AddEventAdminCard: React.FC<AddEventAdminCardProps> = ({
           </Select>
 
           {selectedEventName ? (
-            <div className="mt-2 text-xs text-muted-foreground">
+            <div className={ADMIN_FORM_HELPER_CLASS}>
               Selected: <span className="font-medium">{selectedEventName}</span>
             </div>
           ) : null}

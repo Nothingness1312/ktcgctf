@@ -21,6 +21,9 @@ import {
 import { DIALOG_FORM_CONTENT_CLASS } from '@/shared/styles'
 import { cn } from '@/shared/lib/utils'
 import {
+  ADMIN_FORM_FIELD_CLASS,
+  ADMIN_FORM_HELPER_CLASS,
+  ADMIN_FORM_SECTION_CLASS,
   ADMIN_INPUT_CLASS,
   ADMIN_SELECT_CONTENT_CLASS,
   ADMIN_SELECT_TRIGGER_CLASS,
@@ -71,9 +74,42 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
                 <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Name, description, and public event artwork.</p>
               </div>
 
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_220px]">
-                <div className="space-y-3">
-                  <div>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-[240px_minmax(0,1fr)]">
+                <div className={ADMIN_FORM_SECTION_CLASS}>
+                  <div className={ADMIN_FORM_FIELD_CLASS}>
+                    <Label>Preview</Label>
+                    <div className="relative aspect-[16/10] overflow-hidden rounded-xl border border-gray-200/80 bg-gradient-to-br from-blue-50 to-indigo-50 dark:border-gray-800 dark:from-blue-950/20 dark:to-indigo-950/20">
+                      {previewImageUrl ? (
+                        <Image
+                          src={previewImageUrl}
+                          alt={formData.name || 'Event preview'}
+                          fill
+                          className="object-cover"
+                          unoptimized
+                        />
+                      ) : (
+                        <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-blue-500/35">
+                          <CalendarDays className="h-8 w-8" />
+                          <span className="text-xs font-bold text-gray-500 dark:text-gray-400">No image URL</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className={ADMIN_FORM_FIELD_CLASS}>
+                    <Label>Image URL</Label>
+                    <Input
+                      type="url"
+                      placeholder="https://example.com/image.jpg"
+                      value={formData.image_url}
+                      onChange={(e) => onChange({ ...formData, image_url: e.target.value })}
+                      className={`${ADMIN_INPUT_CLASS} h-9 text-sm`}
+                    />
+                  </div>
+                </div>
+
+                <div className={ADMIN_FORM_SECTION_CLASS}>
+                  <div className={ADMIN_FORM_FIELD_CLASS}>
                     <Label>Name</Label>
                     <Input
                       required
@@ -83,45 +119,14 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
                     />
                   </div>
 
-                  <div>
+                  <div className={ADMIN_FORM_FIELD_CLASS}>
                     <Label>Description</Label>
                     <Textarea
-                      rows={4}
+                      rows={7}
                       value={formData.description}
                       onChange={(e) => onChange({ ...formData, description: e.target.value })}
-                      className={ADMIN_TEXTAREA_CLASS}
+                      className={`${ADMIN_TEXTAREA_CLASS} min-h-[156px]`}
                     />
-                  </div>
-
-                  <div>
-                    <Label>Image URL</Label>
-                    <Input
-                      type="url"
-                      placeholder="https://example.com/image.jpg"
-                      value={formData.image_url}
-                      onChange={(e) => onChange({ ...formData, image_url: e.target.value })}
-                      className={ADMIN_INPUT_CLASS}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Preview</Label>
-                  <div className="relative aspect-[16/10] overflow-hidden rounded-xl border border-gray-200/80 bg-gradient-to-br from-blue-50 to-indigo-50 dark:border-gray-800 dark:from-blue-950/20 dark:to-indigo-950/20">
-                    {previewImageUrl ? (
-                      <Image
-                        src={previewImageUrl}
-                        alt={formData.name || 'Event preview'}
-                        fill
-                        className="object-cover"
-                        unoptimized
-                      />
-                    ) : (
-                      <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-blue-500/35">
-                        <CalendarDays className="h-8 w-8" />
-                        <span className="text-xs font-bold text-gray-500 dark:text-gray-400">No image URL</span>
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>
@@ -133,8 +138,8 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
                 <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Control how users join this event.</p>
               </div>
 
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                <div>
+              <div className={ADMIN_FORM_SECTION_CLASS}>
+                <div className={`max-w-md ${ADMIN_FORM_FIELD_CLASS}`}>
                   <Label>Join Mode</Label>
                   <Select
                     value={formData.join_mode}
@@ -151,23 +156,27 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
                   </Select>
                 </div>
 
-                <div>
-                  <div className="flex items-center justify-between">
-                    <Label>Join Key</Label>
-                    {editing?.id && formData.join_mode === 'key' && (
-                      <button type="button" onClick={onRegenerateJoinKey} className="text-xs font-semibold text-blue-600 hover:underline dark:text-blue-300">
-                        Regenerate
-                      </button>
-                    )}
+                {formData.join_mode === 'key' && (
+                  <div className="rounded-xl border border-gray-200/80 bg-gray-50/70 p-3 dark:border-gray-800 dark:bg-gray-900/40">
+                    <div className="mb-2 flex items-center justify-between gap-3">
+                      <div>
+                        <Label>Join Key</Label>
+                        <p className={ADMIN_FORM_HELPER_CLASS}>Users need this invite key to join the event.</p>
+                      </div>
+                      {editing?.id && (
+                        <button type="button" onClick={onRegenerateJoinKey} className="shrink-0 text-xs font-semibold text-blue-600 hover:underline dark:text-blue-300">
+                          Regenerate
+                        </button>
+                      )}
+                    </div>
+                    <Input
+                      value={formData.join_key}
+                      onChange={(e) => onChange({ ...formData, join_key: e.target.value })}
+                      placeholder="Enter custom join key"
+                      className={ADMIN_INPUT_CLASS}
+                    />
                   </div>
-                  <Input
-                    value={formData.join_key}
-                    onChange={(e) => onChange({ ...formData, join_key: e.target.value })}
-                    disabled={formData.join_mode !== 'key'}
-                    placeholder={formData.join_mode === 'key' ? 'Enter custom join key' : 'Join key only for key mode'}
-                    className={ADMIN_INPUT_CLASS}
-                  />
-                </div>
+                )}
               </div>
             </section>
 
@@ -177,8 +186,8 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
                 <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Set event timing and post-event challenge visibility.</p>
               </div>
 
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                <div>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className={ADMIN_FORM_FIELD_CLASS}>
                   <div className="flex items-center justify-between">
                     <Label>Start Time</Label>
                     {formData.start_time && (
@@ -195,7 +204,7 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
                   />
                 </div>
 
-                <div>
+                <div className={ADMIN_FORM_FIELD_CLASS}>
                   <div className="flex items-center justify-between">
                     <Label>End Time</Label>
                     {formData.end_time && (
@@ -212,10 +221,10 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
                   />
                 </div>
 
-                <div className="flex items-center justify-between rounded-xl border border-gray-200/80 bg-gray-50/70 px-3 py-2 dark:border-gray-800 dark:bg-gray-900/40 md:col-span-2">
+                <div className="flex items-center justify-between gap-3 rounded-xl border border-gray-200/80 bg-gray-50/70 px-3 py-2 dark:border-gray-800 dark:bg-gray-900/40 md:col-span-2">
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Always show challenges</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Show event challenges after the event ends.</p>
+                    <p className={ADMIN_FORM_HELPER_CLASS}>Show event challenges after the event ends.</p>
                   </div>
                   <Switch
                     checked={formData.always_show_challenges}

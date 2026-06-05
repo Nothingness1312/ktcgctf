@@ -4,7 +4,7 @@
 
 CREATE TABLE public.events (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  name VARCHAR(255) NOT NULL,
+  name VARCHAR(255) NOT NULL UNIQUE,
   description TEXT DEFAULT '',
   join_mode VARCHAR(16) NOT NULL DEFAULT 'open' CHECK (join_mode IN ('open', 'request', 'key')),
   join_key VARCHAR(128) DEFAULT NULL,

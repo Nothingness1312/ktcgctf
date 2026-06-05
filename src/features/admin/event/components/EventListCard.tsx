@@ -118,12 +118,12 @@ function EventListItem({
             <AdminStatusBadge tone={eventState.tone}>
               {eventState.label}
             </AdminStatusBadge>
-            <AdminStatusBadge tone="neutral">
+            <AdminStatusBadge tone="neutral" className="inline-flex items-center gap-1.5">
               <JoinIcon className="h-3 w-3" />
               {joinMode.label}
             </AdminStatusBadge>
             {event.always_show_challenges && (
-              <AdminStatusBadge tone="info">
+              <AdminStatusBadge tone="info" className="inline-flex items-center gap-1.5">
                 <Eye className="h-3 w-3" />
                 Always visible
               </AdminStatusBadge>

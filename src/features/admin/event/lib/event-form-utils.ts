@@ -15,7 +15,10 @@ export const DEFAULT_EVENT_FILTERS: FilterState = {
   category: 'all',
   difficulty: 'all',
   search: '',
-  feature: 'N',
+  sourceEventId: 'all',
+  visibility: 'all',
+  service: 'all',
+  sortBy: 'points_desc',
 }
 
 export const toEventInputValue = (value?: string | null) => {

@@ -5,7 +5,10 @@ import { ChallengeFormData } from '../../types'
 import { parseNxctlService, serializeNxctlService, type NxctlServiceOptions } from '@/features/challenges/lib/nxctl-services'
 import toast from 'react-hot-toast'
 import {
+  ADMIN_FORM_HELPER_CLASS,
   ADMIN_MUTED_INPUT_CLASS,
+  ADMIN_SELECT_CONTENT_CLASS,
+  ADMIN_SELECT_TRIGGER_CLASS,
 } from '@/features/admin/ui/form-field-styles'
 
 interface ChallengeServicesSectionProps {
@@ -198,10 +201,10 @@ export const ChallengeServicesSection: React.FC<ChallengeServicesSectionProps> =
             }}
             onOpenChange={(open) => { if (open) loadPlatformOptions() }}
           >
-            <SelectTrigger className="h-8 w-[180px] text-xs">
+            <SelectTrigger className={`${ADMIN_SELECT_TRIGGER_CLASS} h-8 w-[180px] text-xs`}>
               <SelectValue placeholder="Add from Platform" />
             </SelectTrigger>
-            <SelectContent className="max-h-[250px] overflow-y-auto">
+            <SelectContent className={`${ADMIN_SELECT_CONTENT_CLASS} max-h-[250px] overflow-y-auto`}>
               {platformLoading && (
                 <div className="flex items-center justify-center py-3 gap-2 text-xs text-muted-foreground">
                   <Loader2 size={14} className="animate-spin" /> Loading...
@@ -226,10 +229,10 @@ export const ChallengeServicesSection: React.FC<ChallengeServicesSectionProps> =
             }}
             onOpenChange={(open) => { if (open) loadLiveOptions() }}
           >
-            <SelectTrigger className="h-8 w-[180px] text-xs">
+            <SelectTrigger className={`${ADMIN_SELECT_TRIGGER_CLASS} h-8 w-[180px] text-xs`}>
               <SelectValue placeholder="Add from Live" />
             </SelectTrigger>
-            <SelectContent className="max-h-[250px] overflow-y-auto">
+            <SelectContent className={`${ADMIN_SELECT_CONTENT_CLASS} max-h-[250px] overflow-y-auto`}>
               {liveLoading && (
                 <div className="flex items-center justify-center py-3 gap-2 text-xs text-muted-foreground">
                   <Loader2 size={14} className="animate-spin" /> Loading...
@@ -257,7 +260,7 @@ export const ChallengeServicesSection: React.FC<ChallengeServicesSectionProps> =
           </Button>
         </div>
       </div>
-      {formData.services.length === 0 && <p className="text-xs text-muted-foreground">No NXCTL services added</p>}
+      {formData.services.length === 0 && <p className={ADMIN_FORM_HELPER_CLASS}>No NXCTL services added</p>}
       <div className="space-y-2">
         {formData.services.map((rawService, idx) => {
           const service = parseNxctlService(rawService)
@@ -290,7 +293,7 @@ export const ChallengeServicesSection: React.FC<ChallengeServicesSectionProps> =
                   <SelectTrigger className={ADMIN_MUTED_INPUT_CLASS}>
                     <SelectValue placeholder="Type" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className={ADMIN_SELECT_CONTENT_CLASS}>
                     <SelectItem value="default">Default</SelectItem>
                     <SelectItem value="ssh">SSH</SelectItem>
                   </SelectContent>

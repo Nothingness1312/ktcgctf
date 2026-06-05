@@ -23,17 +23,35 @@ export function useAdminEventBulkChallenges() {
   }, [])
 
   const filteredChallenges = useMemo(() => {
-    const q = filters.search.toLowerCase()
+    const q = filters.search.trim().toLowerCase()
     return challenges.filter((c) => {
-      if (q && !c.title.toLowerCase().includes(q)) return false
+      const searchableText = `${c.title || ''} ${c.description || ''}`.toLowerCase()
+      if (q && !searchableText.includes(q)) return false
       if (filters.category !== 'all' && c.category !== filters.category) return false
       if (filters.difficulty !== 'all' && c.difficulty !== filters.difficulty) return false
-      const hasQuestions = !!(c as any).has_questions
-      const hasServices = Array.isArray((c as any).services) && (c as any).services.length > 0
-      const featureType = hasQuestions && hasServices ? 'TS' : hasQuestions ? 'T' : hasServices ? 'S' : 'N'
-      if (filters.feature === 'T' && !(featureType === 'T' || featureType === 'TS')) return false
-      if (filters.feature === 'S' && !(featureType === 'S' || featureType === 'TS')) return false
+
+      if (filters.sourceEventId === 'main' && c.event_id) return false
+      if (filters.sourceEventId !== 'all' && filters.sourceEventId !== 'main' && c.event_id !== filters.sourceEventId) return false
+
+      if (filters.visibility === 'active' && !c.is_active) return false
+      if (filters.visibility === 'inactive' && c.is_active) return false
+      if (filters.visibility === 'maintenance' && !c.is_maintenance) return false
+
+      const hasQuestions = !!c.has_questions
+      const hasServices = Array.isArray(c.services) && c.services.length > 0
+      if (filters.service === 'services' && !hasServices) return false
+      if (filters.service === 'tasks' && !hasQuestions) return false
+      if (filters.service === 'placeholder' && (hasServices || hasQuestions)) return false
+
       return true
+    }).sort((a, b) => {
+      const sortBy = filters.sortBy || 'points_desc'
+      if (sortBy === 'points_asc') return (a.points || 0) - (b.points || 0)
+      if (sortBy === 'difficulty_asc') return String(a.difficulty || '').localeCompare(String(b.difficulty || ''))
+      if (sortBy === 'difficulty_desc') return String(b.difficulty || '').localeCompare(String(a.difficulty || ''))
+      if (sortBy === 'title_asc') return String(a.title || '').localeCompare(String(b.title || ''))
+      if (sortBy === 'title_desc') return String(b.title || '').localeCompare(String(a.title || ''))
+      return (b.points || 0) - (a.points || 0)
     })
   }, [filters, challenges])
 

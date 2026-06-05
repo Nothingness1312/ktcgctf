@@ -20,3 +20,15 @@ export const ADMIN_NATIVE_SELECT_CLASS =
 
 export const ADMIN_MUTED_INPUT_CLASS =
   "w-full px-3 py-2 text-sm border border-gray-200/60 dark:border-gray-800/60 rounded-xl bg-gray-50 dark:bg-black/20 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500/20 focus:border-blue-500/50 transition-all shadow-sm"
+
+export const ADMIN_FORM_SECTION_CLASS = "space-y-4"
+
+export const ADMIN_FORM_GRID_CLASS = "grid grid-cols-1 gap-4 md:grid-cols-2"
+
+export const ADMIN_FORM_FIELD_CLASS = "space-y-1.5"
+
+export const ADMIN_FORM_HELPER_CLASS = "mt-1 text-xs text-gray-500 dark:text-gray-400"
+
+export const ADMIN_FORM_ERROR_CLASS = "mt-1 text-xs font-semibold text-red-500 dark:text-red-400"
+
+export const ADMIN_SWITCH_FIELD_CLASS = "flex items-center gap-2"

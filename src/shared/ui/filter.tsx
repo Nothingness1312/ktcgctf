@@ -1,9 +1,9 @@
 "use client"
 
 import * as React from 'react'
-import { Search, X } from 'lucide-react'
+import { X } from 'lucide-react'
 import { cn } from '@/shared/lib/utils'
-import { Input } from './input'
+import { SearchInput } from './search-input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './select'
 
 export const FILTER_CONTROL_CLASS =
@@ -41,7 +41,7 @@ export function FilterToolbar({
   )
 }
 
-type FilterInputProps = Omit<React.ComponentProps<typeof Input>, 'value' | 'defaultValue' | 'onChange'> & {
+type FilterInputProps = Omit<React.ComponentProps<typeof SearchInput>, 'value' | 'defaultValue' | 'onChange' | 'size'> & {
   value: string
   defaultValue?: string
   onChange: (value: string) => void
@@ -66,53 +66,34 @@ export function FilterInput({
   ...props
 }: FilterInputProps) {
   const isActive = active ?? value !== defaultValue
-  const showClear = clearable && !disabled && value !== defaultValue
-  const iconNode = icon === undefined
-    ? <Search className="h-4 w-4 text-gray-400 dark:text-gray-400" />
-    : icon
-
-  const handleClear = (event: React.MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault()
-    event.stopPropagation()
-    if (onClear) onClear()
-    else onChange(defaultValue)
-  }
 
   return (
-    <div className={cn('relative w-full max-w-md', wrapperClassName)}>
-      <Input
-        value={value}
-        disabled={disabled}
-        onChange={(event) => onChange(event.target.value)}
-        className={cn(
-          FILTER_CONTROL_CLASS,
-          iconNode && 'pl-9',
-          showClear && 'pr-10',
-          isActive && FILTER_CONTROL_ACTIVE_CLASS,
-          isActive && 'placeholder:text-white/70 dark:placeholder:text-white/70',
-          className
-        )}
-        {...props}
-      />
-      {iconNode && (
-        <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center z-10">
-          {iconNode}
-        </div>
+    <SearchInput
+      value={value}
+      defaultValue={defaultValue}
+      disabled={disabled}
+      onChange={onChange}
+      onClear={() => {
+        if (onClear) onClear()
+        else onChange(defaultValue)
+      }}
+      showClearButton={clearable}
+      showSearchIcon={icon !== null}
+      icon={icon}
+      containerClassName={wrapperClassName}
+      inputClassName={cn(
+        FILTER_CONTROL_CLASS,
+        isActive && FILTER_CONTROL_ACTIVE_CLASS,
+        isActive && 'placeholder:text-white/70 dark:placeholder:text-white/70',
+        className
       )}
-      {showClear && (
-        <button
-          type="button"
-          aria-label="Clear filter"
-          onClick={handleClear}
-          className={cn(
-            FILTER_CLEAR_BUTTON_CLASS,
-            'absolute right-1 top-1 z-10 text-white/80 hover:bg-white/15 hover:text-white'
-          )}
-        >
-          <X className="h-3.5 w-3.5" />
-        </button>
-      )}
-    </div>
+      clearButtonClassName={isActive
+        ? 'text-white/80 hover:bg-white/15 hover:text-white'
+        : 'text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-200'
+      }
+      clearAriaLabel="Clear filter"
+      {...props}
+    />
   )
 }
 

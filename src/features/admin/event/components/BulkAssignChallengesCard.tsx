@@ -1,8 +1,14 @@
 import React from 'react'
-import ChallengeFilterBar from '@/features/challenges/components/ChallengeFilterBar'
-import { Button, Label } from '@/shared/ui'
-import { ADMIN_NATIVE_SELECT_CLASS } from '@/features/admin/ui/form-field-styles'
-import { AdminDataSurface, AdminEmptyState } from '@/features/admin/ui'
+import { ArrowUpDown, CheckSquare, Minus, Plus, XCircle } from 'lucide-react'
+import { Button } from '@/shared/ui'
+import {
+  AdminDataSurface,
+  AdminEmptyState,
+  AdminFilterInput,
+  AdminFilterSelect,
+  AdminFilterToolbar,
+  AdminStatusBadge,
+} from '@/features/admin/ui'
 import { DEFAULT_EVENT_FILTERS } from '../lib'
 import type { ChallengeLite, Event, FilterState } from '../types'
 
@@ -24,6 +30,11 @@ interface BulkAssignChallengesCardProps {
   onToggleSelect: (challengeId: string) => void
 }
 
+const EVENT_FILTER_OPTIONS = [
+  { value: 'all', label: 'All Events' },
+  { value: 'main', label: 'Main Event' },
+]
+
 const BulkAssignChallengesCard: React.FC<BulkAssignChallengesCardProps> = ({
   events,
   filters,
@@ -41,85 +52,210 @@ const BulkAssignChallengesCard: React.FC<BulkAssignChallengesCardProps> = ({
   selectedIds,
   onToggleSelect,
 }) => {
+  const isFilterDirty =
+    filters.search ||
+    filters.category !== 'all' ||
+    filters.difficulty !== 'all' ||
+    filters.sourceEventId !== 'all' ||
+    filters.visibility !== 'all' ||
+    filters.service !== 'all' ||
+    filters.sortBy !== 'points_desc'
+
   return (
-    <AdminDataSurface className="p-6" contentClassName="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-150 dark:border-gray-800/60 pb-4">
-        <div>
-          <h2 className="text-base font-bold text-gray-900 dark:text-white">Bulk Assign Challenges</h2>
-          <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mt-1">
-            Select multiple challenges, then assign or remove event.
-          </p>
+    <AdminDataSurface className="h-[calc(100dvh-8.5rem)] min-h-[520px]" contentClassName="flex h-full min-h-0 flex-col p-0">
+      <div className="shrink-0 border-b border-gray-200/70 bg-white/95 p-3 backdrop-blur-md dark:border-gray-800/70 dark:bg-[#0b0f19]/95">
+        <div className="flex flex-col gap-2 xl:flex-row xl:items-center xl:justify-between">
+          <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
+            <div className="w-full min-w-0">
+              <AdminFilterSelect
+                value={bulkEventId || 'none'}
+                defaultValue="none"
+                onValueChange={(value) => onBulkEventChange(value === 'none' ? '' : value)}
+                className="w-full"
+                options={[
+                  { value: 'none', label: 'Target Event' },
+                  ...events.map((event) => ({ value: event.id, label: event.name })),
+                ]}
+              />
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <Button onClick={onBulkAssign} disabled={bulkSubmitting} size="sm" className="gap-1.5 rounded-xl">
+                <Plus className="h-3.5 w-3.5" />
+                Assign
+              </Button>
+              <Button variant="secondary" onClick={onBulkRemove} disabled={bulkSubmitting} size="sm" className="gap-1.5 rounded-xl">
+                <Minus className="h-3.5 w-3.5" />
+                Remove
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 xl:justify-end">
+            <AdminStatusBadge tone={selectedIds.length > 0 ? 'info' : 'muted'}>
+              {selectedIds.length} selected
+            </AdminStatusBadge>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClearSelection}
+              className="gap-1.5 rounded-xl"
+              aria-label="Clear selected challenges"
+              title="Clear Select"
+            >
+              <XCircle className="h-4 w-4" />
+              Clear
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onSelectAllFiltered}
+              className="gap-1.5 rounded-xl"
+              aria-label="Select all filtered challenges"
+              title="Select All"
+            >
+              <CheckSquare className="h-4 w-4" />
+              Select All
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <Button variant="outline" size="sm" onClick={onSelectAllFiltered} className="rounded-xl">
-            Select All
-          </Button>
-          <Button variant="ghost" size="sm" onClick={onClearSelection} className="rounded-xl">
-            Clear
-          </Button>
+
+        <div className="mt-2 grid gap-2 xl:grid-cols-[minmax(0,520px)_minmax(0,1fr)] xl:items-center">
+          <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
+            <AdminFilterInput
+              type="text"
+              value={filters.search}
+              defaultValue=""
+              onChange={(value) => onFilterChange((prev) => ({ ...prev, search: value }))}
+              placeholder="Search challenges..."
+              wrapperClassName="w-full sm:flex-1"
+            />
+            <AdminFilterSelect
+              value={filters.sourceEventId}
+              defaultValue="all"
+              onValueChange={(value) => onFilterChange((prev) => ({ ...prev, sourceEventId: value }))}
+              className="w-full sm:w-[160px]"
+              options={[
+                ...EVENT_FILTER_OPTIONS,
+                ...events.map((event) => ({ value: event.id, label: event.name })),
+              ]}
+            />
+          </div>
+
+          <AdminFilterToolbar
+            actions={(
+              <div className="flex flex-wrap items-center gap-2 xl:justify-end">
+                <AdminFilterSelect
+                  value={filters.category}
+                  onValueChange={(value) => onFilterChange((prev) => ({ ...prev, category: value }))}
+                  className="w-full sm:w-[150px]"
+                  options={[
+                    { value: 'all', label: 'All Categories' },
+                    ...categories.map((category) => ({ value: category, label: category })),
+                  ]}
+                />
+                <AdminFilterSelect
+                  value={filters.difficulty}
+                  onValueChange={(value) => onFilterChange((prev) => ({ ...prev, difficulty: value }))}
+                  className="w-full sm:w-[145px]"
+                  options={[
+                    { value: 'all', label: 'All Difficulties' },
+                    ...difficulties.map((difficulty) => ({ value: difficulty, label: difficulty, className: 'capitalize' })),
+                  ]}
+                />
+                <AdminFilterSelect
+                  value={filters.visibility}
+                  onValueChange={(value) => onFilterChange((prev) => ({ ...prev, visibility: value as FilterState['visibility'] }))}
+                  className="w-full sm:w-[140px]"
+                  options={[
+                    { value: 'all', label: 'All Visibility' },
+                    { value: 'active', label: 'Active / Visible' },
+                    { value: 'inactive', label: 'Inactive / Hidden' },
+                    { value: 'maintenance', label: 'Maintenance' },
+                  ]}
+                />
+                <AdminFilterSelect
+                  value={filters.service}
+                  onValueChange={(value) => onFilterChange((prev) => ({ ...prev, service: value as FilterState['service'] }))}
+                  className="w-full sm:w-[130px]"
+                  options={[
+                    { value: 'all', label: 'All Services' },
+                    { value: 'services', label: 'Services' },
+                    { value: 'placeholder', label: 'Placeholder' },
+                    { value: 'tasks', label: 'Tasks' },
+                  ]}
+                />
+                <AdminFilterSelect
+                  value={filters.sortBy || 'points_desc'}
+                  defaultValue="points_desc"
+                  onValueChange={(value) => onFilterChange((prev) => ({ ...prev, sortBy: value }))}
+                  className="w-full sm:w-[150px]"
+                  icon={<ArrowUpDown className="h-3.5 w-3.5 shrink-0" />}
+                  options={[
+                    { value: 'points_desc', label: 'Points desc' },
+                    { value: 'points_asc', label: 'Points asc' },
+                    { value: 'difficulty_asc', label: 'Difficulty asc' },
+                    { value: 'difficulty_desc', label: 'Difficulty desc' },
+                    { value: 'title_asc', label: 'Name A-Z' },
+                    { value: 'title_desc', label: 'Name Z-A' },
+                  ]}
+                />
+              </div>
+            )}
+          >
+            <div className="flex min-w-0 flex-1 items-center gap-2">
+              {isFilterDirty && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onFilterChange(DEFAULT_EVENT_FILTERS)}
+                  className="h-9 shrink-0 rounded-xl border-blue-600 bg-blue-600 px-3.5 text-xs font-bold text-white hover:border-blue-500 hover:bg-blue-500 dark:border-blue-600 dark:bg-blue-600 dark:text-white"
+                >
+                  Clear Filter
+                </Button>
+              )}
+            </div>
+          </AdminFilterToolbar>
         </div>
       </div>
 
-      <div className="space-y-4">
-        <div className="flex flex-col lg:flex-row gap-3 lg:items-end">
-          <div className="flex-1">
-            <Label className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Target Event</Label>
-            <select
-              value={bulkEventId}
-              onChange={(event) => onBulkEventChange(event.target.value)}
-              className={`mt-1.5 ${ADMIN_NATIVE_SELECT_CLASS}`}
+      <div className="min-h-0 flex-1 overflow-y-auto divide-y divide-gray-150 dark:divide-gray-800/85 scroll-hidden">
+        {filteredChallenges.length === 0 ? (
+          <div className="p-6">
+            <AdminEmptyState
+              title="No challenges found"
+              description="Try adjusting your filters or search terms."
+            />
+          </div>
+        ) : (
+          filteredChallenges.map((challenge) => (
+            <label
+              key={challenge.id}
+              className="flex cursor-pointer items-center gap-3 px-3.5 py-3 transition-colors duration-150 hover:bg-gray-50/60 dark:hover:bg-gray-900/25"
             >
-              <option value="">Select event</option>
-              {events.map((event) => (
-                <option key={event.id} value={event.id}>{event.name}</option>
-              ))}
-            </select>
-          </div>
-          <div className="flex items-end gap-2">
-            <Button onClick={onBulkAssign} disabled={bulkSubmitting} className="min-w-[96px] rounded-xl">Assign</Button>
-            <Button variant="secondary" onClick={onBulkRemove} disabled={bulkSubmitting} className="min-w-[120px] rounded-xl">Remove Event</Button>
-          </div>
-        </div>
-
-        <div>
-          <ChallengeFilterBar
-            filters={filters}
-            categories={categories}
-            difficulties={difficulties}
-            onFilterChange={onFilterChange}
-            onClear={() => onFilterChange(DEFAULT_EVENT_FILTERS)}
-            showStatusFilter={false}
-          />
-        </div>
-
-        <div className="max-h-[360px] overflow-auto divide-y divide-gray-150 dark:divide-gray-800/85 rounded-xl bg-gray-50/25 dark:bg-black/10">
-          {filteredChallenges.length === 0 ? (
-            <div className="p-6">
-              <AdminEmptyState
-                title="No challenges found"
-                description="Try adjusting your filters or search terms."
+              <input
+                type="checkbox"
+                checked={selectedIds.includes(challenge.id)}
+                onChange={() => onToggleSelect(challenge.id)}
+                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
-            </div>
-          ) : (
-            filteredChallenges.map((challenge) => (
-              <label key={challenge.id} className="flex items-center gap-3 px-3.5 py-3 cursor-pointer hover:bg-gray-50/50 dark:hover:bg-gray-900/20 transition-colors duration-150">
-                <input
-                  type="checkbox"
-                  checked={selectedIds.includes(challenge.id)}
-                  onChange={() => onToggleSelect(challenge.id)}
-                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <div className="min-w-0">
-                  <div className="text-sm font-semibold text-gray-900 dark:text-white truncate">{challenge.title}</div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
-                    {challenge.category || 'Uncategorized'} {'\u2022'} {challenge.difficulty || 'Unknown'} {'\u2022'} {challenge.event_id ? 'Event' : 'Main'}
-                  </div>
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm font-semibold text-gray-900 dark:text-white">{challenge.title}</div>
+                <div className="mt-0.5 truncate text-xs text-gray-500 dark:text-gray-400">
+                  {challenge.category || 'Uncategorized'} {' / '}
+                  {challenge.difficulty || 'Unknown'} {' / '}
+                  {typeof challenge.points === 'number' ? `${challenge.points} pts` : 'No points'} {' / '}
+                  {challenge.event_id ? (events.find((event) => event.id === challenge.event_id)?.name || 'Event') : 'Main Event'}
                 </div>
-              </label>
-            ))
-          )}
-        </div>
-        <div className="text-xs font-semibold text-gray-500 dark:text-gray-500/80">Selected: {selectedIds.length}</div>
+              </div>
+              <div className="hidden shrink-0 items-center gap-1.5 sm:flex">
+                {challenge.is_maintenance && <AdminStatusBadge tone="warning">Maintenance</AdminStatusBadge>}
+                {!challenge.is_active && <AdminStatusBadge tone="muted">Hidden</AdminStatusBadge>}
+                {Array.isArray(challenge.services) && challenge.services.length > 0 && <AdminStatusBadge tone="info">Service</AdminStatusBadge>}
+                {challenge.has_questions && <AdminStatusBadge tone="success">Tasks</AdminStatusBadge>}
+              </div>
+            </label>
+          ))
+        )}
       </div>
     </AdminDataSurface>
   )

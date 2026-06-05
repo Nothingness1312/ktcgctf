@@ -5,6 +5,7 @@ import { Flag as FlagIcon, Loader2, Zap, Type } from 'lucide-react'
 import { ChallengeFormData } from '../../types'
 import { cn } from '@/shared/lib/utils'
 import {
+  ADMIN_FORM_FIELD_CLASS,
   ADMIN_INPUT_CLASS,
   ADMIN_TEXTAREA_CLASS,
 } from '@/features/admin/ui/form-field-styles'
@@ -30,7 +31,7 @@ export const ContentSection: React.FC<ContentSectionProps> = ({
 }) => {
   return (
     <div className="space-y-4">
-      <div className="w-full">
+      <div className={ADMIN_FORM_FIELD_CLASS}>
         <div className="flex items-center justify-between">
           <Label>Deskripsi</Label>
           <Button type="button" variant="ghost" size="sm" onClick={() => setShowPreview(!showPreview)}>{showPreview ? 'Edit' : 'Preview'}</Button>
@@ -43,7 +44,7 @@ export const ContentSection: React.FC<ContentSectionProps> = ({
           <Textarea required rows={5} value={formData.description} onChange={e => onChange({ ...formData, description: e.target.value })} className={ADMIN_TEXTAREA_CLASS} />
         )}
       </div>
-      <div className="w-full">
+      <div className={ADMIN_FORM_FIELD_CLASS}>
         <Label>Flag</Label>
         <div className="flex gap-2 pointer-events-auto items-center">
           <Input

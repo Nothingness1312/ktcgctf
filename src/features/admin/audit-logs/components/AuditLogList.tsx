@@ -11,6 +11,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  AppTabs,
   Input,
   Table,
   TableBody,
@@ -38,6 +39,7 @@ import {
 interface AuditLogListProps {
   logs?: AuditLogEntry[]
   isLoading?: boolean
+  tabs?: React.ReactNode
 }
 
 const ACTION_OPTIONS = [
@@ -68,6 +70,14 @@ const ENTITY_OPTIONS = [
 const LIMIT_OPTIONS = [25, 50, 100, 250]
 const SENSITIVE_FIELD_PATTERN = /(password|token|session|secret|credential|flag|join_key|key)$/i
 const SENSITIVE_FIELD_NAMES = new Set(['flag', 'flag_hash', 'join_key', 'services'])
+type AuditDetailTab = 'summary' | 'changes' | 'metadata'
+
+const AUDIT_DETAIL_TABS = [
+  { value: 'summary' as const, label: 'Summary' },
+  { value: 'changes' as const, label: 'Changes' },
+  { value: 'metadata' as const, label: 'Metadata' },
+]
+
 
 function getActionStyle(action: string) {
   switch (action) {
@@ -220,24 +230,25 @@ function AuditSummary({
 }) {
   const rows = [
     { label: 'Actor name', value: log.actor_snapshot },
-    { label: 'Actor ID', value: <CopyableValue value={log.actor_user_id} /> },
     { label: 'Actor role', value: log.actor_role === 'global_admin' ? 'Global Admin' : 'Admin' },
+    { label: 'Actor ID', value: <CopyableValue value={log.actor_user_id} /> },
     { label: 'Action', value: log.action },
     { label: 'Entity type', value: formatFieldLabel(log.entity_type) },
     { label: 'Entity ID', value: <CopyableValue value={log.entity_id} /> },
     { label: 'IP address', value: log.ip_address || '—' },
     { label: 'Created time', value: formatJakartaDate(log.created_at) },
-    { label: 'Request ID', value: log.request_id ? <CopyableValue value={log.request_id} /> : '—' },
     { label: 'Browser', value: `${parsedUserAgent.browser} - ${parsedUserAgent.os}` },
   ]
 
   return (
-    <section className="rounded-2xl border border-gray-200/70 bg-white/70 p-4 shadow-sm dark:border-gray-800/70 dark:bg-[#0d121d]/70">
-      <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">Activity Summary</h3>
-      <dl className="mt-4 grid gap-x-6 gap-y-4 md:grid-cols-2 xl:grid-cols-3">
+    <section className="rounded-2xl border border-gray-200/70 bg-white/70 shadow-sm dark:border-gray-800/70 dark:bg-[#0d121d]/70">
+      <div className="border-b border-gray-200/70 px-4 py-3 dark:border-gray-800/70">
+        <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">Activity Summary</h3>
+      </div>
+      <dl className="grid gap-px bg-gray-200/60 dark:bg-gray-800/70 sm:grid-cols-2 xl:grid-cols-3">
         {rows.map((row) => (
-          <div key={row.label} className="min-w-0">
-            <dt className="text-xs font-semibold text-gray-500 dark:text-gray-400">{row.label}</dt>
+          <div key={row.label} className="min-w-0 bg-white/80 px-4 py-3 dark:bg-[#0d121d]/85">
+            <dt className="text-[11px] font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">{row.label}</dt>
             <dd className="mt-1 min-w-0 break-words text-sm font-semibold text-gray-800 dark:text-gray-100">
               {row.value}
             </dd>
@@ -248,11 +259,66 @@ function AuditSummary({
   )
 }
 
+function AuditSummaryCards({
+  log,
+  parsedUserAgent,
+}: {
+  log: AuditLogEntry
+  parsedUserAgent: ReturnType<typeof parseUserAgent>
+}) {
+  const groups = [
+    {
+      title: 'Actor',
+      rows: [
+        { label: 'Name', value: log.actor_snapshot },
+        { label: 'Role', value: log.actor_role === 'global_admin' ? 'Global Admin' : 'Admin' },
+        { label: 'User ID', value: <CopyableValue value={log.actor_user_id} /> },
+      ],
+    },
+    {
+      title: 'Action',
+      rows: [
+        { label: 'Action', value: log.action },
+        { label: 'Entity', value: formatFieldLabel(log.entity_type) },
+        { label: 'Entity ID', value: <CopyableValue value={log.entity_id} /> },
+      ],
+    },
+    {
+      title: 'Request',
+      rows: [
+        { label: 'Created', value: formatJakartaDate(log.created_at) },
+        { label: 'IP address', value: log.ip_address || 'Not captured' },
+        { label: 'Client', value: `${parsedUserAgent.browser} - ${parsedUserAgent.os}` },
+      ],
+    },
+  ]
+
+  return (
+    <section className="grid gap-3 lg:grid-cols-3">
+      {groups.map((group) => (
+        <div key={group.title} className="rounded-2xl border border-gray-200/70 bg-white/70 p-4 shadow-sm dark:border-gray-800/70 dark:bg-[#0d121d]/70">
+          <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">{group.title}</h3>
+          <dl className="mt-3 space-y-3">
+            {group.rows.map((row) => (
+              <div key={row.label} className="min-w-0">
+                <dt className="text-[11px] font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">{row.label}</dt>
+                <dd className="mt-1 min-w-0 break-words text-sm font-semibold text-gray-800 dark:text-gray-100">
+                  {row.value}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      ))}
+    </section>
+  )
+}
+
 function AuditValue({ value, tone = 'neutral' }: { value: unknown; tone?: 'before' | 'after' | 'neutral' }) {
   const toneClass = tone === 'before'
-    ? 'border-red-500/15 bg-red-500/5'
+    ? 'border-gray-200/80 bg-gray-50/80 text-gray-600 dark:border-gray-800 dark:bg-gray-900/40 dark:text-gray-300'
     : tone === 'after'
-      ? 'border-emerald-500/15 bg-emerald-500/5'
+      ? 'border-blue-500/20 bg-blue-500/5 text-gray-800 dark:border-blue-400/20 dark:bg-blue-500/10 dark:text-gray-100'
       : 'border-gray-200/70 bg-gray-50/70 dark:border-gray-800 dark:bg-[#0d121d]/70'
 
   if (typeof value === 'boolean') {
@@ -272,9 +338,33 @@ function AuditValue({ value, tone = 'neutral' }: { value: unknown; tone?: 'befor
   }
 
   return (
-    <div className={cn('min-h-10 break-words rounded-xl border px-3 py-2 text-sm font-semibold text-gray-700 dark:text-gray-200', toneClass)}>
+    <div className={cn('min-h-10 break-words rounded-xl border px-3 py-2 text-sm font-semibold', toneClass)}>
       {formatPrimitive(value)}
     </div>
+  )
+}
+
+function AuditInlineValue({ value }: { value: unknown }) {
+  if (typeof value === 'boolean') {
+    return (
+      <AdminStatusBadge tone={value ? 'success' : 'muted'}>
+        {value ? 'Yes' : 'No'}
+      </AdminStatusBadge>
+    )
+  }
+
+  if (Array.isArray(value) || isPlainRecord(value)) {
+    return (
+      <code className="block max-h-28 overflow-auto whitespace-pre-wrap break-words rounded-lg border border-gray-200/70 bg-gray-50/70 px-2.5 py-2 font-mono text-[11px] leading-relaxed text-gray-700 dark:border-gray-800 dark:bg-gray-900/40 dark:text-gray-200 scroll-hidden">
+        {JSON.stringify(value, null, 2)}
+      </code>
+    )
+  }
+
+  return (
+    <span className="break-words text-sm font-semibold text-gray-800 dark:text-gray-100">
+      {formatPrimitive(value)}
+    </span>
   )
 }
 
@@ -282,43 +372,150 @@ function ChangedFields({ log, fields }: { log: AuditLogEntry; fields: string[] }
   const visibleFields = fields.filter((field) => !isSensitiveField(field))
 
   return (
-    <section className="rounded-2xl border border-gray-200/70 bg-white/70 shadow-sm dark:border-gray-800/70 dark:bg-[#0d121d]/70">
-      <div className="border-b border-gray-200/70 px-4 py-3 dark:border-gray-800/70">
-        <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">Changed Fields</h3>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Only fields that changed are shown.</p>
+    <section className="min-w-0">
+      <div className="flex flex-col gap-1 border-b border-gray-200/70 pb-2 dark:border-gray-800/70 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">Changed Fields</h3>
+          <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Only fields that changed are shown.</p>
+        </div>
+        <AdminStatusBadge tone={visibleFields.length > 0 ? 'info' : 'muted'}>
+          {visibleFields.length} fields
+        </AdminStatusBadge>
       </div>
 
       {visibleFields.length > 0 ? (
-        <div className="divide-y divide-gray-100 dark:divide-gray-800">
-          <div className="hidden grid-cols-[180px_minmax(0,1fr)_minmax(0,1fr)] gap-3 px-4 py-3 text-xs font-bold text-gray-500 dark:text-gray-400 lg:grid">
-            <span>Field</span>
-            <span>Before</span>
-            <span>After</span>
-          </div>
+        <div className="divide-y divide-gray-100 dark:divide-gray-800/80">
           {visibleFields.map((field) => (
-            <div key={field} className="grid gap-3 px-4 py-4 lg:grid-cols-[180px_minmax(0,1fr)_minmax(0,1fr)]">
+            <div key={field} className="grid gap-2 py-3 lg:grid-cols-[190px_minmax(0,1fr)] lg:items-start">
               <div className="min-w-0">
-                <div className="text-sm font-bold text-gray-900 dark:text-gray-100">{formatFieldLabel(field)}</div>
-                <div className="mt-1 font-mono text-[11px] text-gray-500">{field}</div>
+                <div className="truncate text-xs font-bold text-gray-600 dark:text-gray-300">{formatFieldLabel(field)}</div>
               </div>
-              <div className="min-w-0">
-                <div className="mb-1 text-xs font-bold text-gray-500 dark:text-gray-400 lg:hidden">Before</div>
-                <AuditValue value={getFieldValue(log.before_data, field)} tone="before" />
-              </div>
-              <div className="min-w-0">
-                <div className="mb-1 text-xs font-bold text-gray-500 dark:text-gray-400 lg:hidden">After</div>
-                <AuditValue value={getFieldValue(log.after_data, field)} tone="after" />
+              <div className="grid min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-start">
+                <div className="min-w-0 rounded-lg bg-gray-50/70 px-3 py-2 dark:bg-gray-900/35">
+                  <AuditInlineValue value={getFieldValue(log.before_data, field)} />
+                </div>
+                <span className="hidden pt-2 text-xs font-bold text-gray-400 sm:block">to</span>
+                <div className="min-w-0 rounded-lg bg-blue-500/5 px-3 py-2 dark:bg-blue-500/10">
+                  <AuditInlineValue value={getFieldValue(log.after_data, field)} />
+                </div>
               </div>
             </div>
           ))}
         </div>
       ) : (
-        <div className="px-4 py-8 text-center">
+        <div className="py-8 text-center">
           <p className="text-sm font-semibold text-gray-600 dark:text-gray-300">No changed fields were recorded.</p>
           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">This action may only contain metadata.</p>
         </div>
       )}
     </section>
+  )
+}
+
+function FieldListCard({
+  title,
+  entries,
+}: {
+  title: string
+  entries: Array<[string, unknown]>
+}) {
+  return (
+    <section className="overflow-hidden rounded-2xl border border-gray-200/70 bg-white/70 shadow-sm dark:border-gray-800/70 dark:bg-[#0d121d]/70">
+      <div className="border-b border-gray-200/70 px-4 py-3 dark:border-gray-800/70">
+        <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">{title}</h3>
+      </div>
+      {entries.length > 0 ? (
+        <dl className="divide-y divide-gray-100 dark:divide-gray-800">
+          {entries.map(([key, value]) => (
+            <div key={key} className="grid gap-2 px-4 py-2.5 sm:grid-cols-[190px_minmax(0,1fr)] sm:items-start">
+              <dt className="min-w-0">
+                <div className="truncate text-xs font-bold text-gray-700 dark:text-gray-200">{formatFieldLabel(key)}</div>
+              </dt>
+              <dd className="min-w-0 break-words text-sm font-semibold text-gray-800 dark:text-gray-100">
+                <AuditInlineValue value={value} />
+              </dd>
+            </div>
+          ))}
+        </dl>
+      ) : (
+        <div className="px-4 py-6 text-sm text-gray-500 dark:text-gray-400">No data available.</div>
+      )}
+    </section>
+  )
+}
+
+function FieldRowSection({
+  title,
+  entries,
+}: {
+  title: string
+  entries: Array<[string, unknown]>
+}) {
+  return (
+    <section className="min-w-0">
+      <div className="border-b border-gray-200/70 pb-2 dark:border-gray-800/70">
+        <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">{title}</h3>
+      </div>
+      {entries.length > 0 ? (
+        <dl className="divide-y divide-gray-100 dark:divide-gray-800/80">
+          {entries.map(([key, value]) => (
+            <div key={key} className="grid gap-2 py-2.5 sm:grid-cols-[190px_minmax(0,1fr)] sm:items-start">
+              <dt className="truncate text-xs font-bold text-gray-600 dark:text-gray-300">
+                {formatFieldLabel(key)}
+              </dt>
+              <dd className="min-w-0 break-words text-sm font-semibold text-gray-800 dark:text-gray-100">
+                <AuditInlineValue value={value} />
+              </dd>
+            </div>
+          ))}
+        </dl>
+      ) : (
+        <div className="py-4 text-sm text-gray-500 dark:text-gray-400">No data available.</div>
+      )}
+    </section>
+  )
+}
+
+function SnapshotCards({ before, after }: { before: Record<string, unknown> | null; after: Record<string, unknown> | null }) {
+  const beforeData = sanitizeRecord(before)
+  const afterData = sanitizeRecord(after)
+  const beforeEntries = beforeData ? Object.entries(beforeData).filter(([key]) => !isSensitiveField(key)) : []
+  const afterEntries = afterData ? Object.entries(afterData).filter(([key]) => !isSensitiveField(key)) : []
+
+  return (
+    <div className="grid gap-4 lg:grid-cols-2">
+      <FieldListCard title="Before Snapshot" entries={beforeEntries} />
+      <FieldListCard title="After Snapshot" entries={afterEntries} />
+    </div>
+  )
+}
+
+function ChangesDetails({ log, fields }: { log: AuditLogEntry; fields: string[] }) {
+  return (
+    <div className="max-w-none">
+      <ChangedFields log={log} fields={fields} />
+    </div>
+  )
+}
+
+function MetadataDetails({
+  log,
+  parsedUserAgent,
+}: {
+  log: AuditLogEntry
+  parsedUserAgent: ReturnType<typeof parseUserAgent>
+}) {
+  const requestEntries: Array<[string, unknown]> = [
+    ['ip_address', log.ip_address || 'Not captured'],
+    ['browser', parsedUserAgent.browser],
+    ['operating_system', parsedUserAgent.os],
+    ['user_agent', log.user_agent || 'Not captured'],
+  ]
+
+  return (
+    <div className="max-w-none">
+      <FieldRowSection title="Request Context" entries={requestEntries} />
+    </div>
   )
 }
 
@@ -441,32 +638,17 @@ function AuditLogDetailDialog({
   const fields = log?.changed_fields ?? []
   const actionStyle = log ? getActionStyle(log.action) : getActionStyle('')
   const parsedUserAgent = parseUserAgent(log?.user_agent)
+  const [activeTab, setActiveTab] = useState<AuditDetailTab>('summary')
 
   return (
     <Dialog open={Boolean(log)} onOpenChange={onOpenChange}>
       <DialogContent className={`${DIALOG_CONTENT_CLASS_4XL} max-h-[90dvh] overflow-y-auto scroll-hidden`}>
         {log && (
-          <div className="mx-auto w-full max-w-5xl space-y-5 p-4 sm:p-6">
-            <DialogHeader className="pr-8">
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                <div className="min-w-0 space-y-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <AdminStatusBadge tone={actionStyle.tone}>{log.action}</AdminStatusBadge>
-                    <AdminStatusBadge tone={log.actor_role === 'global_admin' ? 'info' : 'neutral'}>
-                      {log.actor_role === 'global_admin' ? 'Global Admin' : 'Admin'}
-                    </AdminStatusBadge>
-                  </div>
-                  <div>
-                    <DialogTitle className="text-xl">Admin Log Detail</DialogTitle>
-                    <DialogDescription className="mt-2">
-                      {formatFieldLabel(log.entity_type)} - <span title={log.entity_id || undefined}>{shortenValue(log.entity_id)}</span>
-                    </DialogDescription>
-                  </div>
-                </div>
-                <div className="flex shrink-0 flex-col gap-2 text-left lg:text-right">
-                  <span className="text-sm font-semibold text-gray-700 dark:text-gray-200" title={log.created_at}>
-                    {formatJakartaDate(log.created_at)}
-                  </span>
+          <div className="mx-auto w-full max-w-5xl space-y-3 p-4 sm:p-5">
+            <DialogHeader className="sticky top-0 z-20 -mx-4 -mt-4 border-b border-gray-200/70 bg-white/95 px-4 pb-2 pt-3 backdrop-blur-md dark:border-gray-800/70 dark:bg-[#0b0f19]/95 sm:-mx-5 sm:-mt-5 sm:px-5 sm:pt-4">
+              <DialogTitle className="sr-only">Admin audit log detail</DialogTitle>
+              <div className="flex flex-col gap-2.5">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <Button
                     type="button"
                     variant="outline"
@@ -476,14 +658,42 @@ function AuditLogDetailDialog({
                   >
                     Back to list
                   </Button>
+                  <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                    <AdminStatusBadge tone={actionStyle.tone}>{log.action}</AdminStatusBadge>
+                    <AdminStatusBadge tone={log.actor_role === 'global_admin' ? 'info' : 'neutral'}>
+                      {log.actor_role === 'global_admin' ? 'Global Admin' : 'Admin'}
+                    </AdminStatusBadge>
+                    <AdminStatusBadge tone="muted">{formatFieldLabel(log.entity_type)}</AdminStatusBadge>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                  <DialogDescription className="flex min-w-0 flex-wrap items-center gap-1 text-sm font-semibold text-gray-700 dark:text-gray-200">
+                    <span>{log.actor_snapshot}</span>
+                    <span className="text-gray-400">changed</span>
+                    <span className="font-mono text-gray-900 dark:text-gray-100" title={log.entity_id || undefined}>{shortenValue(log.entity_id)}</span>
+                  </DialogDescription>
+                  <span className="shrink-0 text-xs font-bold text-gray-500 dark:text-gray-400" title={log.created_at}>
+                    {formatJakartaDate(log.created_at)}
+                  </span>
+                </div>
+
+                <div>
+                  <AppTabs
+                    items={AUDIT_DETAIL_TABS}
+                    value={activeTab}
+                    onValueChange={setActiveTab}
+                    variant="panel"
+                    stretch
+                    ariaLabel="Audit log detail tabs"
+                  />
                 </div>
               </div>
             </DialogHeader>
 
-            <AuditSummary log={log} parsedUserAgent={parsedUserAgent} />
-            <ChangedFields log={log} fields={fields} />
-            <SnapshotViewer before={log.before_data} after={log.after_data} />
-            <RequestDetails log={log} parsedUserAgent={parsedUserAgent} />
+            {activeTab === 'summary' && <AuditSummary log={log} parsedUserAgent={parsedUserAgent} />}
+            {activeTab === 'changes' && <ChangesDetails log={log} fields={fields} />}
+            {activeTab === 'metadata' && <MetadataDetails log={log} parsedUserAgent={parsedUserAgent} />}
           </div>
         )}
       </DialogContent>
@@ -491,7 +701,7 @@ function AuditLogDetailDialog({
   )
 }
 
-const AuditLogList: React.FC<AuditLogListProps> = ({ logs: propLogs, isLoading: propLoading }) => {
+const AuditLogList: React.FC<AuditLogListProps> = ({ logs: propLogs, isLoading: propLoading, tabs }) => {
   const [internalLogs, setInternalLogs] = useState<AuditLogEntry[]>([])
   const [internalLoading, setInternalLoading] = useState(false)
   const [selectedLog, setSelectedLog] = useState<AuditLogEntry | null>(null)
@@ -559,6 +769,7 @@ const AuditLogList: React.FC<AuditLogListProps> = ({ logs: propLogs, isLoading: 
       <AdminDataSurface
         toolbar={(
           <AdminStickyToolbar
+            tabs={tabs}
             filters={(
               <AdminFilterToolbar
                 actions={(
@@ -673,7 +884,7 @@ const AuditLogList: React.FC<AuditLogListProps> = ({ logs: propLogs, isLoading: 
                         {log.changed_fields.length > 0 ? log.changed_fields.join(', ') : 'No field diff'}
                       </div>
                       <div className="truncate font-mono text-[10px] text-gray-500">
-                        {log.ip_address || 'unknown ip'} {log.request_id ? ` - ${log.request_id}` : ''}
+                        {log.ip_address || 'unknown ip'}
                       </div>
                     </TableCell>
                     <TableCell className="py-3 text-right font-mono text-[10px] text-gray-500">

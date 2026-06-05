@@ -10,6 +10,8 @@ import {
   SelectValue,
 } from '@/shared/ui'
 import {
+  ADMIN_FORM_FIELD_CLASS,
+  ADMIN_FORM_HELPER_CLASS,
   ADMIN_MUTED_INPUT_CLASS,
   ADMIN_SELECT_CONTENT_CLASS,
 } from '@/features/admin/ui/form-field-styles'
@@ -42,9 +44,9 @@ export const HintsAttachmentsSection: React.FC<
   const showAttachments = mode === 'all' || mode === 'attachments'
 
   return (
-    <div className={mode === 'all' ? "grid grid-cols-1 gap-3 md:grid-cols-2" : "space-y-4"}>
+    <div className={mode === 'all' ? "grid grid-cols-1 gap-4 md:grid-cols-2" : "space-y-4"}>
       {showHints && (
-        <div className={mode === 'all' ? "md:col-span-2" : "w-full"}>
+        <div className={mode === 'all' ? `md:col-span-2 ${ADMIN_FORM_FIELD_CLASS}` : ADMIN_FORM_FIELD_CLASS}>
           <div className="flex items-center justify-between">
             <Label>Hints</Label>
             <Button type="button" variant="ghost" size="sm" onClick={onAddHint}>
@@ -52,7 +54,7 @@ export const HintsAttachmentsSection: React.FC<
             </Button>
           </div>
           {formData.hint.length === 0 ? (
-            <p className="text-xs text-muted-foreground">No hints added</p>
+            <p className={ADMIN_FORM_HELPER_CLASS}>No hints added</p>
           ) : null}
           <div className="mt-2 space-y-2">
             {formData.hint.map((hint, index) => (
@@ -76,7 +78,7 @@ export const HintsAttachmentsSection: React.FC<
       )}
 
       {showAttachments && (
-        <div className={mode === 'all' ? "md:col-span-2" : "w-full"}>
+        <div className={mode === 'all' ? `md:col-span-2 ${ADMIN_FORM_FIELD_CLASS}` : ADMIN_FORM_FIELD_CLASS}>
           <div className="flex items-center justify-between">
             <Label>Attachments</Label>
             <Button
@@ -92,10 +94,10 @@ export const HintsAttachmentsSection: React.FC<
             {formData.attachments.map((attachment, index) => (
               <div
                 key={index}
-                className="grid grid-cols-12 items-center gap-2"
+                className="grid grid-cols-1 items-center gap-2 sm:grid-cols-12"
               >
                 <Input
-                  className={`col-span-3 ${ADMIN_MUTED_INPUT_CLASS}`}
+                  className={`sm:col-span-3 ${ADMIN_MUTED_INPUT_CLASS}`}
                   value={attachment.name}
                   onChange={(event) =>
                     onUpdateAttachment(index, 'name', event.target.value)
@@ -104,7 +106,7 @@ export const HintsAttachmentsSection: React.FC<
                   required
                 />
                 <Input
-                  className={`col-span-6 ${ADMIN_MUTED_INPUT_CLASS}`}
+                  className={`sm:col-span-6 ${ADMIN_MUTED_INPUT_CLASS}`}
                   value={attachment.url}
                   onChange={(event) =>
                     onUpdateAttachment(index, 'url', event.target.value)
@@ -119,7 +121,7 @@ export const HintsAttachmentsSection: React.FC<
                   }
                 >
                   <SelectTrigger
-                    className={`col-span-2 ${ADMIN_MUTED_INPUT_CLASS}`}
+                    className={`sm:col-span-2 ${ADMIN_MUTED_INPUT_CLASS}`}
                   >
                     <SelectValue placeholder="Type" />
                   </SelectTrigger>
@@ -132,14 +134,14 @@ export const HintsAttachmentsSection: React.FC<
                   type="button"
                   variant="ghost"
                   onClick={() => onRemoveAttachment(index)}
-                  className="col-span-1"
+                  className="sm:col-span-1"
                 >
                   &times;
                 </Button>
               </div>
             ))}
             {formData.attachments.length === 0 ? (
-              <p className="text-xs text-muted-foreground">
+              <p className={ADMIN_FORM_HELPER_CLASS}>
                 No attachments added
               </p>
             ) : null}

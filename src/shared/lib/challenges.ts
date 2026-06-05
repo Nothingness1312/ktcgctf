@@ -437,16 +437,32 @@ export async function getChallengesLite(showAll: boolean = true) {
   try {
     let query = supabase
       .from('challenges')
-      .select('id, title, category, difficulty, event_id, is_active')
+      .select('id, title, description, category, difficulty, event_id, is_active, is_maintenance, points, services')
       .order('created_at', { ascending: false })
 
     if (!showAll) query = query.eq('is_active', true)
 
     const { data, error } = await query
     if (error) throw error
+    const rows = data || []
+    const ids = rows.map((challenge) => challenge.id)
+    let questionIds = new Set<string>()
+
+    if (ids.length > 0) {
+      const { data: subChallengeRows } = await supabase
+        .from('sub_challenges')
+        .select('challenge_id')
+        .in('challenge_id', ids)
+
+      questionIds = new Set((subChallengeRows || []).map((row: any) => String(row.challenge_id)))
+    }
+
     return (data || []).map((challenge) => ({
       ...challenge,
       is_active: challenge.is_active ?? undefined,
+      is_maintenance: challenge.is_maintenance ?? undefined,
+      services: challenge.services ?? undefined,
+      has_questions: questionIds.has(String(challenge.id)),
     }))
   } catch (err) {
     console.error('Error fetching challenges (lite):', err)

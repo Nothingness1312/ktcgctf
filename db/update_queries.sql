@@ -1747,6 +1747,9 @@ BEGIN
   IF NOT is_admin() THEN
     RAISE EXCEPTION 'Only admin can add event';
   END IF;
+  IF EXISTS (SELECT 1 FROM public.events WHERE LOWER(name) = LOWER(p_name)) THEN
+    RAISE EXCEPTION 'Event with this name already exists';
+  END IF;
   INSERT INTO public.events(name, description, start_time, end_time, always_show_challenges, image_url)
   VALUES (p_name, COALESCE(p_description, ''), p_start_time, p_end_time, COALESCE(p_always_show_challenges, FALSE), p_image_url)
   RETURNING id INTO v_event_id;
@@ -1787,6 +1790,11 @@ DECLARE
 BEGIN
   IF NOT is_admin() THEN
     RAISE EXCEPTION 'Only admin can update event';
+  END IF;
+  IF p_name IS NOT NULL AND EXISTS (
+    SELECT 1 FROM public.events WHERE LOWER(name) = LOWER(p_name) AND id != p_event_id
+  ) THEN
+    RAISE EXCEPTION 'Event with this name already exists';
   END IF;
   SELECT jsonb_build_object(
     'name', e.name,

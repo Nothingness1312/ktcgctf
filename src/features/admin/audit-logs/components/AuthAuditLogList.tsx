@@ -62,7 +62,7 @@ function getActionStyle(action: string) {
   }
 }
 
-export default function AuthAuditLogList() {
+export default function AuthAuditLogList({ tabs }: { tabs?: React.ReactNode }) {
   const [logs, setLogs] = useState<AuthAuditLogEntry[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [limit, setLimit] = useState(50)
@@ -116,6 +116,7 @@ export default function AuthAuditLogList() {
     <AdminDataSurface
       toolbar={(
         <AdminStickyToolbar
+          tabs={tabs}
           filters={(
             <AdminFilterToolbar
               actions={(

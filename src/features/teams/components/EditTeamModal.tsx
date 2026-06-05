@@ -88,7 +88,7 @@ export default function EditTeamModal({
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
               Team Name
             </label>
@@ -99,7 +99,7 @@ export default function EditTeamModal({
               maxLength={50}
               className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100"
             />
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
               Max 50 characters. Must be unique.
             </p>
           </div>

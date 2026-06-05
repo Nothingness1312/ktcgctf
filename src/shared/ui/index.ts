@@ -11,6 +11,7 @@ export { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/sha
 export { Badge } from '@/shared/ui/badge'
 export { Button } from '@/shared/ui/button'
 export { Input } from '@/shared/ui/input'
+export { SearchInput, type SearchInputSize } from '@/shared/ui/search-input'
 export { Label } from '@/shared/ui/label'
 export { Switch } from '@/shared/ui/switch'
 export { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select'
