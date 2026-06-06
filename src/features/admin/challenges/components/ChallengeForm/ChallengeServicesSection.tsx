@@ -3,6 +3,7 @@ import { Label, Input, Button, Select, SelectContent, SelectItem, SelectTrigger,
 import { Loader2, X as XIcon } from 'lucide-react'
 import { ChallengeFormData } from '../../types'
 import { parseNxctlService, serializeNxctlService, type NxctlServiceOptions } from '@/features/challenges/lib/nxctl-services'
+import { getChallengesList } from '@/shared/lib'
 import toast from 'react-hot-toast'
 import {
   ADMIN_FORM_HELPER_CLASS,
@@ -20,7 +21,9 @@ type NxctlServiceQuickPick = {
   id: string
   name: string
   key: string
-  source: 'platform' | 'live' | 'both'
+  options: NxctlServiceOptions
+  source: 'nxctl' | 'supabase'
+  label?: string
   enabled: boolean | null
   keyAvailable: boolean | null
 }
@@ -44,10 +47,6 @@ function firstBoolean(...values: unknown[]) {
   return null
 }
 
-function getRuntimeName(item: any) {
-  return firstString(item?.name, item?.challenge?.name)
-}
-
 function getPlatformName(item: Record<string, unknown>) {
   return firstString(
     item.service,
@@ -62,12 +61,12 @@ export const ChallengeServicesSection: React.FC<ChallengeServicesSectionProps> =
   formData,
   onChange,
 }) => {
-  const [platformOptions, setPlatformOptions] = React.useState<NxctlServiceQuickPick[]>([])
-  const [liveOptions, setLiveOptions] = React.useState<NxctlServiceQuickPick[]>([])
-  const [platformLoaded, setPlatformLoaded] = React.useState(false)
-  const [liveLoaded, setLiveLoaded] = React.useState(false)
-  const [platformLoading, setPlatformLoading] = React.useState(false)
-  const [liveLoading, setLiveLoading] = React.useState(false)
+  const [nxctlOptions, setNxctlOptions] = React.useState<NxctlServiceQuickPick[]>([])
+  const [supabaseOptions, setSupabaseOptions] = React.useState<NxctlServiceQuickPick[]>([])
+  const [nxctlLoaded, setNxctlLoaded] = React.useState(false)
+  const [supabaseLoaded, setSupabaseLoaded] = React.useState(false)
+  const [nxctlLoading, setNxctlLoading] = React.useState(false)
+  const [supabaseLoading, setSupabaseLoading] = React.useState(false)
 
   const updateService = (index: number, patch: Partial<{ name: string; key: string; options: NxctlServiceOptions }>) => {
     const current = parseNxctlService(formData.services[index] || '')
@@ -76,9 +75,9 @@ export const ChallengeServicesSection: React.FC<ChallengeServicesSectionProps> =
     onChange({ ...formData, services: next })
   }
 
-  const loadPlatformOptions = React.useCallback(async () => {
-    if (platformLoaded || platformLoading) return
-    setPlatformLoading(true)
+  const loadNxctlOptions = React.useCallback(async () => {
+    if (nxctlLoaded || nxctlLoading) return
+    setNxctlLoading(true)
     try {
       const { supabase } = await import('@/lib/supabase/client')
       const { data: sessionData } = await supabase.auth.getSession()
@@ -86,85 +85,88 @@ export const ChallengeServicesSection: React.FC<ChallengeServicesSectionProps> =
       if (!accessToken) return
 
       const headers = { Authorization: `Bearer ${accessToken}` }
-      const platformRes = await fetch('/api/nxctl?action=admin-challenges', { headers })
-      const platformData = platformRes.ok ? await platformRes.json() : []
-      const pPicks = new Map<string, NxctlServiceQuickPick>()
+      const nxctlRes = await fetch('/api/nxctl?action=admin-challenges', { headers })
+      const nxctlData = nxctlRes.ok ? await nxctlRes.json() : []
+      const picks = new Map<string, NxctlServiceQuickPick>()
 
-      if (Array.isArray(platformData)) {
-        platformData.forEach((item) => {
+      if (Array.isArray(nxctlData)) {
+        nxctlData.forEach((item) => {
           const record = item && typeof item === 'object' ? item as Record<string, unknown> : {}
           const name = getPlatformName(record)
           if (!name) return
           const key = firstString(record.key, record.challenge_key, record.access_key)
+          if (!key) return
           const nameLower = name.toLowerCase()
-          const existing = pPicks.get(nameLower)
-          pPicks.set(nameLower, {
+          const existing = picks.get(nameLower)
+          picks.set(nameLower, {
             id: nameLower,
             name,
             key: key || (existing ? existing.key : ''),
-            source: 'platform',
+            options: {},
+            source: 'nxctl',
             enabled: firstBoolean(record.enabled, record.is_enabled, record.active, record.is_active) ?? true,
             keyAvailable: !!(key || (existing ? existing.key : '')),
           })
         })
       }
 
-      const sorted = Array.from(pPicks.values()).sort((a, b) => {
+      const sorted = Array.from(picks.values()).sort((a, b) => {
         const aValid = !!a.key
         const bValid = !!b.key
         if (aValid && !bValid) return -1
         if (!aValid && bValid) return 1
         return a.name.localeCompare(b.name)
       })
-      setPlatformOptions(sorted)
-      setPlatformLoaded(true)
+      setNxctlOptions(sorted)
+      setNxctlLoaded(true)
     } catch (error) {
       console.error(error)
-      toast.error('Failed to load platform services')
+      toast.error('Failed to load NXCTL services')
     } finally {
-      setPlatformLoading(false)
+      setNxctlLoading(false)
     }
-  }, [platformLoaded, platformLoading])
+  }, [nxctlLoaded, nxctlLoading])
 
-  const loadLiveOptions = React.useCallback(async () => {
-    if (liveLoaded || liveLoading) return
-    setLiveLoading(true)
+  const loadSupabaseOptions = React.useCallback(async () => {
+    if (supabaseLoaded || supabaseLoading) return
+    setSupabaseLoading(true)
     try {
-      const { supabase } = await import('@/lib/supabase/client')
-      const { data: sessionData } = await supabase.auth.getSession()
-      const accessToken = sessionData.session?.access_token
-      if (!accessToken) return
+      const challenges = await getChallengesList(undefined, true, 'all')
+      const picks = new Map<string, NxctlServiceQuickPick>()
 
-      const headers = { Authorization: `Bearer ${accessToken}` }
-      const liveRes = await fetch('/api/nxctl?action=live-services', { headers })
-      const liveData = liveRes.ok ? await liveRes.json() : []
-      const lPicks = new Map<string, NxctlServiceQuickPick>()
-
-      if (Array.isArray(liveData)) {
-        liveData.forEach((item) => {
-          const name = getRuntimeName(item)
-          if (!name) return
-          const id = name.toLowerCase()
-          lPicks.set(id, {
+      challenges.forEach((challenge: any) => {
+        const rawServices = Array.isArray(challenge?.services) ? challenge.services : []
+        rawServices.forEach((rawService: string, index: number) => {
+          const service = parseNxctlService(rawService)
+          if (!service.name.trim()) return
+          const serialized = serializeNxctlService(service)
+          const id = `${service.name.toLowerCase()}:${serialized}`
+          if (picks.has(id)) return
+          picks.set(id, {
             id,
-            name,
-            key: '',
-            source: 'live',
+            name: service.name,
+            key: service.key,
+            options: service.options,
+            source: 'supabase',
+            label: `${service.name} from ${challenge?.title || `challenge ${index + 1}`}`,
             enabled: null,
-            keyAvailable: null,
+            keyAvailable: service.key.trim() ? true : null,
           })
         })
-      }
+      })
 
-      setLiveOptions(Array.from(lPicks.values()).sort((a, b) => a.name.localeCompare(b.name)))
-      setLiveLoaded(true)
+      setSupabaseOptions(Array.from(picks.values()).sort((a, b) => {
+        if (a.name !== b.name) return a.name.localeCompare(b.name)
+        return String(a.label || '').localeCompare(String(b.label || ''))
+      }))
+      setSupabaseLoaded(true)
     } catch (error) {
       console.error(error)
-      toast.error('Failed to load live services')
+      toast.error('Failed to load Supabase services')
     } finally {
-      setLiveLoading(false)
+      setSupabaseLoading(false)
     }
-  }, [liveLoaded, liveLoading])
+  }, [supabaseLoaded, supabaseLoading])
 
   const applyQuickPick = (pick: NxctlServiceQuickPick) => {
     const existing = formData.services.map(raw => parseNxctlService(raw))
@@ -175,15 +177,7 @@ export const ChallengeServicesSection: React.FC<ChallengeServicesSectionProps> =
       return
     }
 
-    let key = pick.key
-    if (!key) {
-      const platformMatch = platformOptions.find(o => o.name.toLowerCase() === pick.name.toLowerCase())
-      if (platformMatch && platformMatch.key) {
-        key = platformMatch.key
-      }
-    }
-
-    const serialized = serializeNxctlService({ name: pick.name, key })
+    const serialized = serializeNxctlService({ name: pick.name, key: pick.key, options: pick.options })
     onChange({ ...formData, services: [...formData.services, serialized] })
     toast.success(`Successfully added service "${pick.name}"`)
   }
@@ -196,26 +190,26 @@ export const ChallengeServicesSection: React.FC<ChallengeServicesSectionProps> =
           <Select
             value=""
             onValueChange={(id) => {
-              const pick = platformOptions.find(o => o.id === id)
+              const pick = nxctlOptions.find(o => o.id === id)
               if (pick) applyQuickPick(pick)
             }}
-            onOpenChange={(open) => { if (open) loadPlatformOptions() }}
+            onOpenChange={(open) => { if (open) loadNxctlOptions() }}
           >
             <SelectTrigger className={`${ADMIN_SELECT_TRIGGER_CLASS} h-8 w-[180px] text-xs`}>
-              <SelectValue placeholder="Add from Platform" />
+              <SelectValue placeholder="Add from NXCTL" />
             </SelectTrigger>
             <SelectContent className={`${ADMIN_SELECT_CONTENT_CLASS} max-h-[250px] overflow-y-auto`}>
-              {platformLoading && (
+              {nxctlLoading && (
                 <div className="flex items-center justify-center py-3 gap-2 text-xs text-muted-foreground">
                   <Loader2 size={14} className="animate-spin" /> Loading...
                 </div>
               )}
-              {!platformLoading && platformLoaded && platformOptions.length === 0 && (
-                <div className="py-3 text-center text-xs text-muted-foreground">No platform services found</div>
+              {!nxctlLoading && nxctlLoaded && nxctlOptions.length === 0 && (
+                <div className="py-3 text-center text-xs text-muted-foreground">No NXCTL services with keys found</div>
               )}
-              {platformOptions.map((opt) => (
+              {nxctlOptions.map((opt) => (
                 <SelectItem key={opt.id} value={opt.id}>
-                  {opt.name} {opt.key ? `(Key: ${opt.key})` : '(No Key)'}
+                  {opt.name} (Key: {opt.key})
                 </SelectItem>
               ))}
             </SelectContent>
@@ -224,26 +218,27 @@ export const ChallengeServicesSection: React.FC<ChallengeServicesSectionProps> =
           <Select
             value=""
             onValueChange={(id) => {
-              const pick = liveOptions.find(o => o.id === id)
+              const pick = supabaseOptions.find(o => o.id === id)
               if (pick) applyQuickPick(pick)
             }}
-            onOpenChange={(open) => { if (open) loadLiveOptions() }}
+            onOpenChange={(open) => { if (open) loadSupabaseOptions() }}
           >
             <SelectTrigger className={`${ADMIN_SELECT_TRIGGER_CLASS} h-8 w-[180px] text-xs`}>
-              <SelectValue placeholder="Add from Live" />
+              <SelectValue placeholder="Add from Supabase" />
             </SelectTrigger>
             <SelectContent className={`${ADMIN_SELECT_CONTENT_CLASS} max-h-[250px] overflow-y-auto`}>
-              {liveLoading && (
+              {supabaseLoading && (
                 <div className="flex items-center justify-center py-3 gap-2 text-xs text-muted-foreground">
                   <Loader2 size={14} className="animate-spin" /> Loading...
                 </div>
               )}
-              {!liveLoading && liveLoaded && liveOptions.length === 0 && (
-                <div className="py-3 text-center text-xs text-muted-foreground">No live services found</div>
+              {!supabaseLoading && supabaseLoaded && supabaseOptions.length === 0 && (
+                <div className="py-3 text-center text-xs text-muted-foreground">No Supabase service configs found</div>
               )}
-              {liveOptions.map((opt) => (
+              {supabaseOptions.map((opt) => (
                 <SelectItem key={opt.id} value={opt.id}>
-                  {opt.name} 🟢 Running
+                  {opt.label || opt.name}
+                  {opt.options.type === 'ssh' ? ` (SSH${opt.options.user ? `: ${opt.options.user}` : ''})` : ''}
                 </SelectItem>
               ))}
             </SelectContent>

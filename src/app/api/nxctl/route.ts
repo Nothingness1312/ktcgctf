@@ -257,6 +257,7 @@ export async function POST(request: Request) {
     const action = body?.action as NxctlAction | undefined
     const name = typeof body?.name === 'string' ? body.name : ''
     const all = body?.all === true
+    const force = body?.force === true
     const challengeKey = challengeKeyFromRequest(request, body?.key)
 
     if (!action || !['up', 'down', 'restart', 'extend'].includes(action)) {
@@ -273,7 +274,8 @@ export async function POST(request: Request) {
         return jsonError('Global admin access required', 403)
       }
 
-      const result = await safeFetch(`${apiUrl}/${action}?all=true`, {
+      const adminPath = action === 'down' ? '/admin/down' : `/${action}?all=true`
+      const result = await safeFetch(`${apiUrl}${adminPath}`, {
         method: 'POST',
         headers: buildNxctlHeaders(null, true),
       })
@@ -285,7 +287,7 @@ export async function POST(request: Request) {
       return jsonError('Missing challenge name')
     }
 
-    const isAdminAction = action === 'down'
+    const isAdminAction = action === 'down' || (action === 'restart' && force)
     if (isAdminAction) {
       const isAdmin = await isGlobalAdminRequest(request)
       if (!isAdmin) {
@@ -293,7 +295,12 @@ export async function POST(request: Request) {
       }
     }
 
-    const result = await safeFetch(`${apiUrl}/${action}/${servicePath(name)}`, {
+    const upstreamPath = action === 'down'
+      ? `/admin/down/${servicePath(name)}`
+      : action === 'restart' && force
+        ? `/admin/restart/${servicePath(name)}?force=true`
+        : `/${action}/${servicePath(name)}`
+    const result = await safeFetch(`${apiUrl}${upstreamPath}`, {
       method: 'POST',
       headers: buildNxctlHeaders(challengeKey, isAdminAction),
     })

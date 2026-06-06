@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useEffect, useMemo, useState } from 'react'
-import { Clock, Loader2, Play, PowerOff, RefreshCcw } from 'lucide-react'
+import { Clock, Loader2, Play, Power, PowerOff, RefreshCcw } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { SURFACE_GLASS_CARD_COMPACT_CLASS } from '@/shared/styles'
 import { parseNxctlService, type NxctlServiceEntry } from '../lib/nxctl-services'
@@ -9,6 +9,9 @@ import { parseNxctlService, type NxctlServiceEntry } from '../lib/nxctl-services
 type ServiceAction = 'up' | 'restart' | 'extend'
 type ServiceActionLoadingState = ServiceAction | null
 const CHALLENGE_KEY_HEADER = 'X-NXCTL-Challenge-Key'
+const EXTEND_REMINDER_SOUND = '/sounds/notif_ringtone.mp3'
+const EXTEND_REMINDER_VOLUME = 0.25
+const EXTEND_FINAL_REMINDER_INTERVAL_MS = 15000
 
 interface ChallengeServicesPanelProps {
   open: boolean
@@ -191,6 +194,12 @@ const getNxctlErrorMessage = (data: any) => {
 
 const getNxctlStatusName = (item: any) => String(item?.name || item?.challenge?.name || '').trim()
 
+const getServiceDisplayName = (name: string) => {
+  const normalized = name.trim().replace(/\\/g, '/')
+  const parts = normalized.split('/').filter(Boolean)
+  return parts.at(-1) || name
+}
+
 const getRestartState = (details: any) => {
   const restart = details?.runtime?.restart || details?.restart || null
   const enabled = firstBoolean(
@@ -253,6 +262,8 @@ const normalizeNxctlStatusDetail = (item: any) => {
     challenge: {
       name: getNxctlStatusName(item),
       type: item?.type || item?.challenge?.type || null,
+      port: item?.port ?? item?.challenge?.port ?? null,
+      ports: Array.isArray(item?.ports) ? item.ports : Array.isArray(item?.challenge?.ports) ? item.challenge.ports : [],
       can_restart: restartEnabled,
     },
     runtime: {
@@ -319,6 +330,46 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
   const [nowTick, setNowTick] = useState<number>(() => Date.now())
   const inspectRunRef = React.useRef(0)
   const expiryReminderRef = React.useRef<Record<string, boolean>>({})
+  const extendSoundReminderRef = React.useRef<Record<string, { initial: boolean; initialPending?: boolean; finalPending?: boolean; finalNextAt?: number }>>({})
+  const extendReminderAudioRef = React.useRef<HTMLAudioElement | null>(null)
+  const extendReminderRunRef = React.useRef(0)
+
+  const stopExtendReminderSound = React.useCallback(() => {
+    const audio = extendReminderAudioRef.current
+    if (!audio) return
+    audio.pause()
+    audio.currentTime = 0
+    extendReminderAudioRef.current = null
+  }, [])
+
+  const playExtendReminderSound = React.useCallback(async () => {
+    if (!open || document.visibilityState !== 'visible') return false
+
+    const currentAudio = extendReminderAudioRef.current
+    if (currentAudio && !currentAudio.paused && currentAudio.currentTime > 0) return true
+
+    const audio = new Audio(EXTEND_REMINDER_SOUND)
+    audio.volume = EXTEND_REMINDER_VOLUME
+    extendReminderAudioRef.current = audio
+    audio.addEventListener('ended', () => {
+      if (extendReminderAudioRef.current === audio) {
+        extendReminderAudioRef.current = null
+      }
+    }, { once: true })
+    try {
+      await audio.play()
+      return true
+    } catch {
+      if (extendReminderAudioRef.current === audio) {
+        extendReminderAudioRef.current = null
+      }
+      return false
+    }
+  }, [open])
+
+  useEffect(() => {
+    return () => stopExtendReminderSound()
+  }, [stopExtendReminderSound])
 
   const visibleServices = useMemo(
     () => parsedServices.filter((service) => !hiddenServices[service.name]),
@@ -501,7 +552,16 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
 
   useEffect(() => {
     if (!open) {
+      extendReminderRunRef.current += 1
       expiryReminderRef.current = {}
+      Object.entries(extendSoundReminderRef.current).forEach(([name, state]) => {
+        extendSoundReminderRef.current[name] = {
+          ...state,
+          initialPending: false,
+          finalPending: false,
+        }
+      })
+      stopExtendReminderSound()
       return
     }
 
@@ -513,22 +573,49 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
       const timeSinceFetch = Math.max(0, (nowTick - fetchTime) / 1000)
       const remainingSec = remainingSecFromApi !== null ? Math.max(0, remainingSecFromApi - timeSinceFetch) : null
       const thresholdSec = Number(details?.runtime?.extend?.threshold_seconds || 300)
+      const extendState = getExtendState(details, remainingSec, timeSinceFetch)
 
-      if (!isRunning || remainingSec === null || remainingSec <= 0) {
+      if (!isRunning || remainingSec === null || remainingSec <= 0 || !extendState.canExtend) {
         expiryReminderRef.current[service.name] = false
         return
       }
 
       if (remainingSec > thresholdSec) {
         expiryReminderRef.current[service.name] = false
+        delete extendSoundReminderRef.current[service.name]
         return
+      }
+
+      const soundState = extendSoundReminderRef.current[service.name] ?? { initial: false, final: false }
+      const shouldPlayInitialReminder = !soundState.initial
+      const shouldPlayFinalReminder = remainingSec <= 60 && !soundState.final
+
+      if (shouldPlayInitialReminder || shouldPlayFinalReminder) {
+        const reminderKind = shouldPlayFinalReminder ? 'final' : 'initial'
+        const pendingKey = reminderKind === 'final' ? 'finalPending' : 'initialPending'
+        if (!soundState[pendingKey]) {
+          extendSoundReminderRef.current[service.name] = {
+            ...soundState,
+            [pendingKey]: true,
+          }
+
+          void playExtendReminderSound().then((played) => {
+            const latest = extendSoundReminderRef.current[service.name] ?? { initial: false, final: false }
+            extendSoundReminderRef.current[service.name] = {
+              ...latest,
+              initial: played && reminderKind === 'final' ? true : latest.initial,
+              [reminderKind]: played ? true : latest[reminderKind],
+              [pendingKey]: false,
+            }
+          })
+        }
       }
 
       if (expiryReminderRef.current[service.name]) return
 
       expiryReminderRef.current[service.name] = true
       toast(
-        `${service.name} expires in ${formatDuration(Math.floor(remainingSec))}. Extend it if needed.`,
+        `${getServiceDisplayName(service.name)} expires in ${formatDuration(Math.floor(remainingSec))}. Extend it if needed.`,
         {
           icon: '!',
           duration: 7000,
@@ -536,7 +623,7 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
         }
       )
     })
-  }, [open, visibleServices, serviceDetails, serviceDetailsFetchTime, nowTick])
+  }, [open, visibleServices, serviceDetails, serviceDetailsFetchTime, nowTick, playExtendReminderSound, stopExtendReminderSound])
 
   const inspectService = async (service: NxctlServiceEntry) => {
     setServiceDetailsLoading((prev) => ({ ...prev, [service.name]: true }))
@@ -588,7 +675,8 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
     }
 
     setServiceActionLoading((prev) => ({ ...prev, [service.name]: action }))
-    const toastId = toast.loading(`${action}ing ${service.name}...`)
+    const serviceDisplayName = getServiceDisplayName(service.name)
+    const toastId = toast.loading(`${action}ing ${serviceDisplayName}...`)
 
     try {
       const res = await fetch('/api/nxctl', {
@@ -599,15 +687,15 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
 
       const data = await res.json()
       if (res.ok) {
-        toast.success(`Successfully ${action}ed ${service.name}`, { id: toastId })
+        toast.success(`Successfully ${action}ed ${serviceDisplayName}`, { id: toastId })
         await new Promise((resolve) => setTimeout(resolve, 500))
         await inspectService(service)
       } else {
-        toast.error(`Failed to ${action} ${service.name}: ${getNxctlErrorMessage(data)}`, { id: toastId })
+        toast.error(`Failed to ${action} ${serviceDisplayName}: ${getNxctlErrorMessage(data)}`, { id: toastId })
       }
     } catch (error) {
       console.error(`Failed to ${action} ${service.name}`, error)
-      toast.error(`Error ${action}ing ${service.name}`, { id: toastId })
+      toast.error(`Error ${action}ing ${serviceDisplayName}`, { id: toastId })
     } finally {
       setServiceActionLoading((prev) => ({ ...prev, [service.name]: null }))
     }
@@ -622,9 +710,11 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
       </p>
       <div className="grid grid-cols-1 gap-1.5">
         {visibleServices.map((service, idx) => {
+          const serviceDisplayName = getServiceDisplayName(service.name)
           const details = serviceDetails[service.name]
           const isRunning = details?.runtime?.status === 'running'
           const serviceType = details?.challenge?.type
+          const hasPublishedPort = Boolean(details?.challenge?.port) || (Array.isArray(details?.challenge?.ports) && details.challenge.ports.length > 0)
           const endpoints = Array.isArray(details?.exports)
             ? details.exports
               .map((item: any, exportIdx: number) => {
@@ -680,6 +770,11 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
           const extendDelayLabel = !canExtend
             ? extendCooldownLabel || formatExtendWaitDuration(extendState.waitSeconds)
             : null
+          const extendButtonAlertClass = canExtend && isRunning && remainingSec !== null
+            ? remainingSec <= 60
+              ? 'border-red-500/40 bg-red-500/15 text-red-200 shadow-red-500/10 hover:border-red-400/70 hover:bg-red-500/25 dark:border-red-400/40 dark:bg-red-500/15 dark:text-red-200 dark:hover:bg-red-500/25'
+              : 'border-amber-500/40 bg-amber-500/15 text-amber-200 shadow-amber-500/10 hover:border-amber-400/70 hover:bg-amber-500/25 dark:border-amber-400/40 dark:bg-amber-500/15 dark:text-amber-200 dark:hover:bg-amber-500/25'
+            : ''
 
           const formatSecs = (s: number) => {
             if (s <= 0) return '0s'
@@ -700,13 +795,28 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
           const errorMessage = serviceDetailsError[service.name]
           const actionLoading = serviceActionLoading[service.name] ?? null
           const isActionLoading = actionLoading !== null
+          const isContainerOnly = isRunning && !hasPublishedPort && endpoints.length === 0
+          const statusLabel = !details
+            ? 'Unknown'
+            : isRunning
+              ? isContainerOnly
+                ? 'Container only'
+                : 'Running'
+              : 'Not running'
+          const statusClass = !details
+            ? 'border-gray-700/60 bg-gray-900/40 text-gray-500'
+            : isRunning
+              ? isContainerOnly
+                ? 'border-emerald-500/25 bg-emerald-500/10 text-emerald-300'
+                : 'border-emerald-500/25 bg-emerald-500/10 text-emerald-300'
+              : 'border-gray-600/40 bg-gray-800/30 text-gray-400'
 
           return (
             <div key={`${service.name}-${idx}`} className={`group flex min-h-[74px] flex-col gap-1.5 px-3 py-2.5 transition-colors duration-200 ${SURFACE_GLASS_CARD_COMPACT_CLASS} hover:border-blue-500/40`}>
               {/* Header: name + action buttons + timer */}
               <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 min-h-9">
                 <div className="min-w-0 color-primary font-medium truncate">
-                    {service.name}
+                    {serviceDisplayName}
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
@@ -768,7 +878,7 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
                   </button>
                   <button
                     type="button"
-                    className={serviceActionButtonClass}
+                    className={`${serviceActionButtonClass} ${extendButtonAlertClass}`}
                     onClick={() => handleServiceAction(service, 'extend')}
                     title={(() => {
                       if (isLoading) return 'Checking status...'
@@ -812,11 +922,11 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
                   </span>
                 ) : (
                   <span
-                    className={`inline-flex h-7 min-w-[100px] select-none items-center justify-between gap-1 rounded-md border px-2 text-[10px] font-semibold tabular-nums ${timerClass}`}
-                    title="Time remaining"
+                    className={`inline-flex h-7 min-w-[100px] select-none items-center justify-between gap-1 rounded-md border px-2 text-[10px] font-semibold tabular-nums ${statusClass}`}
+                    title="Runtime status"
                   >
-                    <Clock size={11} className="shrink-0 opacity-80" />
-                    {details ? 'Not running' : 'Unknown status'}
+                    {isRunning ? <Power size={11} className="shrink-0 opacity-80" /> : <Clock size={11} className="shrink-0 opacity-80" />}
+                    {statusLabel}
                   </span>
                 )}
               </div>
@@ -891,7 +1001,14 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
                     ))}
                   </div>
                 ) : (
-                  <span className="text-[11px] text-yellow-500">Waiting for endpoint allocation...</span>
+                  isContainerOnly ? (
+                    <span className="inline-flex items-center gap-1.5 text-[11px] text-emerald-400 select-none">
+                      <Power size={11} className="shrink-0 opacity-70" />
+                      Running without published endpoint
+                    </span>
+                  ) : (
+                    <span className="text-[11px] text-yellow-500">Waiting for endpoint allocation...</span>
+                  )
                 )
               )}
 

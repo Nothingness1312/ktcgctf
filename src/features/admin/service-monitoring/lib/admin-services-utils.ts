@@ -152,6 +152,10 @@ export function normalizeNxctlStatusDetail(item: any): AdminNxctlStatusDetail {
     item?.runtime?.remaining_seconds,
     item?.remaining_seconds
   )
+  const port = firstNumber(
+    item?.port,
+    item?.challenge?.port
+  )
   const extendCooldown = firstNumber(
     item?.runtime?.extend_cooldown,
     item?.extend_cooldown
@@ -161,6 +165,8 @@ export function normalizeNxctlStatusDetail(item: any): AdminNxctlStatusDetail {
     challenge: {
       name: getNxctlStatusName(item),
       type: item?.type || item?.challenge?.type || null,
+      port,
+      ports: Array.isArray(item?.ports) ? item.ports : Array.isArray(item?.challenge?.ports) ? item.challenge.ports : [],
       can_restart: restartEnabled,
     },
     runtime: {
@@ -258,6 +264,9 @@ export function getRuntimeStatusFromDetail(
   if (runtimeStatus === 'running') {
     const remaining = getRemainingSecondsFromDetail(detail, fetchedAt, now)
     if (remaining !== null && remaining <= 0) return 'expired'
+    if ((detail.challenge.port === null || detail.challenge.port === 0) && detail.exports.length === 0) {
+      return 'container_only'
+    }
     return 'running'
   }
 
@@ -549,13 +558,13 @@ function getLiveComparison(
   platformEntries: AdminPlatformChallengeEntry[]
 ): AdminServiceComparisonStatus {
   if (platformEntries.length === 0) {
-    return rowStatus === 'running' ? 'running_unregistered' : 'missing_from_platform'
+    return rowStatus === 'running' || rowStatus === 'container_only' ? 'running_unregistered' : 'missing_from_platform'
   }
   if (platformEntries.some((entry) => entry.requiresKey && !entry.keyAvailable)) return 'key_missing'
   if (platformEntries.every((entry) => !entry.enabled)) {
-    return rowStatus === 'running' ? 'disabled_running' : 'valid'
+    return rowStatus === 'running' || rowStatus === 'container_only' ? 'disabled_running' : 'valid'
   }
-  if (rowStatus === 'running') return 'valid'
+  if (rowStatus === 'running' || rowStatus === 'container_only') return 'valid'
   if (rowStatus === 'unknown') return 'unknown'
   return 'configured_not_running'
 }

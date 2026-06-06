@@ -126,11 +126,12 @@ function LiveNxctlActions({
   onAction: (target: AdminNxctlActionTarget, action: AdminServiceAction) => void
   now: number
 }) {
-  const isRunning = row.status === 'running'
+  const isRunning = row.status === 'running' || row.status === 'container_only'
   const isBusy = loadingAction !== null
   const hasKey = target.key.trim() !== ''
   const restartCooldown = Math.max(0, Number(row.details.runtime.restart_cooldown || 0))
   const restartEnabled = row.details.runtime.can_restart !== false
+  const canForceRestart = isGlobalAdmin
   const extendState = getExtendState(row, now)
   const actionButtonClass = 'h-8 rounded-lg px-2.5 text-xs'
 
@@ -158,9 +159,9 @@ function LiveNxctlActions({
         variant="outline"
         size="sm"
         className={actionButtonClass}
-        onClick={() => onAction(target, 'restart')}
-        disabled={isBusy || !isRunning || !hasKey || !restartEnabled || restartCooldown > 0}
-        title={!restartEnabled ? 'Restart disabled for this service' : 'Restart service'}
+        onClick={() => onAction({ ...target, force: canForceRestart }, 'restart')}
+        disabled={isBusy || !isRunning || !hasKey || ((!restartEnabled || restartCooldown > 0) && !canForceRestart)}
+        title={!restartEnabled && canForceRestart ? 'Force restart service' : !restartEnabled ? 'Restart disabled for this service' : restartCooldown > 0 && canForceRestart ? 'Force restart during cooldown' : 'Restart service'}
       >
         {renderIcon('restart', <RefreshCcw className="h-3.5 w-3.5" />)}
         Restart
@@ -280,7 +281,7 @@ export default function AdminLiveServicesTable({
                     </TableCell>
 
                     <TableCell>
-                      {row.status === 'running' && remaining !== null ? (
+                      {(row.status === 'running' || row.status === 'container_only') && remaining !== null ? (
                         <span className="flex items-center gap-1 whitespace-nowrap font-mono text-xs text-gray-500 dark:text-gray-400">
                           <Clock className="h-3 w-3" />
                           {formatDuration(remaining)}

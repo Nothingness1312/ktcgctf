@@ -4,6 +4,7 @@ import type { AdminServiceStatus } from '../types'
 const STATUS_LABEL: Record<AdminServiceStatus, string> = {
   running: 'Running',
   stopped: 'Stopped',
+  container_only: 'Container only',
   expired: 'Expired',
   error: 'Error',
   unknown: 'Unknown',
@@ -12,6 +13,7 @@ const STATUS_LABEL: Record<AdminServiceStatus, string> = {
 const STATUS_TONE: Record<AdminServiceStatus, AdminStatusBadgeTone> = {
   running: 'success',
   stopped: 'neutral',
+  container_only: 'success',
   expired: 'warning',
   error: 'danger',
   unknown: 'muted',

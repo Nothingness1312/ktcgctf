@@ -43,6 +43,12 @@ const ChallengeDescription = React.memo(function ChallengeDescription({ descript
   )
 })
 
+function getChallengeDialogTitle(title: string) {
+  const normalized = title.trim().replace(/\\/g, '/')
+  const parts = normalized.split('/').filter(Boolean)
+  return parts.at(-1) || title
+}
+
 interface ChallengeDetailDialogProps {
   open: boolean
   challenge: (ChallengeWithSolve & { is_team_solved?: boolean }) | null
@@ -150,6 +156,7 @@ const ChallengeDetailDialog: React.FC<ChallengeDetailDialogProps> = ({
   const { textClass: diffTextColor } = getDifficultyStyle(colorName);
   const { borderColor: categoryBorderColor, badgeColor: categoryBadgeColor } = getCategoryDetails(challenge.category);
   const eventName = events.find(e => e.id === challenge.event_id)?.name || '';
+  const dialogTitle = getChallengeDialogTitle(challenge.title);
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) onClose() }}>
@@ -164,7 +171,7 @@ const ChallengeDetailDialog: React.FC<ChallengeDetailDialogProps> = ({
             <div className="flex items-start justify-between gap-4">
               <DialogTitle asChild>
                 <h2 className="select-text text-2xl font-black text-gray-900 dark:text-gray-100 tracking-tight leading-tight">
-                  {challenge.title}
+                  {dialogTitle}
                 </h2>
               </DialogTitle>
               {eventName && (

@@ -251,7 +251,7 @@ export function useAdminServicesData() {
       const res = await fetch('/api/nxctl', {
         method: 'POST',
         headers: buildNxctlHeaders(target.key, true, accessToken),
-        body: JSON.stringify({ action, name: target.name }),
+        body: JSON.stringify({ action, name: target.name, ...(target.force ? { force: true } : {}) }),
       })
       const data = await res.json()
 
