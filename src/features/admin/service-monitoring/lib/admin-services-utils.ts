@@ -257,8 +257,9 @@ export function getRuntimeStatusFromDetail(
   now = Date.now()
 ): AdminServiceStatus {
   if (error) return 'error'
+  if (!detail) return 'unknown'
 
-  const runtimeStatus = detail?.runtime.status?.toLowerCase()
+  const runtimeStatus = detail.runtime.status?.toLowerCase()
   if (!runtimeStatus) return 'unknown'
 
   if (runtimeStatus === 'running') {

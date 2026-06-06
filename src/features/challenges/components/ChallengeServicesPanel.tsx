@@ -330,7 +330,7 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
   const [nowTick, setNowTick] = useState<number>(() => Date.now())
   const inspectRunRef = React.useRef(0)
   const expiryReminderRef = React.useRef<Record<string, boolean>>({})
-  const extendSoundReminderRef = React.useRef<Record<string, { initial: boolean; initialPending?: boolean; finalPending?: boolean; finalNextAt?: number }>>({})
+  const extendSoundReminderRef = React.useRef<Record<string, { initial: boolean; final: boolean; initialPending?: boolean; finalPending?: boolean; finalNextAt?: number }>>({})
   const extendReminderAudioRef = React.useRef<HTMLAudioElement | null>(null)
   const extendReminderRunRef = React.useRef(0)
 
