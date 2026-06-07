@@ -287,6 +287,17 @@ export async function adminAddEventMember(eventId: string, userId: string): Prom
   return Boolean(data)
 }
 
+export async function getSolvedEventIds(): Promise<string[]> {
+  const { data, error } = await supabase.rpc('get_solved_event_ids')
+
+  if (error) {
+    console.error('Error fetching solved event IDs:', error)
+    return []
+  }
+
+  return ((data || []) as { event_id: string }[]).map((d) => String(d.event_id))
+}
+
 export async function adminRemoveEventMember(eventId: string, userId: string): Promise<boolean> {
   const { data, error } = await supabase.rpc('admin_remove_event_member', {
     p_event_id: eventId,

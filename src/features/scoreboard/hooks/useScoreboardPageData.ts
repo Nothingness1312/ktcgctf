@@ -8,6 +8,7 @@ import {
   getTopProgressByUsernames,
 } from '@/shared/lib'
 import { getRecentSolves } from '@/features/logs/lib/log-service'
+import { getSolvedEventIds } from '@/features/events/services/event.service'
 import { useAuth, useTheme } from '@/shared/contexts'
 import { useEventContext } from '@/features/events/contexts/EventContext'
 import type { LeaderboardEntry } from '@/shared/types'
@@ -45,6 +46,7 @@ export function useScoreboardPageData() {
     router.replace(`${pathname}?${params.toString()}`, { scroll: false })
   }, [searchParams, pathname, router])
   const { startedEvents, selectedEvent, setSelectedEvent } = useEventContext()
+  const [solvedEventIds, setSolvedEventIds] = useState<string[] | null>(null)
   const [hasMounted, setHasMounted] = useState(false)
   const [stableLeaderboard, setStableLeaderboard] = useState<LeaderboardEntry[]>([])
   const leaderboardLengthRef = useRef(0)
@@ -52,6 +54,10 @@ export function useScoreboardPageData() {
 
   useEffect(() => {
     setHasMounted(true)
+  }, [])
+
+  useEffect(() => {
+    getSolvedEventIds().then(setSolvedEventIds)
   }, [])
 
   useEffect(() => {
@@ -127,6 +133,16 @@ export function useScoreboardPageData() {
 
   const eventParam = getScoreboardEventParam(selectedEvent)
 
+  const filteredStartedEvents = useMemo(() => {
+    if (solvedEventIds === null) return startedEvents
+    const solved = startedEvents.filter((e) => solvedEventIds.includes(String(e.id)))
+    const selectedInList = selectedEvent === 'all' || selectedEvent === 'main' || solved.some((e) => String(e.id) === String(selectedEvent))
+    if (selectedInList) return solved
+    const currentEvent = startedEvents.find((e) => String(e.id) === String(selectedEvent))
+    if (currentEvent) return [...solved, currentEvent]
+    return solved
+  }, [startedEvents, solvedEventIds, selectedEvent])
+
   const displayedLeaderboard = view === 'top' ? leaderboard.slice(0, 100) : leaderboard
   const displayedStableLeaderboard = view === 'top' ? stableLeaderboard.slice(0, 100) : stableLeaderboard
 
@@ -140,7 +156,7 @@ export function useScoreboardPageData() {
     setFirstBloodMode,
     view,
     setView,
-    startedEvents,
+    startedEvents: filteredStartedEvents,
     selectedEvent,
     setSelectedEvent,
     hasMounted,

@@ -702,6 +702,10 @@ export type Database = {
         }[];
       };
       get_event_join_settings: { Args: { p_event_id: string }; Returns: Json };
+      get_solved_event_ids: {
+        Args: Record<PropertyKey, never>;
+        Returns: { event_id: string }[];
+      };
       get_flag: { Args: { p_challenge_id: string }; Returns: string };
       get_flag_placeholder: { Args: { p_flag: string }; Returns: string };
       get_info: { Args: Record<PropertyKey, never>; Returns: Json };

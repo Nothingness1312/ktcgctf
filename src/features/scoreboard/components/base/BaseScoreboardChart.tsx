@@ -12,7 +12,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js'
-import type { ChartData, ChartOptions, Plugin, TooltipItem } from 'chart.js'
+import type { ChartData, ChartOptions, ChartType, Plugin, TooltipItem, TooltipPositionerFunction } from 'chart.js'
 
 import BaseScoreboardCard from './BaseScoreboardCard'
 
@@ -25,6 +25,7 @@ type ScoreboardSolveMarker = {
 
 type ScoreboardOverlapSegment = {
   colors: string[]
+  seriesIndices: number[]
   endIndex: number
   score: number
   startIndex: number
@@ -35,6 +36,10 @@ declare module 'chart.js' {
     $scoreboardRevealProgress?: number
     $scoreboardOverlapSegments?: ScoreboardOverlapSegment[]
     $scoreboardSolveMarkers?: ScoreboardSolveMarker[]
+  }
+
+  interface TooltipPositionerMap {
+    offCenter: TooltipPositionerFunction<ChartType>
   }
 }
 
@@ -104,6 +109,8 @@ const scoreboardSolvePointPlugin: Plugin<'line'> = {
 
     ctx.save()
     markers?.forEach((marker) => {
+      if (!chart.isDatasetVisible(marker.datasetIndex)) return
+
       const x = xScale.getPixelForValue(marker.dataIndex)
       const y = yScale.getPixelForValue(marker.score)
       const isActive = activePointKeys.has(`${marker.datasetIndex}:${marker.dataIndex}`)
@@ -133,10 +140,11 @@ const scoreboardSolvePointPlugin: Plugin<'line'> = {
 
     chart.getActiveElements().forEach((element) => {
       if (element.index === labelCount - 1) return
+      if (!chart.isDatasetVisible(element.datasetIndex)) return
 
       const dataset = chart.data.datasets[element.datasetIndex]
       const rawValue = dataset?.data?.[element.index]
-      if (typeof rawValue !== 'number') return
+      if (typeof rawValue !== 'number' || rawValue <= 0) return
 
       const borderColor = dataset.borderColor
       const color = typeof borderColor === 'string'
@@ -205,11 +213,16 @@ const scoreboardOverlapSegmentPlugin: Plugin<'line'> = {
 
     ctx.save()
     segments.forEach((segment) => {
+      const visibleColors = segment.colors.filter((_, i) =>
+        chart.isDatasetVisible(segment.seriesIndices[i])
+      )
+      if (visibleColors.length < 2) return
+
       const startX = xScale.getPixelForValue(segment.startIndex)
       const endX = xScale.getPixelForValue(segment.endIndex)
       const baseY = yScale.getPixelForValue(segment.score)
-      const spacing = segment.colors.length > 3 ? 1.65 : 2
-      const center = (segment.colors.length - 1) / 2
+      const spacing = visibleColors.length > 3 ? 1.65 : 2
+      const center = (visibleColors.length - 1) / 2
       const maxOffset = center * spacing
       let shiftY = 0
 
@@ -225,11 +238,11 @@ const scoreboardOverlapSegmentPlugin: Plugin<'line'> = {
       ctx.moveTo(startX, baseY + shiftY)
       ctx.lineTo(endX, baseY + shiftY)
       ctx.lineCap = 'butt'
-      ctx.lineWidth = Math.min(6, 3 + segment.colors.length)
+      ctx.lineWidth = Math.min(6, 3 + visibleColors.length)
       ctx.strokeStyle = 'rgba(15,23,42,0.9)'
       ctx.stroke()
 
-      segment.colors.forEach((color, index) => {
+      visibleColors.forEach((color, index) => {
         const y = baseY + shiftY + (index - center) * spacing
 
         ctx.beginPath()
@@ -243,6 +256,22 @@ const scoreboardOverlapSegmentPlugin: Plugin<'line'> = {
     })
     ctx.restore()
   },
+}
+
+Tooltip.positioners.offCenter = function(elements, eventPosition) {
+  if (!elements.length) return false
+
+  const context = (elements[0].element as unknown as Record<string, unknown>).$context as
+    { chart?: ChartJS } | undefined
+  const chart = context?.chart
+  if (!chart?.chartArea) return { x: eventPosition.x ?? 0, y: eventPosition.y ?? 0 }
+
+  const { top } = chart.chartArea
+
+  return {
+    x: (eventPosition.x ?? 0) - 24,
+    y: top + 24,
+  }
 }
 
 ChartJS.register(
@@ -315,8 +344,28 @@ function getFirstSolveDate(series: ChartSeries) {
 }
 
 function toLocalMinuteString(date: Date) {
-  const offsetMs = date.getTimezoneOffset() * 60000
-  return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16)
+  return date.toISOString().slice(0, 16)
+}
+
+function formatDateLabel(dateStr: string) {
+  const d = new Date(dateStr)
+  if (isNaN(d.getTime())) return dateStr
+  const hh = d.getHours().toString().padStart(2, '0')
+  const mm = d.getMinutes().toString().padStart(2, '0')
+  const dd = d.getDate().toString().padStart(2, '0')
+  const mon = (d.getMonth() + 1).toString().padStart(2, '0')
+  const yyyy = d.getFullYear()
+  return `${hh}:${mm} ${dd}/${mon}/${yyyy}`
+}
+
+function formatShortDateLabel(dateStr: string) {
+  const d = new Date(dateStr)
+  if (isNaN(d.getTime())) return dateStr
+  const dd = d.getDate().toString().padStart(2, '0')
+  const mon = (d.getMonth() + 1).toString().padStart(2, '0')
+  const hh = d.getHours().toString().padStart(2, '0')
+  const mm = d.getMinutes().toString().padStart(2, '0')
+  return `${dd}/${mon} ${hh}:${mm}`
 }
 
 function buildSolveMarkers(series: ChartSeries[], labels: string[]) {
@@ -326,6 +375,8 @@ function buildSolveMarkers(series: ChartSeries[], labels: string[]) {
     const markersByDate = new Map<string, ScoreboardSolveMarker>()
 
     s.data.forEach((point) => {
+      if (point.score <= 0) return
+
       const dataIndex = labelIndexByDate.get(point.date)
       if (dataIndex === undefined) return
 
@@ -359,14 +410,16 @@ function buildOverlapSegments(series: ChartSeries[], builtData: BuiltChartPoint[
 
     return Array.from(scoreGroups.entries())
       .filter(([, group]) => group.length > 1)
-      .map(([score, group]) => ({
-        colors: group
-          .sort((a, b) => a.seriesIndex - b.seriesIndex)
-          .map((entry) => entry.color),
-        endIndex: index + 1,
-        score,
-        startIndex: index,
-      }))
+      .map(([score, group]) => {
+        const sorted = [...group].sort((a, b) => a.seriesIndex - b.seriesIndex)
+        return {
+          colors: sorted.map((entry) => entry.color),
+          seriesIndices: sorted.map((entry) => entry.seriesIndex),
+          endIndex: index + 1,
+          score,
+          startIndex: index,
+        }
+      })
   })
 }
 
@@ -449,6 +502,8 @@ export default function BaseScoreboardChart({
         tension: 0,
         pointRadius(context) {
           const date = labels[context.dataIndex]
+          const value = context.dataset.data[context.dataIndex]
+          if (typeof value !== 'number' || value <= 0) return 0
           return solveDateSets[context.datasetIndex]?.has(date) ? 3 : 0
         },
         pointHitRadius: 12,
@@ -516,7 +571,7 @@ export default function BaseScoreboardChart({
           autoSkip: true,
           autoSkipPadding: 50,
           callback(value) {
-            return labels[Number(value)]?.slice(0, 10) ?? ''
+            return formatShortDateLabel(labels[Number(value)] ?? '')
           },
         },
       },
@@ -561,6 +616,8 @@ export default function BaseScoreboardChart({
       },
       tooltip: {
         enabled: true,
+        position: 'offCenter',
+        yAlign: 'center',
         mode: 'index',
         intersect: false,
         backgroundColor: 'rgba(2,6,23,0.96)',
@@ -574,6 +631,10 @@ export default function BaseScoreboardChart({
         caretPadding: 24,
         caretSize: 12,
         cornerRadius: 8,
+        filter(item) {
+          const v = item.parsed.y
+          return typeof v === 'number' && v > 0
+        },
         itemSort(a, b) {
           const scoreA = a.parsed.y ?? 0
           const scoreB = b.parsed.y ?? 0
@@ -581,10 +642,12 @@ export default function BaseScoreboardChart({
         },
         callbacks: {
           title(items) {
-            return labels[items[0]?.dataIndex ?? 0]?.slice(0, 16) ?? ''
+            return formatDateLabel(labels[items[0]?.dataIndex ?? 0] ?? '')
           },
           label(context: TooltipItem<'line'>) {
-            return `${context.dataset.label}: ${context.parsed.y}`
+            const v = context.parsed.y
+            if (!v || v <= 0) return ''
+            return `${context.dataset.label}: ${v}`
           },
         },
       },

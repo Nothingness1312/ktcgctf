@@ -414,6 +414,21 @@ SECURITY DEFINER;
 
 GRANT EXECUTE ON FUNCTION delete_solver(UUID) TO authenticated;
 
+CREATE OR REPLACE FUNCTION get_solved_event_ids()
+RETURNS TABLE (event_id UUID)
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT DISTINCT c.event_id
+  FROM public.solves s
+  JOIN public.challenges c ON c.id = s.challenge_id
+  WHERE c.event_id IS NOT NULL
+    AND c.is_active = TRUE;
+$$;
+
+GRANT EXECUTE ON FUNCTION get_solved_event_ids() TO authenticated;
+
 -- RLS/POLICY
 ALTER TABLE public.solves ENABLE ROW LEVEL SECURITY;
 
