@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import APP from '@/config'
 import { AuthService } from '@/features/auth'
 import { getTeamByUserId } from '@/features/teams/services/team.service'
@@ -44,7 +44,17 @@ export function useUserProfile(userId: string | null, isCurrentUser: boolean) {
 
   const [authInfo, setAuthInfo] = useState<Array<{ provider: string; email: string }>>([])
   const [teamInfo, setTeamInfo] = useState<TeamInfo | null>(null)
-  const [activeTab, setActiveTab] = useState<'profile' | 'stats'>('profile')
+  const searchParams = useSearchParams()
+  const pathname = usePathname()
+  const activeTab: 'profile' | 'stats' = useMemo(() => {
+    const value = searchParams.get('tab')
+    return value === 'stats' ? 'stats' : 'profile'
+  }, [searchParams])
+  const setActiveTab = useCallback((tab: 'profile' | 'stats') => {
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('tab', tab)
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+  }, [searchParams, pathname, router])
 
   useEffect(() => {
     if (isCurrentUser) {

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Activity, AlertTriangle, Server } from 'lucide-react'
 import APP from '@/config'
-import { AdminContentLoading, AdminPageShell, AdminPageSurface, AdminStickyToolbar, AdminTabs } from '@/features/admin/ui'
+import { AdminContentLoading, AdminPageShell, AdminPageSurface, AdminStickyToolbar, AdminTabs, useTabState } from '@/features/admin/ui'
 import {
   buildLiveServiceRows,
   buildPlatformChallengeGroups,
@@ -75,7 +75,7 @@ export default function AdminServicesPage() {
     runGlobalServiceAction,
   } = useAdminServicesData()
 
-  const [activeTab, setActiveTab] = useState<AdminServiceTab>('platform')
+  const [activeTab, setActiveTab] = useTabState<AdminServiceTab>('tab', 'live')
   const [filters, setFilters] = useState<AdminServicesFilters>(DEFAULT_FILTERS)
   const [nowTick, setNowTick] = useState(() => Date.now())
   const [openForm, setOpenForm] = useState(false)
@@ -191,14 +191,14 @@ export default function AdminServicesPage() {
                     onChange={setActiveTab}
                     items={[
                       {
-                        value: 'platform',
-                        label: 'Platform Services',
-                        icon: Server,
+                        value: 'live',
+                        label: 'Actual Services',
+                        icon: Activity,
                       },
                       {
-                        value: 'live',
-                        label: 'Live Services',
-                        icon: Activity,
+                        value: 'platform',
+                        label: 'Supabase Services',
+                        icon: Server,
                       },
                     ]}
                   />

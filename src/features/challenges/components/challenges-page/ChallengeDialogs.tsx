@@ -29,6 +29,9 @@ export default function ChallengeDialogs({ data }: ChallengeDialogsProps) {
           data.setIsJoinDialogOpen(false)
           data.setTargetEventMembership(null)
           data.setTargetEventId(null)
+
+          // Reload challenges so newly-accessible event challenges appear immediately
+          data.loadChallenges()
         }}
       />
 

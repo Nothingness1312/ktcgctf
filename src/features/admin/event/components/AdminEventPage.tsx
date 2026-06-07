@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import { CalendarDays, GitBranch, Users } from 'lucide-react'
 import ConfirmDialog from '@/shared/components/ConfirmDialog'
@@ -10,7 +9,7 @@ import EventListCard from './EventListCard'
 import EventMembersCard from './EventMembersCard'
 import { Button } from '@/shared/ui'
 import { useAdminEventData } from '../hooks/useAdminEventData'
-import { AdminContentLoading, AdminPageShell, AdminStickyToolbar, AdminTabs } from '../../ui'
+import { AdminContentLoading, AdminPageShell, AdminStickyToolbar, AdminTabs, useTabState } from '../../ui'
 
 type AdminEventTab = 'event-list' | 'bulk-event' | 'event-members' | 'join-requests'
 
@@ -21,7 +20,7 @@ const EVENT_TABS = [
 ]
 
 export default function AdminEventPage() {
-  const [activeTab, setActiveTab] = useState<AdminEventTab>('event-list')
+  const [activeTab, setActiveTab] = useTabState<AdminEventTab>('tab', 'event-list')
   const {
     user,
     authLoading,

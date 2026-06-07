@@ -1,7 +1,5 @@
 "use client"
 
-import { useEffect, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
 import { ShieldCheck, Users } from 'lucide-react'
 import { Button } from '@/shared/ui'
 import {
@@ -12,6 +10,7 @@ import {
   AdminFilterInput,
   AdminFilterSelect,
   AdminFilterToolbar,
+  useTabState,
 } from '../../ui'
 import { useAdminUsersData } from '../hooks/useAdminUsersData'
 import UserRolesTab from './UserRolesTab'
@@ -24,10 +23,7 @@ const USER_TABS = [
   { value: 'roles' as const, label: 'Roles', icon: ShieldCheck },
 ]
 export default function AdminUsersPage() {
-  const searchParams = useSearchParams()
-  const [activeTab, setActiveTab] = useState<AdminUsersTab>(
-    searchParams.get('tab') === 'roles' ? 'roles' : 'users',
-  )
+  const [activeTab, setActiveTab] = useTabState<AdminUsersTab>('tab', 'users')
   const adminUsersData = useAdminUsersData()
   const { user, authLoading, accessReady, isAllowed, isLoading } = adminUsersData
   const hasActiveUserFilters =
@@ -36,10 +32,6 @@ export default function AdminUsersPage() {
     adminUsersData.roleFilter !== 'all' ||
     adminUsersData.sortMode !== 'newest' ||
     adminUsersData.pageSize !== 100
-
-  useEffect(() => {
-    if (searchParams.get('tab') === 'roles') setActiveTab('roles')
-  }, [searchParams])
 
   if (authLoading || !accessReady) return <AdminContentLoading variant="users" />
   if (!user || !isAllowed) return null

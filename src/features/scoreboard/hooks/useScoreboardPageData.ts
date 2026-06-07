@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useRef, useState, useMemo, useCallback } from 'react'
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import {
   getFirstBloodLeaderboard,
   getLeaderboardSummary,
@@ -25,8 +25,25 @@ export function useScoreboardPageData() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
   const [recentSolvesMapState, setRecentSolvesMapState] = useState<Map<string, number>>(new Map())
   const [loading, setLoading] = useState(true)
-  const [firstBloodMode, setFirstBloodMode] = useState(false)
-  const [view, setView] = useState<'top' | 'all'>('top')
+  const searchParams = useSearchParams()
+  const pathname = usePathname()
+  const firstBloodMode = useMemo(() => {
+    return searchParams.get('mode') === 'first-blood'
+  }, [searchParams])
+  const setFirstBloodMode = useCallback((value: boolean) => {
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('mode', value ? 'first-blood' : 'points')
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+  }, [searchParams, pathname, router])
+  const view: 'top' | 'all' = useMemo(() => {
+    const value = searchParams.get('tab')
+    return value === 'all' ? 'all' : 'top'
+  }, [searchParams])
+  const setView = useCallback((tab: 'top' | 'all') => {
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('tab', tab)
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+  }, [searchParams, pathname, router])
   const { startedEvents, selectedEvent, setSelectedEvent } = useEventContext()
   const [hasMounted, setHasMounted] = useState(false)
   const [stableLeaderboard, setStableLeaderboard] = useState<LeaderboardEntry[]>([])

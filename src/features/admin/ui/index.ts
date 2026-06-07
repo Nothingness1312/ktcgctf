@@ -10,5 +10,6 @@ export { default as AdminEmptyState } from './AdminEmptyState'
 export * from './admin-navigation'
 export * from './card-styles'
 export * from './AdminLayoutComponents'
+export { useTabState } from './useTabState'
 
 

@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useMemo, useCallback } from 'react'
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { Coins, Sparkles, Trophy, Rocket } from 'lucide-react'
 
 import { APP } from '@/config'
@@ -31,7 +31,20 @@ export default function TeamScoreboardPage() {
   const router = useRouter()
   const { startedEvents, selectedEvent, setSelectedEvent } = useEventContext()
 
-  const [showTotalScore, setShowTotalScore] = useState(false)
+  const searchParams = useSearchParams()
+  const pathname = usePathname()
+  const showTotalScore = useMemo(() => {
+    return searchParams.get('tab') === 'total'
+  }, [searchParams])
+  const setShowTotalScore = useCallback((value: boolean) => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (value) {
+      params.set('tab', 'total')
+    } else {
+      params.set('tab', 'unique')
+    }
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+  }, [searchParams, pathname, router])
 
   useEffect(() => {
     if (!authLoading && !user) {

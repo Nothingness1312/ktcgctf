@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { Flag, Target } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Loader } from '@/shared/components';
 import PageBackground from '@/shared/components/PageBackground'
 import { AppTabs } from '@/shared/ui'
@@ -15,10 +15,22 @@ import { PAGE_MAIN_CONTAINER_4XL, THEME_PRIMARY_SELECTION_CLASS } from '@/shared
 
 export default function LogsPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
   const { user, loading: authLoading } = useAuth();
   const { markAllRead, refresh } = useLogs()
-  const [tabType, setTabType] = useState<'challenges' | 'solves'>('solves')
   const { startedEvents, selectedEvent, setSelectedEvent } = useEventContext()
+
+  const tabType = useMemo(() => {
+    const value = searchParams.get('tab');
+    return value === 'challenges' ? 'challenges' : 'solves';
+  }, [searchParams]);
+
+  const setTabType = (tab: 'challenges' | 'solves') => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('tab', tab);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
 
   useEffect(() => {
     if (!authLoading && !user) {

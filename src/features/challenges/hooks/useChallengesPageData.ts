@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useMemo, useState } from 'react'
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { useAuth } from '@/shared/contexts'
 import { useEventContext } from '@/features/events/contexts/EventContext'
 import { useFilterContext } from '@/features/challenges/contexts/FilterContext'
@@ -16,7 +16,17 @@ import { useFilteredChallenges } from './useFilteredChallenges'
 
 export function useChallengesPageData() {
   const router = useRouter()
-  const [currentTab, setCurrentTab] = useState<ChallengesMainTab>('challenges')
+  const searchParams = useSearchParams()
+  const pathname = usePathname()
+  const currentTab: ChallengesMainTab = useMemo(() => {
+    const value = searchParams.get('tab')
+    return value === 'events' ? 'events' : 'challenges'
+  }, [searchParams])
+  const setCurrentTab = (tab: ChallengesMainTab) => {
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('tab', tab)
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+  }
   const { filters, setFilters, layoutMode, sortMode, setSortMode } = useFilterContext()
   const { events, selectedEvent, setSelectedEvent } = useEventContext()
   const { user, loading } = useAuth()
@@ -188,5 +198,6 @@ export function useChallengesPageData() {
     resetSubChallengeAnswers,
     getCachedEventMembership,
     formatRemaining,
+    loadChallenges,
   }
 }

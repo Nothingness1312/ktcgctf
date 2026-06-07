@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useCallback, useMemo } from 'react'
+import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 
 import { TeamMember, TeamInfo, TeamSummary, TeamChallenge } from '../types'
 import TeamProfileHeader from '@/features/teams/components/TeamProfileHeader'
@@ -58,7 +59,18 @@ export default function TeamPageContent({
   showMainOption,
   onBack
 }: TeamPageContentProps) {
-  const [activeTab, setActiveTab] = useState<'overview' | 'manage'>('overview')
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const pathname = usePathname()
+  const activeTab = useMemo(() => {
+    const value = searchParams.get('tab')
+    return value === 'manage' ? 'manage' : 'overview'
+  }, [searchParams])
+  const setActiveTab = useCallback((tab: 'overview' | 'manage') => {
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('tab', tab)
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+  }, [searchParams, pathname, router])
 
   // Determine if the current user is a member of this team
   const isMember = members.some(m => m.user_id === currentUserId)

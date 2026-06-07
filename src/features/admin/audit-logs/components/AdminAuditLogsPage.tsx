@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { ClipboardList, KeyRound } from 'lucide-react'
 import { useAuth } from '@/shared/contexts'
 import { AuthService } from '@/features/auth'
-import { AdminContentLoading, AdminPageShell, AdminTabs } from '../../ui'
+import { AdminContentLoading, AdminPageShell, AdminTabs, useTabState } from '../../ui'
 import AuthAuditLogList from './AuthAuditLogList'
 import AuditLogList from './AuditLogList'
 
@@ -16,7 +16,7 @@ export default function AdminAuditLogsPage() {
   const { user, loading: authLoading } = useAuth()
   const [accessReady, setAccessReady] = useState(false)
   const [isAllowed, setIsAllowed] = useState(false)
-  const [activeTab, setActiveTab] = useState<AuditLogTab>('admin')
+  const [activeTab, setActiveTab] = useTabState<AuditLogTab>('tab', 'auth')
 
   useEffect(() => {
     let mounted = true
@@ -50,8 +50,8 @@ export default function AdminAuditLogsPage() {
       value={activeTab}
       onChange={setActiveTab}
       items={[
-        { value: 'admin', label: 'Admin Logs', icon: ClipboardList },
         { value: 'auth', label: 'Auth Logs', icon: KeyRound },
+        { value: 'admin', label: 'Admin Logs', icon: ClipboardList },
       ]}
     />
   )
