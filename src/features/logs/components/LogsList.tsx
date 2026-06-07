@@ -11,7 +11,7 @@ import {
   Target
 } from "lucide-react";
 
-import { Loader, EmptyState } from '@/shared/components';
+import { PageLoader, EmptyState } from '@/shared/components';
 import { formatRelativeDate } from '@/shared/lib'
 import { useLogs } from '@/features/logs/contexts/LogsContext';
 import { Button } from "@/shared/ui";
@@ -59,16 +59,7 @@ export default function LogsList({
     })();
   }, [cacheKey, getFeed, tabType, eventId]);
 
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center space-y-3 py-10">
-        <Loader color="text-blue-500" />
-        <p className="text-xs font-black uppercase tracking-widest text-gray-400 animate-pulse">
-          Retrieving intelligence...
-        </p>
-      </div>
-    );
-  }
+  if (loading) return <PageLoader />;
 
   if (notifications.length === 0) {
     return (

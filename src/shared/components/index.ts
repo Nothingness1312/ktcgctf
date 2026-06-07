@@ -1,5 +1,6 @@
 export { default as ImageWithFallback } from '@/shared/components/ImageWithFallback'
 export { default as Loader } from '@/shared/components/Loader'
+export { default as PageLoader } from '@/shared/components/PageLoader'
 export { default as EmptyState } from '@/shared/components/EmptyState'
 export { default as BrandLogo } from '@/shared/components/BrandLogo'
 export { default as BackButton } from '@/shared/components/BackButton'

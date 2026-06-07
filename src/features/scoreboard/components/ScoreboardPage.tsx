@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { Coins, Droplet, Trophy, Rocket } from 'lucide-react'
 import Loader from '@/shared/components/Loader'
 import EmptyState from '@/shared/components/EmptyState'
+import PageLoader from '@/shared/components/PageLoader'
 import PageBackground from '@/shared/components/PageBackground'
 import { AppTabs } from '@/shared/ui'
 import { CardContent } from '@/shared/ui/card'
@@ -97,9 +98,7 @@ export default function ScoreboardPage() {
       </div>
 
       {loading && leaderboard.length === 0 ? (
-        <div className="flex justify-center py-10">
-          <Loader color="text-blue-500" />
-        </div>
+        <PageLoader />
       ) : (
         <div className={`space-y-4 ${hasMounted ? '' : 'opacity-0'} transition-opacity duration-500`}>
           {!isAllView && stableLeaderboard.length > 0 && !isEmpty && (

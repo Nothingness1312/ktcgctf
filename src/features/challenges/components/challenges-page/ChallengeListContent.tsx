@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { Lock } from 'lucide-react'
 import APP from '@/config'
-import { Loader, EmptyState } from '@/shared/components'
+import { Loader, EmptyState, PageLoader } from '@/shared/components'
 import type { ChallengeWithSolve } from '@/shared/types'
 import type { ChallengeFilterSettings, EventSelectorValue } from '../../types'
 import { CHALLENGE_LAYOUT_MODES, type ChallengeLayoutMode } from '../../lib'
@@ -101,19 +101,11 @@ export default function ChallengeListContent({
   }, [totalVisibleChallenges, visibleCount])
 
   if (initialLoading) {
-    return (
-      <div className="flex justify-center py-16">
-        <Loader color="text-blue-500" />
-      </div>
-    )
+    return <PageLoader />
   }
 
   if (eventMembershipLoading && eventMembershipEventId !== eventId) {
-    return (
-      <div className="flex justify-center py-10">
-        <Loader color="text-blue-500" />
-      </div>
-    )
+    return <PageLoader />
   }
 
   if (eventJoinBlocked) {

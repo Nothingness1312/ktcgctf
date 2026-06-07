@@ -66,7 +66,7 @@ export default function UnsolvedChallengesModal({
 
       <ModalBody>
         {loading ? (
-          <div className="flex justify-center py-12">
+          <div className="flex items-center justify-center min-h-[200px]">
             <Loader color="text-blue-500" />
           </div>
         ) : unsolvedChallenges.length === 0 ? (

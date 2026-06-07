@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 
 import Loader from '@/shared/components/Loader'
 import PageBackground from '@/shared/components/PageBackground'
+import PageLoader from '@/shared/components/PageLoader'
 import { PAGE_MAIN_CONTAINER_6XL, THEME_PRIMARY_SELECTION_CLASS } from '@/shared/styles'
 import { useAuth } from '@/shared/contexts/AuthContext'
 import { useEventContext } from '@/features/events/contexts/EventContext'
@@ -74,13 +75,7 @@ export default function TeamDetailPage() {
     })
   }, [team, members, summary, challenges])
 
-  if (authLoading) {
-    return (
-      <div className="flex justify-center py-10">
-        <Loader fullscreen />
-      </div>
-    )
-  }
+  if (authLoading) return <Loader fullscreen />
 
   if (!user || !APP.teams.enabled) return null
 
@@ -89,11 +84,7 @@ export default function TeamDetailPage() {
       selectionClassName={THEME_PRIMARY_SELECTION_CLASS}
       contentClassName={`${PAGE_MAIN_CONTAINER_6XL} space-y-5`}
     >
-      {loading && !team && (
-        <div className="flex justify-center py-10">
-          <Loader />
-        </div>
-      )}
+      {loading && !team && <PageLoader />}
 
       {loading && team && (
         <div className="fixed top-20 right-8 z-50 opacity-70 pointer-events-none">

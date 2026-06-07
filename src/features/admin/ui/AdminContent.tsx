@@ -8,7 +8,7 @@ type AdminContentProps = {
 
 export default function AdminContent({ children, className }: AdminContentProps) {
   return (
-    <main className={cn('min-w-0 flex-1 px-4 sm:px-6 lg:px-8', className)}>
+    <main className={cn('min-w-0 flex-1 px-4 sm:px-6 lg:px-8 flex flex-col', className)}>
       {children}
     </main>
   )

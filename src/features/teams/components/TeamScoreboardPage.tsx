@@ -7,6 +7,7 @@ import { Coins, Sparkles, Trophy, Rocket } from 'lucide-react'
 import { APP } from '@/config'
 import Loader from '@/shared/components/Loader'
 import EmptyState from '@/shared/components/EmptyState'
+import PageLoader from '@/shared/components/PageLoader'
 import PageBackground from '@/shared/components/PageBackground'
 import EventSelect from '@/features/events/components/EventSelect'
 import { AppTabs, Card, CardContent } from '@/shared/ui'
@@ -119,9 +120,7 @@ export default function TeamScoreboardPage() {
         )}
 
         {loading && entries.length === 0 ? (
-          <div className="flex justify-center py-10">
-            <Loader color="text-blue-500" />
-          </div>
+          <PageLoader />
         ) : entries.length === 0 ? (
           <Card className={SURFACE_GLASS_CARD_INTERACTIVE_BLUE_CLASS}>
             <CardContent>

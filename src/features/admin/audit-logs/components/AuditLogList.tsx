@@ -715,7 +715,7 @@ function AuditLogDetailDialog({
 
 const AuditLogList: React.FC<AuditLogListProps> = ({ logs: propLogs, isLoading: propLoading, tabs }) => {
   const [internalLogs, setInternalLogs] = useState<AuditLogEntry[]>([])
-  const [internalLoading, setInternalLoading] = useState(false)
+  const [internalLoading, setInternalLoading] = useState(true)
   const [selectedLog, setSelectedLog] = useState<AuditLogEntry | null>(null)
   const [limit, setLimit] = useState(50)
   const [page, setPage] = useState(1)
@@ -771,11 +771,9 @@ const AuditLogList: React.FC<AuditLogListProps> = ({ logs: propLogs, isLoading: 
   }, [displayLogs.length, offset, totalCount])
 
   if (isLoading) return (
-    <AdminDataSurface>
-      <div className="flex justify-center py-12">
-        <Loader />
-      </div>
-    </AdminDataSurface>
+    <div className="flex flex-1 items-center justify-center">
+      <Loader size={40} />
+    </div>
   )
 
   return (

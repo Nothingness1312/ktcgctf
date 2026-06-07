@@ -4,9 +4,9 @@ import React, { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { ChevronLeft, ChevronRight, KeyRound } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { Loader } from '@/shared/components'
 import { Button } from '@/shared/ui'
 import { cn } from '@/shared/lib/utils'
+import { Loader } from '@/shared/components'
 import { formatRelativeDate } from '@/shared/lib'
 import { getAuthAuditLogs, type AuthAuditLogEntry } from '@/features/logs/lib/audit-service'
 import {
@@ -70,7 +70,7 @@ function getActionStyle(action: string) {
 
 export default function AuthAuditLogList({ tabs }: { tabs?: React.ReactNode }) {
   const [logs, setLogs] = useState<AuthAuditLogEntry[]>([])
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const [limit, setLimit] = useState(50)
   const [page, setPage] = useState(1)
   const [action, setAction] = useState('all')
@@ -112,11 +112,9 @@ export default function AuthAuditLogList({ tabs }: { tabs?: React.ReactNode }) {
   }, [logs, search])
 
   if (isLoading) return (
-    <AdminDataSurface>
-      <div className="flex justify-center py-12">
-        <Loader />
-      </div>
-    </AdminDataSurface>
+    <div className="flex flex-1 items-center justify-center">
+      <Loader size={40} />
+    </div>
   )
 
   return (

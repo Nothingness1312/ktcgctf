@@ -11,8 +11,8 @@ export default function AdminPageShell({
   mainClassName = '',
 }: AdminPageShellProps) {
   return (
-    <div className={cn('min-w-0 flex flex-col', mainClassName)}>
-      <div className="flex-1 min-w-0">{children}</div>
+    <div className={cn('min-w-0 flex flex-col flex-1', mainClassName)}>
+      <div className="flex flex-col flex-1 min-w-0 min-h-0">{children}</div>
     </div>
   )
 }

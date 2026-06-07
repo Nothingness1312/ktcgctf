@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Users, UserPlus, Sparkles, ShieldCheck } from 'lucide-react'
 
 import Loader from '@/shared/components/Loader'
+import PageLoader from '@/shared/components/PageLoader'
 import BackButton from '@/shared/components/BackButton'
 import ConfirmDialog from '@/shared/components/ConfirmDialog'
 import PageBackground from '@/shared/components/PageBackground'
@@ -180,27 +181,14 @@ export default function TeamsPage() {
     return null
   }
 
-  if (authLoading) {
-    return (
-      <PageBackground
-        className="flex justify-center items-center overflow-hidden"
-        selectionClassName="selection:bg-blue-500/30"
-      >
-        <Loader color="text-blue-500" />
-      </PageBackground>
-    )
-  }
+  if (authLoading) return <Loader fullscreen />
 
   if (!user) return null
 
   return (
     <PageBackground selectionClassName={THEME_PRIMARY_SELECTION_CLASS}>
       <div className={cn(PAGE_MAIN_CONTAINER_4XL, "space-y-4")}>
-        {initialLoading ? (
-          <div className="flex justify-center py-12">
-            <Loader color="text-blue-500" />
-          </div>
-        ) : (
+        {initialLoading ? <PageLoader /> : (
           <>
             {loading && team && (
               <div className="fixed top-20 right-8 z-50 opacity-70 pointer-events-none">

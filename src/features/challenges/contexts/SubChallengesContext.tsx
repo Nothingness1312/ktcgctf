@@ -260,11 +260,11 @@ export function SubChallengesProvider({ children }: { children: React.ReactNode 
 
     if (hasNewCorrect) {
       const audio = new Audio('/sounds/tasks_succes.mp3')
-      audio.volume = 0.3
+      audio.volume = 0.8
       audio.play().catch(() => {})
     } else if (hasIncorrect) {
       const audio = new Audio('/sounds/tasks_incorect.mp3')
-      audio.volume = 0.3
+      audio.volume = 0.5
       audio.play().catch(() => {})
     }
 

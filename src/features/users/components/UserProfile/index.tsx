@@ -3,6 +3,7 @@
 import React, { useMemo } from 'react'
 import { AlertTriangle } from 'lucide-react'
 import Loader from '@/shared/components/Loader'
+import PageLoader from '@/shared/components/PageLoader'
 import PageBackground from '@/shared/components/PageBackground'
 import { useUserProfile } from '../../hooks/useUserProfile'
 import { UserProfileProps } from '../../types'
@@ -117,11 +118,7 @@ export default function UserProfile({
       selectionClassName="selection:bg-blue-500/30"
     >
       <main className="relative z-10 mx-auto w-full max-w-5xl space-y-4 px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
-        {loading || loadingDetail ? (
-          <div className="flex justify-center py-4 opacity-70">
-            <Loader color="text-blue-500" />
-          </div>
-        ) : null}
+        {loading || loadingDetail ? <PageLoader /> : null}
 
         {userDetail && (
           <>
