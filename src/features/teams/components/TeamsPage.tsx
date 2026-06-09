@@ -2,11 +2,11 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Users, UserPlus, Sparkles, ShieldCheck } from 'lucide-react'
+import { AlertTriangle, Users, UserPlus, Sparkles, ShieldCheck } from 'lucide-react'
+import toast from 'react-hot-toast'
 
 import Loader from '@/shared/components/Loader'
 import PageLoader from '@/shared/components/PageLoader'
-import BackButton from '@/shared/components/BackButton'
 import ConfirmDialog from '@/shared/components/ConfirmDialog'
 import PageBackground from '@/shared/components/PageBackground'
 import { Button, Input, Card, CardHeader, CardTitle, CardContent } from '@/shared/ui'
@@ -71,8 +71,6 @@ export default function TeamsPage() {
     challenges,
     solvedEventIds,
     hasMainSolved,
-    status,
-    setStatus,
     initialLoading,
     canManage,
     handleCreateTeam,
@@ -147,9 +145,9 @@ export default function TeamsPage() {
     if (!team?.invite_code) return
     try {
       await navigator.clipboard.writeText(team.invite_code)
-      setStatus({ type: 'success', message: 'Invite code copied.' })
+      toast.success('Invite code copied.')
     } catch {
-      setStatus({ type: 'error', message: 'Failed to copy invite code.' })
+      toast.error('Failed to copy invite code.')
     }
   }
 
@@ -196,18 +194,6 @@ export default function TeamsPage() {
               </div>
             )}
 
-            {status && (
-              <div
-                className={cn("rounded-2xl px-4 py-3 text-sm font-semibold shadow-sm border",
-                  status.type === 'error'
-                    ? 'bg-red-50 text-red-700 border-red-100 dark:bg-red-900/20 dark:text-red-300 dark:border-red-900/50'
-                    : 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-900/50'
-                )}
-              >
-                {status.message}
-              </div>
-            )}
-
             {!team ? (
               <div className="grid grid-cols-1 items-start gap-6 pt-2 md:grid-cols-[minmax(0,0.9fr)_minmax(320px,0.75fr)]">
                 <div className={cn("space-y-4 p-6", SURFACE_GLASS_CARD_INTERACTIVE_BLUE_CLASS)}>
@@ -250,23 +236,25 @@ export default function TeamsPage() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      <div className="space-y-2">
-                        <label className={cn(TYPO_SECTION_TITLE_CLASS, "ml-1 !text-[10px]")}>Team Name</label>
-                        <Input
-                          value={teamName}
-                          onChange={(e) => setTeamName(e.target.value)}
-                          placeholder="CyberKnights, VoidWalkers, etc."
-                          disabled={busy}
-                          className={SURFACE_GLASS_INPUT_CLASS}
-                        />
-                      </div>
-                      <Button
-                        onClick={onCreateTeam}
-                        disabled={busy || !teamName.trim()}
-                        className="h-10 w-full font-bold uppercase tracking-widest shadow-lg shadow-blue-500/20"
-                      >
-                        Create Team
-                      </Button>
+                      <form onSubmit={(e) => { e.preventDefault(); onCreateTeam() }}>
+                        <div className="space-y-2">
+                          <label className={cn(TYPO_SECTION_TITLE_CLASS, "ml-1 !text-[10px]")}>Team Name</label>
+                          <Input
+                            value={teamName}
+                            onChange={(e) => setTeamName(e.target.value)}
+                            placeholder="CyberKnights, VoidWalkers, etc."
+                            disabled={busy}
+                            className={SURFACE_GLASS_INPUT_CLASS}
+                          />
+                        </div>
+                        <Button
+                          type="submit"
+                          disabled={busy || !teamName.trim()}
+                          className="mt-4 h-10 w-full font-bold uppercase tracking-widest shadow-lg shadow-blue-500/20"
+                        >
+                          Create Team
+                        </Button>
+                      </form>
                     </CardContent>
                   </Card>
 
@@ -286,21 +274,23 @@ export default function TeamsPage() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      <Input
-                        value={inviteCode}
-                        onChange={(e) => setInviteCode(e.target.value)}
-                        placeholder="Paste code here..."
-                        disabled={busy}
-                        className={`${SURFACE_GLASS_INPUT_CLASS} font-mono text-center tracking-widest`}
-                      />
-                      <Button
-                        onClick={onJoinTeam}
-                        disabled={busy || !inviteCode.trim()}
-                        variant="secondary"
-                        className="h-10 w-full font-bold uppercase tracking-widest"
-                      >
-                        Join Team
-                      </Button>
+                      <form onSubmit={(e) => { e.preventDefault(); onJoinTeam() }}>
+                        <Input
+                          value={inviteCode}
+                          onChange={(e) => setInviteCode(e.target.value)}
+                          placeholder="Paste code here..."
+                          disabled={busy}
+                          className={`${SURFACE_GLASS_INPUT_CLASS} font-mono text-center tracking-widest`}
+                        />
+                        <Button
+                          type="submit"
+                          disabled={busy || !inviteCode.trim()}
+                          variant="secondary"
+                          className="mt-4 h-10 w-full font-bold uppercase tracking-widest"
+                        >
+                          Join Team
+                        </Button>
+                      </form>
                     </CardContent>
                   </Card>
                 </div>
@@ -346,41 +336,17 @@ export default function TeamsPage() {
           setConfirmOpen(open)
         }}
         variant="destructive"
+        icon={<AlertTriangle className="h-8 w-8 text-red-500" />}
         title="Confirm"
-        description={
-          confirmExpected ? (
-            <div className="space-y-4 pt-2">
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                {confirmMessage}
-              </p>
-              <div className="space-y-2 rounded-2xl bg-red-50 dark:bg-red-900/20 p-4 border border-red-100 dark:border-red-900/30">
-                <p className="text-xs text-red-600 dark:text-red-400 uppercase font-black tracking-widest">
-                  Verification Required
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Type <span className="font-mono font-bold text-red-600 dark:text-red-400">{confirmExpected}</span> below.
-                </p>
-                <Input
-                  value={confirmInput}
-                  onChange={(e) => setConfirmInput(e.target.value)}
-                  placeholder={confirmExpected}
-                  className="bg-white dark:bg-gray-900 border-red-200 dark:border-red-900/50"
-                />
-              </div>
-            </div>
-          ) : (
-            <p className="text-sm font-medium py-4">{confirmMessage}</p>
-          )
-        }
+        description={confirmMessage}
+        verificationText={confirmExpected ?? undefined}
+        verificationValue={confirmInput}
+        onVerificationValueChange={setConfirmInput}
         onConfirm={async () => {
           await confirmActionRef.current?.()
         }}
         confirmLabel="Confirm Action"
         cancelLabel="Cancel"
-        confirmDisabled={
-          !!confirmExpected &&
-          confirmInput.trim().toLowerCase() !== confirmExpected
-        }
       />
     </PageBackground>
   )

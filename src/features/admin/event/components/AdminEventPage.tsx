@@ -193,7 +193,7 @@ export default function AdminEventPage() {
           <div>
             <div className="mb-2">Are you sure you want to delete this event? This action cannot be undone.</div>
             {pendingDelete && (
-              <div className="mt-2 p-3 rounded bg-yellow-100 dark:bg-yellow-900 border border-yellow-300 dark:border-yellow-700 text-sm font-semibold">
+              <div className="mt-2 p-1 rounded bg-yellow-100 dark:bg-yellow-900 border border-yellow-300 dark:border-yellow-700 text-sm font-semibold">
                 {pendingDelete.name}
               </div>
             )}

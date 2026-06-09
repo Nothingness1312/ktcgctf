@@ -51,7 +51,7 @@ const JoinRequestsCard: React.FC<JoinRequestsCardProps> = ({
             <div className="py-6 text-center text-sm text-gray-500 dark:text-gray-400">No pending requests</div>
           ) : (
             joinRequests.map((request) => (
-              <div key={request.request_id} className="flex flex-col gap-3 px-3.5 py-3.5 transition-colors hover:bg-gray-50/40 dark:hover:bg-gray-900/10 md:flex-row md:items-center md:justify-between">
+              <div key={request.request_id} className="flex flex-col gap-3 px-3.5 py-3.5 md:flex-row md:items-center md:justify-between hover:!bg-transparent dark:hover:!bg-transparent">
                 <div>
                   <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{request.username || request.user_id}</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Requested at {new Date(request.requested_at).toLocaleString()}</p>

@@ -6,10 +6,10 @@ import toast from 'react-hot-toast'
 
 import { useAuth } from '@/shared/contexts/AuthContext'
 import APP from '@/config'
+import ConfirmDialog from '@/shared/components/ConfirmDialog'
 
 import ChallengeListPanel from './ChallengeListPanel'
 import ChallengeFormDialogHost from './ChallengeFormDialogHost'
-import DeleteChallengeConfirmDialog from './DeleteChallengeConfirmDialog'
 import { FlagPreviewDialog } from './FlagPreviewDialog'
 import { useAdminChallengesData } from '../hooks/useAdminChallengesData'
 import { useChallengeForm } from '../hooks/useChallengeForm'
@@ -55,7 +55,6 @@ export default function AdminChallengesPage() {
   const [openForm, setOpenForm] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [pendingDelete, setPendingDelete] = useState<Challenge | null>(null)
-  const [deleteConfirmInput, setDeleteConfirmInput] = useState("")
   const [eventId, setEventId] = useState<AdminChallengeEventId>('all')
   const [filters, setFilters] = useState<AdminChallengeFilterState>({
     category: "all",
@@ -123,17 +122,13 @@ export default function AdminChallengesPage() {
     const ch = challenges.find(c => c.id === id)
     if (ch) {
       setPendingDelete(ch)
-      setDeleteConfirmInput("")
       setConfirmOpen(true)
     }
   }
 
   const handleConfirmDelete = async () => {
-    if (pendingDelete && deleteConfirmInput === pendingDelete.title) {
+    if (pendingDelete) {
       await removeChallenge(pendingDelete.id)
-      setConfirmOpen(false)
-    } else {
-      toast.error("Confirmation text does not match")
     }
   }
 
@@ -194,12 +189,14 @@ export default function AdminChallengesPage() {
         onSubmitSuccess={() => { initAdminData(true) }}
       />
 
-      <DeleteChallengeConfirmDialog
+      <ConfirmDialog
         open={confirmOpen}
         onOpenChange={setConfirmOpen}
-        pendingDelete={pendingDelete}
-        confirmInput={deleteConfirmInput}
-        onConfirmInputChange={setDeleteConfirmInput}
+        title="Delete Challenge"
+        variant="destructive"
+        description="Are you sure you want to delete this challenge? This action cannot be undone."
+        verificationText={pendingDelete?.title}
+        confirmLabel="Delete"
         onConfirm={handleConfirmDelete}
       />
       <FlagPreviewDialog

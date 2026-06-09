@@ -2,6 +2,7 @@
 
 import APP from '@/config'
 import type { useChallengesPageData } from '../../hooks/useChallengesPageData'
+import { useChallengeStats } from '../../hooks/useChallengeStats'
 import ChallengeFilterBar from '../ChallengeFilterBar'
 import DesktopChallengeFilterSidebar from '../challenge-filter-bar/DesktopChallengeFilterSidebar'
 import ChallengeListContent from './ChallengeListContent'
@@ -16,6 +17,8 @@ type ChallengesTabPanelProps = {
 export default function ChallengesTabPanel({
   data,
 }: ChallengesTabPanelProps) {
+  const myStats = useChallengeStats(data.user, data.challenges, data.eventId)
+
   return (
     <div className="xl:grid xl:grid-cols-[176px_minmax(0,1fr)] xl:gap-8 2xl:gap-10 items-start">
       <div className="relative z-30 flex flex-col gap-4 xl:sticky xl:top-[80px] xl:self-start 2xl:gap-5 [will-change:transform]">
@@ -33,6 +36,7 @@ export default function ChallengesTabPanel({
           categories={data.categories}
           difficulties={data.difficulties}
           onFilterChange={data.setFilters}
+          stats={myStats}
         />
       </div>
 

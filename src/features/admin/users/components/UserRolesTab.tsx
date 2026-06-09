@@ -1,9 +1,9 @@
 "use client"
 
+import ConfirmDialog from '@/shared/components/ConfirmDialog'
 import AddEventAdminCard from '@/features/admin/admins/components/AddEventAdminCard'
 import EventAdminsCard from '@/features/admin/admins/components/EventAdminsCard'
 import GlobalAdminsCard from '@/features/admin/admins/components/GlobalAdminsCard'
-import RemoveEventAdminConfirmDialog from '@/features/admin/admins/components/RemoveEventAdminConfirmDialog'
 import { useAdminAdminsData } from '@/features/admin/admins/hooks/useAdminAdminsData'
 import { AdminContentLoading } from '../../ui'
 
@@ -71,10 +71,24 @@ export default function UserRolesTab() {
         </div>
       </div>
 
-      <RemoveEventAdminConfirmDialog
+      <ConfirmDialog
         open={confirmOpen}
         onOpenChange={setConfirmOpen}
-        pendingRemove={pendingRemove}
+        title="Remove Event Admin"
+        variant="destructive"
+        description={
+          pendingRemove ? (
+            <div className="space-y-1">
+              <div>
+                Remove <b>{pendingRemove.username}</b> from event <b>{pendingRemove.event_name}</b>?
+              </div>
+              <div className="text-xs text-muted-foreground">This user will lose access to manage challenges for this event.</div>
+            </div>
+          ) : (
+            'Are you sure?'
+          )
+        }
+        confirmLabel="Remove"
         onConfirm={doRemove}
       />
     </>

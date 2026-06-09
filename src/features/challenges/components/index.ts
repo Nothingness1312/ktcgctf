@@ -8,5 +8,8 @@ export { default as HintDialog } from './HintDialog'
 export { default as SolversList } from './SolversList'
 export { default as ChallengeFilterBar } from './ChallengeFilterBar'
 export { default as JoinEventDialog } from './JoinEventDialog'
+export { default as ChallengeStatsBadge } from './ChallengeStatsBadge'
+export { useChallengeStats } from '../hooks/useChallengeStats'
+export type { ChallengeStats } from '../hooks/useChallengeStats'
 
 export type { Solver } from '../types'

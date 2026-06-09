@@ -11,7 +11,7 @@ type ServiceActionLoadingState = ServiceAction | null
 const CHALLENGE_KEY_HEADER = 'X-NXCTL-Challenge-Key'
 const EXTEND_REMINDER_SOUND = '/sounds/notif_ringtone.mp3'
 const EXTEND_REMINDER_VOLUME = 0.25
-const EXTEND_FINAL_REMINDER_INTERVAL_MS = 15000
+const EXTEND_SOUND_COOLDOWN_MS = 60000
 
 interface ChallengeServicesPanelProps {
   open: boolean
@@ -329,10 +329,12 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
   const [hiddenServices, setHiddenServices] = useState<Record<string, boolean>>({})
   const [nowTick, setNowTick] = useState<number>(() => Date.now())
   const inspectRunRef = React.useRef(0)
+  const openPrevRef = React.useRef(false)
+  const fetchCompletedRef = React.useRef(!open)
+  const lastUpTimestampsRef = React.useRef<Record<string, number>>({})
   const expiryReminderRef = React.useRef<Record<string, boolean>>({})
-  const extendSoundReminderRef = React.useRef<Record<string, { initial: boolean; final: boolean; initialPending?: boolean; finalPending?: boolean; finalNextAt?: number }>>({})
+  const lastExtendSoundAtRef = React.useRef<Record<string, number>>({})
   const extendReminderAudioRef = React.useRef<HTMLAudioElement | null>(null)
-  const extendReminderRunRef = React.useRef(0)
 
   const stopExtendReminderSound = React.useCallback(() => {
     const audio = extendReminderAudioRef.current
@@ -370,6 +372,14 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
   useEffect(() => {
     return () => stopExtendReminderSound()
   }, [stopExtendReminderSound])
+
+  // Synchronously detect open transitions to prevent stale loading state
+  // when dialog reopens during Radix animation (component stays mounted).
+  const justOpened = open && !openPrevRef.current
+  openPrevRef.current = open
+  if (justOpened) {
+    fetchCompletedRef.current = false
+  }
 
   const visibleServices = useMemo(
     () => parsedServices.filter((service) => !hiddenServices[service.name]),
@@ -525,6 +535,7 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
         })
       } finally {
         if (isCurrentRun()) {
+          fetchCompletedRef.current = true
           setServiceDetailsLoading((prev) => {
             const next = { ...prev }
             parsedServices.forEach((service) => {
@@ -552,19 +563,13 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
 
   useEffect(() => {
     if (!open) {
-      extendReminderRunRef.current += 1
       expiryReminderRef.current = {}
-      Object.entries(extendSoundReminderRef.current).forEach(([name, state]) => {
-        extendSoundReminderRef.current[name] = {
-          ...state,
-          initialPending: false,
-          finalPending: false,
-        }
-      })
+      lastExtendSoundAtRef.current = {}
       stopExtendReminderSound()
       return
     }
 
+    const now = Date.now()
     visibleServices.forEach((service) => {
       const details = serviceDetails[service.name]
       const isRunning = details?.runtime?.status === 'running'
@@ -572,47 +577,25 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
       const fetchTime = serviceDetailsFetchTime[service.name] ?? nowTick
       const timeSinceFetch = Math.max(0, (nowTick - fetchTime) / 1000)
       const remainingSec = remainingSecFromApi !== null ? Math.max(0, remainingSecFromApi - timeSinceFetch) : null
-      const thresholdSec = Number(details?.runtime?.extend?.threshold_seconds || 300)
       const extendState = getExtendState(details, remainingSec, timeSinceFetch)
+      const thresholdSec = extendState.thresholdSeconds
+      const canExtend = extendState.canExtend
 
-      if (!isRunning || remainingSec === null || remainingSec <= 0 || !extendState.canExtend) {
+      // Reset toast state if no longer in extend window
+      if (!isRunning || remainingSec === null || remainingSec <= 0 || !canExtend || remainingSec > thresholdSec) {
         expiryReminderRef.current[service.name] = false
         return
       }
 
-      if (remainingSec > thresholdSec) {
-        expiryReminderRef.current[service.name] = false
-        delete extendSoundReminderRef.current[service.name]
-        return
+      // Play sound at most once per EXTEND_SOUND_COOLDOWN_MS
+      const lastSoundAt = lastExtendSoundAtRef.current[service.name] ?? 0
+      if (now - lastSoundAt >= EXTEND_SOUND_COOLDOWN_MS) {
+        lastExtendSoundAtRef.current[service.name] = now
+        void playExtendReminderSound()
       }
 
-      const soundState = extendSoundReminderRef.current[service.name] ?? { initial: false, final: false }
-      const shouldPlayInitialReminder = !soundState.initial
-      const shouldPlayFinalReminder = remainingSec <= 60 && !soundState.final
-
-      if (shouldPlayInitialReminder || shouldPlayFinalReminder) {
-        const reminderKind = shouldPlayFinalReminder ? 'final' : 'initial'
-        const pendingKey = reminderKind === 'final' ? 'finalPending' : 'initialPending'
-        if (!soundState[pendingKey]) {
-          extendSoundReminderRef.current[service.name] = {
-            ...soundState,
-            [pendingKey]: true,
-          }
-
-          void playExtendReminderSound().then((played) => {
-            const latest = extendSoundReminderRef.current[service.name] ?? { initial: false, final: false }
-            extendSoundReminderRef.current[service.name] = {
-              ...latest,
-              initial: played && reminderKind === 'final' ? true : latest.initial,
-              [reminderKind]: played ? true : latest[reminderKind],
-              [pendingKey]: false,
-            }
-          })
-        }
-      }
-
+      // Show toast once per dialog session
       if (expiryReminderRef.current[service.name]) return
-
       expiryReminderRef.current[service.name] = true
       toast(
         `${getServiceDisplayName(service.name)} expires in ${formatDuration(Math.floor(remainingSec))}. Extend it if needed.`,
@@ -634,7 +617,7 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
       })
       const dataInspect = await resInspect.json()
       if (resInspect.ok) {
-        setServiceDetails((prev) => ({ ...prev, [service.name]: dataInspect }))
+        setServiceDetails((prev) => ({ ...prev, [service.name]: normalizeNxctlStatusDetail(dataInspect) }))
         setServiceDetailsFetchTime((prev) => ({ ...prev, [service.name]: Date.now() }))
         setServiceDetailsError((prev) => ({ ...prev, [service.name]: null }))
       } else {
@@ -653,10 +636,25 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
   }
 
   const handleServiceAction = async (service: NxctlServiceEntry, action: ServiceAction) => {
+    const details = serviceDetails[service.name]
+    const isRunning = details?.runtime?.status === 'running'
+
+    if (action === 'up') {
+      if (isRunning) {
+        toast.error('Service is already running.')
+        return
+      }
+
+      const lastUp = lastUpTimestampsRef.current[service.name]
+      if (lastUp && Date.now() - lastUp < 10000) {
+        toast.error('Service is still starting. Please wait a moment.')
+        return
+      }
+      lastUpTimestampsRef.current[service.name] = Date.now()
+    }
+
     if (action === 'restart') {
-      const details = serviceDetails[service.name]
       const restartState = getRestartState(details)
-      const isRunning = details?.runtime?.status === 'running'
 
       if (!restartState.enabled) {
         toast.error('Restart is disabled for this challenge.')
@@ -791,7 +789,7 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
             if (remainingSec <= thresholdSec) return 'border-yellow-500/30 bg-yellow-500/10 text-yellow-300'
             return 'border-cyan-500/20 bg-cyan-500/10 text-cyan-300'
           })()
-          const isLoading = serviceDetailsLoading[service.name] ?? (!details && open)
+          const isLoading = (serviceDetailsLoading[service.name] ?? (!details && open)) || (open && !fetchCompletedRef.current)
           const errorMessage = serviceDetailsError[service.name]
           const actionLoading = serviceActionLoading[service.name] ?? null
           const isActionLoading = actionLoading !== null

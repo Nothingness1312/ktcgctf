@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Activity, AlertTriangle, Server } from 'lucide-react'
 import APP from '@/config'
 import Loader from '@/shared/components/Loader'
+import ConfirmDialog from '@/shared/components/ConfirmDialog'
 import { AdminContentLoading, AdminPageShell, AdminPageSurface, AdminStickyToolbar, AdminTabs, useTabState } from '@/features/admin/ui'
 import {
   buildLiveServiceRows,
@@ -14,7 +15,7 @@ import {
 } from '../lib/admin-services-utils'
 import { useAdminServicesData } from '../hooks/useAdminServicesData'
 import { useChallengeForm } from '../../challenges/hooks/useChallengeForm'
-import type { AdminServiceRow, AdminServicesFilters, AdminServiceTab } from '../types'
+import type { AdminNxctlActionTarget, AdminServiceRow, AdminServicesFilters, AdminServiceTab } from '../types'
 import { FlagPreviewDialog } from '../../challenges/components/FlagPreviewDialog'
 import ChallengeFormDialogHost from '../../challenges/components/ChallengeFormDialogHost'
 import AdminLiveServicesTable from './AdminLiveServicesTable'
@@ -80,6 +81,7 @@ export default function AdminServicesPage() {
   const [filters, setFilters] = useState<AdminServicesFilters>(DEFAULT_FILTERS)
   const [nowTick, setNowTick] = useState(() => Date.now())
   const [openForm, setOpenForm] = useState(false)
+  const [pendingServiceAction, setPendingServiceAction] = useState<{ target: AdminNxctlActionTarget; action: 'up' | 'down' } | null>(null)
   const challengeForm = useChallengeForm()
 
   const {
@@ -241,7 +243,13 @@ export default function AdminServicesPage() {
                     isGlobalAdmin={isGlobalAdmin}
                     actionLoading={actionLoading}
                     globalActionLoading={globalActionLoading}
-                    onNxctlAction={(target, action) => void runNxctlAction(target, action)}
+                    onNxctlAction={(target, action) => {
+                      if (action === 'down') {
+                        setPendingServiceAction({ target, action })
+                      } else {
+                        void runNxctlAction(target, action)
+                      }
+                    }}
                     onGlobalAction={(action) => void runGlobalServiceAction(action)}
                   />
                 </div>
@@ -259,6 +267,21 @@ export default function AdminServicesPage() {
         events={events}
         hideMainEventOption={!isGlobalAdmin}
         onSubmitSuccess={() => { void refresh() }}
+      />
+
+      <ConfirmDialog
+        open={pendingServiceAction !== null}
+        onOpenChange={() => setPendingServiceAction(null)}
+        title={pendingServiceAction ? `Stop ${pendingServiceAction.target.name}` : ''}
+        variant="destructive"
+        description={<p>Are you sure you want to stop NXCTL service <b>{pendingServiceAction?.target.name}</b>?</p>}
+        confirmLabel="Stop Service"
+        onConfirm={() => {
+          if (pendingServiceAction) {
+            void runNxctlAction(pendingServiceAction.target, pendingServiceAction.action)
+            setPendingServiceAction(null)
+          }
+        }}
       />
 
       <FlagPreviewDialog

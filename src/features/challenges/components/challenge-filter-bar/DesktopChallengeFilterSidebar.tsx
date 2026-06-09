@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { CheckCircle2, EyeOff, Flag, Gauge, Layers, LayoutGrid, ListChecks, ListFilter, Search, ServerCog, X } from 'lucide-react'
+import { CheckCircle2, Crown, EyeOff, Flag, Gauge, Layers, LayoutGrid, ListChecks, ListFilter, Search, ServerCog, X } from 'lucide-react'
 import { createPortal } from 'react-dom'
 import type { ElementType } from 'react'
 import APP from '@/config'
@@ -20,12 +20,14 @@ import {
   getSortedFilterValues,
 } from '../../lib'
 import type { ChallengeFeatureFilter, ChallengeFilterState } from '../../types'
+import type { ChallengeStats } from '../../hooks/useChallengeStats'
 
 type DesktopChallengeFilterSidebarProps = {
   filters: ChallengeFilterState
   categories: string[]
   difficulties: string[]
   onFilterChange: (filters: any) => void
+  stats?: ChallengeStats | null
 }
 
 export default function DesktopChallengeFilterSidebar({
@@ -33,6 +35,7 @@ export default function DesktopChallengeFilterSidebar({
   categories,
   difficulties,
   onFilterChange,
+  stats,
 }: DesktopChallengeFilterSidebarProps) {
   const [searchOpen, setSearchOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
@@ -120,6 +123,43 @@ export default function DesktopChallengeFilterSidebar({
         className="relative z-20 hidden max-h-[calc(100vh-8.75rem)] overflow-y-auto xl:block scroll-hidden"
       >
         <div className="flex w-[176px] flex-col gap-1.5 rounded-2xl border border-blue-500/20 bg-white/60 p-2 shadow-sm shadow-blue-500/5 backdrop-blur-md dark:border-blue-500/10 dark:bg-gray-900/60">
+          <div className="flex h-9 w-full items-center justify-between rounded-xl border border-gray-200/80 bg-white/70 px-3 text-xs font-semibold shadow-sm backdrop-blur-md transition-all dark:border-gray-700/80 dark:bg-[#111622]/80">
+            {stats == null || stats.total === 0 ? (
+              <span className="w-full text-center tabular-nums text-gray-400 dark:text-gray-500">N/A</span>
+            ) : (
+              <>
+                <span className="flex items-center gap-1 tabular-nums text-gray-700 dark:text-gray-200">
+                  {stats.solved > 0 && stats.rank ? (
+                    <>
+                      <Crown
+                        size={13}
+                        strokeWidth={2.5}
+                        className={
+                          stats.rank <= 1
+                            ? 'text-yellow-500'
+                            : stats.rank <= 2
+                              ? 'text-gray-400 dark:text-gray-300'
+                              : stats.rank <= 3
+                                ? 'text-orange-600 dark:text-orange-500'
+                                : 'text-gray-700 dark:text-gray-200'
+                        }
+                      />
+                      <span>#{stats.rank}</span>
+                    </>
+                  ) : (
+                    <span>N/A</span>
+                  )}
+                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className="tabular-nums text-emerald-600 dark:text-emerald-400">
+                    {stats.solved}/{stats.total}
+                  </span>
+                  <Flag size={13} strokeWidth={2.5} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
+                </div>
+              </>
+            )}
+          </div>
+
           <button
             type="button"
             data-tour="challenge-sidebar-search-filter"

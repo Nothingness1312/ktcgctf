@@ -311,6 +311,55 @@ END;
 $$ LANGUAGE plpgsql
 SECURITY DEFINER;
 GRANT EXECUTE ON FUNCTION detail_user(UUID, UUID, TEXT) TO authenticated;
+CREATE OR REPLACE FUNCTION detail_user_lite(p_id UUID, p_event_id UUID DEFAULT NULL, p_event_mode TEXT DEFAULT 'any')
+RETURNS JSON
+AS $$
+DECLARE
+  v_rank BIGINT;
+  v_solved_count INT;
+BEGIN
+  SELECT r.rank
+  INTO v_rank
+  FROM (
+    SELECT
+      u.id,
+      RANK() OVER (
+        ORDER BY COALESCE(SUM(CASE WHEN (
+          p_event_mode = 'any'
+          OR (p_event_mode = 'is_null' AND c.event_id IS NULL)
+          OR (p_event_mode = 'equals' AND c.event_id = p_event_id)
+        ) THEN c.points ELSE 0 END), 0) DESC,
+                 MAX(CASE WHEN (
+          p_event_mode = 'any'
+          OR (p_event_mode = 'is_null' AND c.event_id IS NULL)
+          OR (p_event_mode = 'equals' AND c.event_id = p_event_id)
+        ) THEN s.created_at ELSE NULL END) ASC
+      ) AS rank
+    FROM public.users u
+    LEFT JOIN public.solves s ON u.id = s.user_id
+    LEFT JOIN public.challenges c ON s.challenge_id = c.id
+    GROUP BY u.id
+  ) r
+  WHERE r.id = p_id;
+  SELECT COUNT(*)::int
+  INTO v_solved_count
+  FROM public.solves s
+  JOIN public.challenges c ON s.challenge_id = c.id
+  WHERE s.user_id = p_id
+    AND (
+      p_event_mode = 'any'
+      OR (p_event_mode = 'is_null' AND c.event_id IS NULL)
+      OR (p_event_mode = 'equals' AND c.event_id = p_event_id)
+    );
+  RETURN json_build_object(
+    'success', true,
+    'rank', COALESCE(v_rank, 0),
+    'solved_count', COALESCE(v_solved_count, 0)
+  );
+END;
+$$ LANGUAGE plpgsql
+SECURITY DEFINER;
+GRANT EXECUTE ON FUNCTION detail_user_lite(UUID, UUID, TEXT) TO authenticated;
 CREATE OR REPLACE FUNCTION get_leaderboard(
   limit_rows integer DEFAULT 100,
   offset_rows integer DEFAULT 0,
@@ -386,6 +435,23 @@ $$ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public, auth;
 GRANT EXECUTE ON FUNCTION get_leaderboard(integer, integer, uuid, text) TO authenticated;
+CREATE OR REPLACE FUNCTION resolve_user_pictures(p_user_ids UUID[])
+RETURNS TABLE (user_id UUID, username TEXT, picture TEXT)
+SECURITY DEFINER
+SET search_path = public, auth
+LANGUAGE sql
+AS $$
+  SELECT u.id, u.username::TEXT,
+    COALESCE(
+      au.raw_user_meta_data->>'picture',
+      au.raw_user_meta_data->>'avatar_url',
+      u.profile_picture_url
+    )::TEXT AS picture
+  FROM public.users u
+  LEFT JOIN auth.users au ON au.id = u.id
+  WHERE u.id = ANY(p_user_ids);
+$$;
+GRANT EXECUTE ON FUNCTION resolve_user_pictures(UUID[]) TO authenticated;
 CREATE OR REPLACE FUNCTION get_top_progress(
   p_user_ids UUID[],
   p_limit INT DEFAULT 1000,

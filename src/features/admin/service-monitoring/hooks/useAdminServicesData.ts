@@ -239,8 +239,6 @@ export function useAdminServicesData() {
   }, [initServicesData])
 
   const runNxctlAction = useCallback(async (target: AdminNxctlActionTarget, action: AdminServiceAction) => {
-    if (action === 'down' && !window.confirm(`Stop NXCTL service "${target.name}"?`)) return
-
     setActionLoading((prev) => ({ ...prev, [target.id]: action }))
     const actionLabel = action === 'up' ? 'start' : action
     const toastId = toast.loading(`${actionLabel}ing ${target.name}...`)
@@ -283,8 +281,6 @@ export function useAdminServicesData() {
   }, [runNxctlAction])
 
   const runGlobalServiceAction = useCallback(async (action: 'up' | 'down') => {
-    if (action === 'down' && !window.confirm('Stop all NXCTL services?')) return
-
     setGlobalActionLoading(action)
     const actionLabel = action === 'up' ? 'Starting' : 'Stopping'
     const toastId = toast.loading(`${actionLabel} all NXCTL services...`)

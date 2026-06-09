@@ -5,7 +5,6 @@ import { Check, UserPlus, Users, X } from 'lucide-react'
 import { Button, SearchInput, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui'
 import { FILTER_CONTROL_CLASS } from '@/shared/ui/filter'
 import {
-  ADMIN_ROW_CLASS,
   AdminDataSurface,
   AdminEmptyState,
   AdminFilterSelect,
@@ -139,11 +138,11 @@ const EventMembersCard: React.FC<EventMembersCardProps> = ({
                   />
 
                   {candidateUsers.length > 0 && (
-                    <div className="absolute z-10 mt-1 w-full rounded-md border bg-white shadow-lg dark:bg-gray-900 border-gray-200 dark:border-gray-700 overflow-hidden">
+                    <div className="absolute z-10 mt-1 w-full overflow-hidden rounded-md border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900">
                       <div className="max-h-60 overflow-y-auto">
                         {candidateUsers.map((user) => (
-                          <label key={user.id} className="flex cursor-pointer items-center justify-between gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800">
-                            <div className="flex min-w-0 items-center gap-2">
+                          <div key={user.id} className="flex items-center justify-between gap-2 px-3 py-2 hover:!bg-transparent dark:hover:!bg-transparent">
+                            <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-2">
                               <input
                                 type="checkbox"
                                 className="h-4 w-4 shrink-0 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
@@ -154,11 +153,11 @@ const EventMembersCard: React.FC<EventMembersCardProps> = ({
                                 <span className="block truncate text-sm font-medium text-gray-900 dark:text-gray-100">{user.username}</span>
                                 <span className="block truncate font-mono text-[10px] text-gray-500">{user.id}</span>
                               </div>
-                            </div>
+                              </label>
                             <Button size="sm" onClick={() => onQuickAddMember(user.id)} disabled={memberActionUserId === user.id} className="h-7 shrink-0 rounded-lg px-2 text-xs">
                               Add
                             </Button>
-                          </label>
+                          </div>
                         ))}
                       </div>
                     </div>
@@ -216,18 +215,18 @@ const EventMembersCard: React.FC<EventMembersCardProps> = ({
                   </TableHeader>
                   <TableBody>
                     {loadingEventMembers ? (
-                      <TableRow>
+                      <TableRow className="hover:!bg-transparent dark:hover:!bg-transparent">
                         <TableCell colSpan={4} className="p-5 text-center text-sm text-gray-500 dark:text-gray-400">Loading members...</TableCell>
                       </TableRow>
                     ) : filteredEventMembers.length === 0 ? (
-                      <TableRow>
+                      <TableRow className="hover:!bg-transparent dark:hover:!bg-transparent">
                         <TableCell colSpan={4} className="p-6">
                           <AdminEmptyState title="No members yet" description="Search users above to add members." />
                         </TableCell>
                       </TableRow>
                     ) : (
                       filteredEventMembers.map((member) => (
-                        <TableRow key={member.user_id} className={ADMIN_ROW_CLASS}>
+                        <TableRow key={member.user_id}>
                           <TableCell className="pl-6 font-medium text-gray-900 dark:text-gray-100">{member.username}</TableCell>
                           <TableCell className="font-mono text-xs text-muted-foreground">{member.user_id}</TableCell>
                           <TableCell className="text-xs text-muted-foreground">{formatDate(member.joined_at)}</TableCell>
@@ -264,7 +263,7 @@ const EventMembersCard: React.FC<EventMembersCardProps> = ({
                 </div>
               ) : (
                 joinRequests.map((request) => (
-                  <div key={request.request_id} className="flex flex-col gap-3 px-4 py-4 transition-colors hover:bg-gray-50/60 dark:hover:bg-gray-900/25 md:flex-row md:items-center md:justify-between">
+                  <div key={request.request_id} className="flex flex-col gap-3 px-4 py-4 md:flex-row md:items-center md:justify-between hover:!bg-transparent dark:hover:!bg-transparent">
                     <div className="min-w-0">
                       <p className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">{request.username || request.user_id}</p>
                       <p className="truncate font-mono text-[10px] text-gray-500">{request.user_id}</p>

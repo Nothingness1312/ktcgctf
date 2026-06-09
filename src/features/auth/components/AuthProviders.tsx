@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { Mail, Chrome, X } from "lucide-react";
 import { AuthService } from "@/features/auth/services/auth.service";
 import ConfirmDialog from '@/shared/components/ConfirmDialog';
-import { SURFACE_GLASS_INPUT_CLASS } from '@/shared/styles';
 
 type AuthInfo = { provider: string; email: string };
 
@@ -122,26 +121,15 @@ export default function AuthProviders({ authInfo }: { authInfo: AuthInfo[] }) {
           <div>
             <div className="mb-2">Are you sure you want to unbind your Google account? This action cannot be undone.</div>
             {pendingUnbindEmail && (
-              <>
-                <div className="mt-2 p-3 rounded bg-yellow-100 dark:bg-yellow-900 border border-yellow-300 dark:border-yellow-700 text-sm font-semibold flex flex-col gap-1">
-                  <span><b>Google Email:</b> <span className="font-mono">{pendingUnbindEmail}</span></span>
-                </div>
-                <div className="mt-4">
-                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Type <b>{pendingUnbindEmail}</b> to confirm:
-                  </label>
-                  <input
-                    type="text"
-                    className={SURFACE_GLASS_INPUT_CLASS}
-                    value={confirmInput}
-                    onChange={e => setConfirmInput(e.target.value)}
-                    autoFocus
-                  />
-                </div>
-              </>
+              <div className="mt-2 p-3 rounded bg-yellow-100 dark:bg-yellow-900 border border-yellow-300 dark:border-yellow-700 text-sm font-semibold">
+                <span><b>Google Email:</b> <span className="font-mono">{pendingUnbindEmail}</span></span>
+              </div>
             )}
           </div>
         }
+        verificationText={pendingUnbindEmail || undefined}
+        verificationValue={confirmInput}
+        onVerificationValueChange={setConfirmInput}
         confirmLabel="Unbind"
         onConfirm={async () => {
           setLoading(true);
@@ -161,7 +149,6 @@ export default function AuthProviders({ authInfo }: { authInfo: AuthInfo[] }) {
           setLocalAuthInfo(prev => prev.filter(p => p.provider !== 'google'));
           router.refresh();
         }}
-        confirmDisabled={confirmInput !== pendingUnbindEmail}
       />
     </div>
   );

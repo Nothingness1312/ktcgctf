@@ -1,9 +1,9 @@
 "use client"
 
+import ConfirmDialog from '@/shared/components/ConfirmDialog'
 import AddEventAdminCard from './AddEventAdminCard'
 import EventAdminsCard from './EventAdminsCard'
 import GlobalAdminsCard from './GlobalAdminsCard'
-import RemoveEventAdminConfirmDialog from './RemoveEventAdminConfirmDialog'
 import { useAdminAdminsData } from '../hooks/useAdminAdminsData'
 import { AdminContentLoading, AdminPageShell } from '../../ui'
 
@@ -80,10 +80,24 @@ export default function AdminAdminsPage() {
         </div>
       </AdminPageShell>
 
-      <RemoveEventAdminConfirmDialog
+      <ConfirmDialog
         open={confirmOpen}
         onOpenChange={setConfirmOpen}
-        pendingRemove={pendingRemove}
+        title="Remove Event Admin"
+        variant="destructive"
+        description={
+          pendingRemove ? (
+            <div className="space-y-1">
+              <div>
+                Remove <b>{pendingRemove.username}</b> from event <b>{pendingRemove.event_name}</b>?
+              </div>
+              <div className="text-xs text-muted-foreground">This user will lose access to manage challenges for this event.</div>
+            </div>
+          ) : (
+            'Are you sure?'
+          )
+        }
+        confirmLabel="Remove"
         onConfirm={doRemove}
       />
     </>

@@ -53,10 +53,6 @@ export default function DesktopEventsSidebar({
   return (
     <aside className="relative z-20 hidden max-h-[calc(100vh-8.75rem)] overflow-y-auto xl:block scroll-hidden">
       <div className="flex w-[176px] flex-col gap-1.5 rounded-2xl border border-blue-500/20 bg-white/60 p-2 shadow-sm shadow-blue-500/5 backdrop-blur-md dark:border-blue-500/10 dark:bg-gray-900/60">
-        <div className="px-2 pb-1 pt-1 text-[10px] font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-          Filters
-        </div>
-
         <button
           type="button"
           onClick={() => setSearchOpen(true)}

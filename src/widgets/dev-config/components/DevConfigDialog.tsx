@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -301,7 +301,8 @@ export default function DevConfigDialog({ open, onOpenChange }: DevConfigDialogP
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={cn(DIALOG_CONTENT_CLASS_3XL, "flex max-h-[90vh] flex-col overflow-hidden border border-gray-200/80 p-0 dark:border-gray-800/80")}>
+      <DialogContent className={cn(DIALOG_CONTENT_CLASS_3XL, "flex max-h-[85vh] flex-col overflow-hidden border border-gray-200/80 p-0 dark:border-gray-800/80")}>
+        <div className="shrink-0">
         <div className="border-b border-gray-200/70 px-4 py-3.5 dark:border-gray-800/80 sm:px-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex min-w-0 items-center gap-3">
@@ -355,6 +356,7 @@ export default function DevConfigDialog({ open, onOpenChange }: DevConfigDialogP
           </div>
         </div>
 
+        </div>
         <div className="flex-1 space-y-4 overflow-y-auto p-4 scroll-hidden sm:p-5">
           <AnimatePresence mode="wait">
             {(message || error) && (
@@ -376,9 +378,34 @@ export default function DevConfigDialog({ open, onOpenChange }: DevConfigDialogP
           </AnimatePresence>
 
           {loading ? (
-            <div className="flex flex-col items-center justify-center gap-4 py-20 text-gray-500">
-              <Loader2 className="h-10 w-10 animate-spin text-blue-500" />
-              <p className="text-sm font-semibold uppercase tracking-wider">Loading...</p>
+            <div className="animate-pulse space-y-4 pb-4">
+              <div className="rounded-xl border border-gray-200/80 bg-white/50 p-4 dark:border-gray-800/80 dark:bg-[#111622]/60 sm:p-5">
+                <div className="mb-4 h-4 w-32 rounded bg-gray-200 dark:bg-gray-700" />
+                <div className="mb-2 h-3 w-48 rounded bg-gray-200 dark:bg-gray-700" />
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+                  <div className="h-10 rounded-lg bg-gray-200 dark:bg-gray-700 lg:col-span-1" />
+                  <div className="h-10 rounded-lg bg-gray-200 dark:bg-gray-700 lg:col-span-3" />
+                  <div className="h-10 rounded-lg bg-gray-200 dark:bg-gray-700 lg:col-span-2" />
+                  <div className="h-10 rounded-lg bg-gray-200 dark:bg-gray-700 lg:col-span-2" />
+                </div>
+              </div>
+              <div className="rounded-xl border border-gray-200/80 bg-white/50 p-4 dark:border-gray-800/80 dark:bg-[#111622]/60 sm:p-5">
+                <div className="mb-4 h-4 w-28 rounded bg-gray-200 dark:bg-gray-700" />
+                <div className="mb-2 h-3 w-40 rounded bg-gray-200 dark:bg-gray-700" />
+                <div className="space-y-3">
+                  <div className="h-14 rounded-lg bg-gray-200 dark:bg-gray-700" />
+                  <div className="h-14 rounded-lg bg-gray-200 dark:bg-gray-700" />
+                  <div className="h-14 rounded-lg bg-gray-200 dark:bg-gray-700" />
+                </div>
+              </div>
+              <div className="rounded-xl border border-gray-200/80 bg-white/50 p-4 dark:border-gray-800/80 dark:bg-[#111622]/60 sm:p-5">
+                <div className="mb-4 h-4 w-36 rounded bg-gray-200 dark:bg-gray-700" />
+                <div className="mb-2 h-3 w-44 rounded bg-gray-200 dark:bg-gray-700" />
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="h-16 rounded-lg bg-gray-200 dark:bg-gray-700" />
+                  <div className="h-16 rounded-lg bg-gray-200 dark:bg-gray-700" />
+                </div>
+              </div>
             </div>
           ) : activeTab === 'config' ? (
             <div className="space-y-4">
@@ -556,7 +583,7 @@ function AssetCurrentValue({ item }: { item: AssetConfigItem }) {
   const previewSrc = item.currentValue
     ? item.currentValue.startsWith('http')
       ? item.currentValue
-      : `/${item.currentValue}?t=${Date.now()}`
+      : `${item.currentValue.startsWith('/') ? '' : '/'}${item.currentValue}?t=${Date.now()}`
     : ''
 
   return (

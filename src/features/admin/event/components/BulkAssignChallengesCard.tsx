@@ -2,6 +2,7 @@ import React from 'react'
 import { ArrowUpDown, CheckSquare, Minus, Plus, XCircle } from 'lucide-react'
 import { Button } from '@/shared/ui'
 import {
+  ADMIN_ROW_CLASS,
   AdminDataSurface,
   AdminEmptyState,
   AdminFilterInput,
@@ -91,11 +92,13 @@ const BulkAssignChallengesCard: React.FC<BulkAssignChallengesCardProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-2 xl:justify-end">
-            <AdminStatusBadge tone={selectedIds.length > 0 ? 'info' : 'muted'}>
-              {selectedIds.length} selected
-            </AdminStatusBadge>
+            {selectedIds.length > 0 && (
+              <AdminStatusBadge tone="info">
+                {selectedIds.length} selected
+              </AdminStatusBadge>
+            )}
             <Button
-              variant="ghost"
+              variant="secondary"
               size="sm"
               onClick={onClearSelection}
               className="gap-1.5 rounded-xl"
@@ -106,7 +109,7 @@ const BulkAssignChallengesCard: React.FC<BulkAssignChallengesCardProps> = ({
               Clear
             </Button>
             <Button
-              variant="outline"
+              variant="secondary"
               size="sm"
               onClick={onSelectAllFiltered}
               className="gap-1.5 rounded-xl"
@@ -205,10 +208,10 @@ const BulkAssignChallengesCard: React.FC<BulkAssignChallengesCardProps> = ({
             <div className="flex min-w-0 flex-1 items-center gap-2">
               {isFilterDirty && (
                 <Button
-                  variant="outline"
+                  variant="secondary"
                   size="sm"
                   onClick={() => onFilterChange(DEFAULT_EVENT_FILTERS)}
-                  className="h-9 shrink-0 rounded-xl border-blue-600 bg-blue-600 px-3.5 text-xs font-bold text-white hover:border-blue-500 hover:bg-blue-500 dark:border-blue-600 dark:bg-blue-600 dark:text-white"
+                  className="h-9 shrink-0 rounded-xl px-3.5 text-xs font-bold"
                 >
                   Clear Filter
                 </Button>
@@ -218,7 +221,7 @@ const BulkAssignChallengesCard: React.FC<BulkAssignChallengesCardProps> = ({
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto divide-y divide-gray-150 dark:divide-gray-800/85 scroll-hidden">
+      <div className="min-h-0 flex-1 overflow-y-auto scroll-hidden">
         {filteredChallenges.length === 0 ? (
           <div className="p-6">
             <AdminEmptyState
@@ -230,14 +233,29 @@ const BulkAssignChallengesCard: React.FC<BulkAssignChallengesCardProps> = ({
           filteredChallenges.map((challenge) => (
             <label
               key={challenge.id}
-              className="flex cursor-pointer items-center gap-3 px-3.5 py-3 transition-colors duration-150 hover:bg-gray-50/60 dark:hover:bg-gray-900/25"
+              className={`${ADMIN_ROW_CLASS} flex cursor-pointer items-center gap-3 px-3.5 py-3`}
             >
-              <input
-                type="checkbox"
-                checked={selectedIds.includes(challenge.id)}
-                onChange={() => onToggleSelect(challenge.id)}
-                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
+              <span className="relative flex h-5 w-5 shrink-0 items-center justify-center">
+                <input
+                  type="checkbox"
+                  checked={selectedIds.includes(challenge.id)}
+                  onChange={() => onToggleSelect(challenge.id)}
+                  className="peer sr-only"
+                />
+                <span className="flex h-5 w-5 items-center justify-center rounded-md border-2 border-gray-300/80 bg-white transition-all duration-150 peer-checked:border-blue-600 peer-checked:bg-blue-600 peer-focus-visible:ring-2 peer-focus-visible:ring-blue-500/40 dark:border-gray-600 dark:bg-[#151b2a] dark:peer-checked:border-blue-500 dark:peer-checked:bg-blue-500">
+                  <svg
+                    className="h-3 w-3 scale-0 text-white transition-transform duration-150 peer-checked:scale-100"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </span>
+              </span>
               <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-semibold text-gray-900 dark:text-white">{challenge.title}</div>
                 <div className="mt-0.5 truncate text-xs text-gray-500 dark:text-gray-400">

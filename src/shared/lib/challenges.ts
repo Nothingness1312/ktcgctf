@@ -677,14 +677,33 @@ export async function getFirstBloodLeaderboard(limit = 100, offset = 0, eventId?
     // instead build a cumulative first-blood timeline per user for the chart.
     const countMap: Record<string, number> = {}
     const perUserDates: Record<string, string[]> = {}
+    const userMetaByUsername: Record<string, { id?: string | null; username: string }> = {}
 
     for (const n of fbList) {
       const username = n.log_username || null
+      const userId = n.log_user_id || null
       const created = n.log_created_at || null
       if (!username) continue
       countMap[username] = (countMap[username] || 0) + 1
       perUserDates[username] = perUserDates[username] || []
       if (created) perUserDates[username].push(created)
+      userMetaByUsername[username] = { id: userId, username }
+    }
+
+    const usernames = Object.keys(countMap)
+    const userIds = Array.from(new Set(Object.values(userMetaByUsername).map((u) => u.id).filter(Boolean) as string[]))
+
+    const { data: profileRows, error: profileError } = userIds.length > 0
+      ? await (supabase.rpc as any)('resolve_user_pictures', { p_user_ids: userIds })
+      : { data: null, error: null }
+
+    if (profileError) {
+      console.error('Error fetching first-blood profile pictures:', profileError)
+    }
+
+    const pictureByUsername = new Map<string, string | null>()
+    for (const row of ((profileRows || []) as any[])) {
+      if (row.username) pictureByUsername.set(row.username, row.picture ?? null)
     }
 
     // Build list including the timestamp when the user reached their final count
@@ -723,6 +742,7 @@ export async function getFirstBloodLeaderboard(limit = 100, offset = 0, eventId?
       username: r.username,
       rank: i + 1 + offset,
       score: r.firstBloodCount,
+      picture: pictureByUsername.get(userMetaByUsername[r.username]?.id || r.username) ?? pictureByUsername.get(r.username) ?? null,
       // progress: cumulative first-blood count over time
       progress: progressMap[r.username]?.history || [],
     }))

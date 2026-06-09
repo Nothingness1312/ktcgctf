@@ -3,6 +3,7 @@ import { User, ChallengeWithSolve } from '@/shared/types'
 export {
   getUserByUsername,
   getUserDetail,
+  getUserDetailLite,
   getUserProfileLite,
   updateBio,
   updateProfilePicture,
@@ -10,7 +11,7 @@ export {
   updateUsername,
 }
 from '@/features/users/services/user-profile.service'
-export type { UserDetail, UserProfileLite } from '@/features/users/services/user-profile.service'
+export type { UserDetail, UserDetailLite, UserProfileLite } from '@/features/users/services/user-profile.service'
 export {
   getCategoryTotals,
   getDifficultyTotals,

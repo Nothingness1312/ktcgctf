@@ -1,4 +1,4 @@
-export {
+﻿export {
   Dialog,
   DialogContent,
   DialogTitle,
@@ -36,5 +36,17 @@ export {
   type SurfacePadding,
   type SurfaceVariant,
 } from '@/shared/ui/surface'
+
+export {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
 
 export { default as CustomBadge } from './CustomBadge'

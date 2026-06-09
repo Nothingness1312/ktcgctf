@@ -86,6 +86,36 @@ export async function getUserDetail(userId: string, eventId?: string | null, eve
   }
 }
 
+export type UserDetailLite = {
+  rank: number | null
+  solved_count: number
+}
+
+export async function getUserDetailLite(
+  userId: string,
+  eventId?: string | null,
+  eventMode?: string
+): Promise<UserDetailLite | null> {
+  try {
+    const { data, error } = await callUserRpc('detail_user_lite', {
+      p_id: userId,
+      p_event_id: eventId ?? null,
+      p_event_mode: eventMode ?? (eventId ? 'equals' : 'any'),
+    })
+    if (error || !data || !data.success) {
+      console.error('Error fetching user detail lite:', error || data?.message)
+      return null
+    }
+    return {
+      rank: data.rank ?? null,
+      solved_count: data.solved_count ?? 0,
+    }
+  } catch (error) {
+    console.error('Error fetching user detail lite:', error)
+    return null
+  }
+}
+
 export async function getUserProfileLite(userId: string): Promise<UserProfileLite | null> {
   try {
     const { data, error } = await callUserRpc('get_user_profile', { p_id: userId })

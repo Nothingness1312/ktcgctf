@@ -1,5 +1,9 @@
+﻿"use client"
+
+import { useState } from 'react'
 import { RefreshCcw, Power, PowerOff, Loader2 } from 'lucide-react'
 import { Button } from '@/shared/ui'
+import ConfirmDialog from '@/shared/components/ConfirmDialog'
 import { AdminFilterSelect, AdminFilterToolbar } from '@/features/admin/ui'
 import type { AdminServicesFilters, AdminServiceTab } from '../types'
 
@@ -28,6 +32,8 @@ export default function AdminServicesToolbar({
   globalActionLoading,
   onGlobalAction,
 }: AdminServicesToolbarProps) {
+  const [confirmAction, setConfirmAction] = useState<'up' | 'down' | null>(null)
+
   const updateFilter = <K extends keyof AdminServicesFilters>(
     key: K,
     value: AdminServicesFilters[K]
@@ -36,10 +42,13 @@ export default function AdminServicesToolbar({
   }
 
   const handleGlobalAction = (action: 'up' | 'down') => {
-    const actionLabel = action === 'up' ? 'START ALL' : 'STOP ALL'
-    const isConfirmed = window.confirm(`WARNING: Are you sure you want to ${actionLabel} NXCTL services?`)
-    if (isConfirmed) {
-      onGlobalAction(action)
+    setConfirmAction(action)
+  }
+
+  const handleConfirmGlobal = () => {
+    if (confirmAction) {
+      onGlobalAction(confirmAction)
+      setConfirmAction(null)
     }
   }
 
@@ -47,6 +56,7 @@ export default function AdminServicesToolbar({
   const actionButtonClass = 'h-9 rounded-xl border-gray-200/50 font-semibold text-gray-700 hover:border-blue-500/40 dark:border-gray-800/50 dark:text-gray-200'
 
   return (
+    <>
     <AdminFilterToolbar
       actions={
         <>
@@ -119,5 +129,20 @@ export default function AdminServicesToolbar({
           ]}
         />
     </AdminFilterToolbar>
+
+      <ConfirmDialog
+        open={confirmAction !== null}
+        onOpenChange={() => setConfirmAction(null)}
+        title={confirmAction === 'up' ? 'Start All Services' : 'Stop All Services'}
+        variant={confirmAction === 'down' ? 'destructive' : 'default'}
+        description={
+          <p>
+            Are you sure you want to {confirmAction === 'up' ? 'start' : 'stop'} all NXCTL services?
+          </p>
+        }
+        confirmLabel={confirmAction === 'up' ? 'Start All' : 'Stop All'}
+        onConfirm={handleConfirmGlobal}
+      />
+    </>
   )
 }

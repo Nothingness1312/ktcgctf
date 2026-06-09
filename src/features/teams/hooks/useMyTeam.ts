@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
+import toast from 'react-hot-toast'
 import {
   getMyTeam,
   getMyTeamSummary,
@@ -23,7 +24,7 @@ export function useMyTeam(user: any, effectiveSelectedEvent: string | number) {
   const [challenges, setChallenges] = useState<TeamChallenge[]>([])
   const [solvedEventIds, setSolvedEventIds] = useState<string[]>([])
   const [hasMainSolved, setHasMainSolved] = useState<boolean>(false)
-  const [status, setStatus] = useState<{ type: 'error' | 'success'; message: string } | null>(null)
+  // toast-based status inline
   const [initialLoading, setInitialLoading] = useState(true)
   const teamRef = useRef<TeamInfo | null>(null)
 
@@ -31,7 +32,6 @@ export function useMyTeam(user: any, effectiveSelectedEvent: string | number) {
     if (!user) return
     const isFirstLoad = teamRef.current === null
     if (isFirstLoad) setLoading(true)
-    setStatus(null)
 
     const p_event_id = (effectiveSelectedEvent === 'all' || effectiveSelectedEvent === 'main') ? null : String(effectiveSelectedEvent)
     const p_event_mode = effectiveSelectedEvent === 'all' ? 'any' : effectiveSelectedEvent === 'main' ? 'main' : 'event'
@@ -68,12 +68,11 @@ export function useMyTeam(user: any, effectiveSelectedEvent: string | number) {
   const handleCreateTeam = async (teamName: string) => {
     if (!teamName.trim()) return
     setBusy(true)
-    setStatus(null)
     const { error } = await createTeam(teamName.trim())
     if (error) {
-      setStatus({ type: 'error', message: error })
+      toast.error(error)
     } else {
-      setStatus({ type: 'success', message: 'Team created.' })
+      toast.success('Team created.')
       await loadTeamData()
     }
     setBusy(false)
@@ -82,12 +81,11 @@ export function useMyTeam(user: any, effectiveSelectedEvent: string | number) {
   const handleJoinTeam = async (inviteCode: string) => {
     if (!inviteCode.trim()) return
     setBusy(true)
-    setStatus(null)
     const { error } = await joinTeam(inviteCode.trim())
     if (error) {
-      setStatus({ type: 'error', message: error })
+      toast.error(error)
     } else {
-      setStatus({ type: 'success', message: 'Joined team.' })
+      toast.success('Joined team.')
       await loadTeamData()
     }
     setBusy(false)
@@ -95,12 +93,11 @@ export function useMyTeam(user: any, effectiveSelectedEvent: string | number) {
 
   const handleLeaveTeam = async () => {
     setBusy(true)
-    setStatus(null)
     const { success, error } = await leaveTeam()
     if (!success) {
-      setStatus({ type: 'error', message: error || 'Failed to leave team.' })
+      toast.error(error || 'Failed to leave team.')
     } else {
-      setStatus({ type: 'success', message: 'You left the team.' })
+      toast.success('You left the team.')
       await loadTeamData()
     }
     setBusy(false)
@@ -108,12 +105,11 @@ export function useMyTeam(user: any, effectiveSelectedEvent: string | number) {
 
   const handleDeleteTeam = async (teamId: string) => {
     setBusy(true)
-    setStatus(null)
     const { success, error } = await deleteTeam(teamId)
     if (!success) {
-      setStatus({ type: 'error', message: error || 'Failed to delete team.' })
+      toast.error(error || 'Failed to delete team.')
     } else {
-      setStatus({ type: 'success', message: 'Team deleted.' })
+      toast.success('Team deleted.')
       await loadTeamData()
     }
     setBusy(false)
@@ -121,12 +117,11 @@ export function useMyTeam(user: any, effectiveSelectedEvent: string | number) {
 
   const handleRegenerateInvite = async (teamId: string) => {
     setBusy(true)
-    setStatus(null)
     const { error } = await regenerateTeamInviteCode(teamId)
     if (error) {
-      setStatus({ type: 'error', message: error })
+      toast.error(error)
     } else {
-      setStatus({ type: 'success', message: 'Invite code regenerated.' })
+      toast.success('Invite code regenerated.')
       await loadTeamData()
     }
     setBusy(false)
@@ -134,12 +129,11 @@ export function useMyTeam(user: any, effectiveSelectedEvent: string | number) {
 
   const handleKickMember = async (teamId: string, member: TeamMember) => {
     setBusy(true)
-    setStatus(null)
     const { success, error } = await kickTeamMember(teamId, member.user_id)
     if (!success) {
-      setStatus({ type: 'error', message: error || 'Failed to kick member.' })
+      toast.error(error || 'Failed to kick member.')
     } else {
-      setStatus({ type: 'success', message: `${member.username} kicked.` })
+      toast.success(`${member.username} kicked.`)
       await loadTeamData()
     }
     setBusy(false)
@@ -147,17 +141,16 @@ export function useMyTeam(user: any, effectiveSelectedEvent: string | number) {
 
   const handleTransferCaptain = async (teamId: string, member: TeamMember) => {
     setBusy(true)
-    setStatus(null)
     try {
       const { success, error } = await transferTeamCaptain(teamId, member.user_id)
       if (!success) {
-        setStatus({ type: 'error', message: error || 'Failed to transfer captain.' })
+        toast.error(error || 'Failed to transfer captain.')
       } else {
-        setStatus({ type: 'success', message: `${member.username} is now captain.` })
+        toast.success(`${member.username} is now captain.`)
         await loadTeamData()
       }
     } catch (err: any) {
-      setStatus({ type: 'error', message: err?.message || 'Unexpected error occurred.' })
+      toast.error(err?.message || 'Unexpected error occurred.')
     } finally {
       setBusy(false)
     }
@@ -166,7 +159,7 @@ export function useMyTeam(user: any, effectiveSelectedEvent: string | number) {
   const handleRenameTeam = async (teamId: string, newName: string, pictureUrl?: string | null) => {
     const { success, error } = await updateTeamProfile(teamId, newName, pictureUrl)
     if (success) {
-      setStatus({ type: 'success', message: 'Team profile updated.' })
+      toast.success('Team profile updated.')
       await loadTeamData()
     }
     return { success, error }
@@ -181,8 +174,6 @@ export function useMyTeam(user: any, effectiveSelectedEvent: string | number) {
     challenges,
     solvedEventIds,
     hasMainSolved,
-    status,
-    setStatus,
     initialLoading,
     canManage,
     handleCreateTeam,
