@@ -16,7 +16,6 @@ CREATE TABLE IF NOT EXISTS public.admin_audit_logs (
   metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
   ip_address TEXT DEFAULT NULL,
   user_agent TEXT DEFAULT NULL,
-  request_id TEXT DEFAULT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT admin_audit_logs_action_not_empty CHECK (btrim(action) <> ''),
   CONSTRAINT admin_audit_logs_entity_type_not_empty CHECK (btrim(entity_type) <> ''),

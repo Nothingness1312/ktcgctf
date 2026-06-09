@@ -112,6 +112,10 @@ BEGIN
 
   v_changed_fields := public.audit_log_changed_fields(v_before, v_after);
 
+  IF v_before IS NOT NULL AND v_after IS NOT NULL AND array_length(v_changed_fields, 1) IS NULL THEN
+    RETURN NULL;
+  END IF;
+
   INSERT INTO public.admin_audit_logs(
     actor_user_id,
     actor_snapshot,
@@ -124,8 +128,7 @@ BEGIN
     after_data,
     metadata,
     ip_address,
-    user_agent,
-    request_id
+    user_agent
   )
   VALUES (
     v_actor_user_id,
@@ -139,8 +142,7 @@ BEGIN
     v_after,
     COALESCE(p_metadata, '{}'::jsonb),
     COALESCE(v_headers->>'x-forwarded-for', v_headers->>'cf-connecting-ip', v_headers->>'real-ip'),
-    v_headers->>'user-agent',
-    COALESCE(v_headers->>'x-request-id', v_headers->>'request-id')
+    v_headers->>'user-agent'
   )
   RETURNING id INTO v_log_id;
 
@@ -176,7 +178,6 @@ RETURNS TABLE (
   metadata JSONB,
   ip_address TEXT,
   user_agent TEXT,
-  request_id TEXT,
   created_at TIMESTAMPTZ,
   total_count BIGINT
 )
@@ -229,7 +230,6 @@ BEGIN
     f.metadata,
     f.ip_address,
     f.user_agent,
-    f.request_id,
     f.created_at,
     c.total_count
   FROM filtered f

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Check, ChevronLeft, ChevronRight, Copy, Eye, FileDiff, ShieldCheck } from 'lucide-react'
+import { Check, ChevronLeft, ChevronRight, Copy, Eye, ShieldCheck } from 'lucide-react'
 import { Loader } from '@/shared/components'
 import {
   Button,
@@ -608,10 +608,6 @@ function RequestDetails({
             <div className="text-xs font-semibold text-gray-500 dark:text-gray-400">Operating System</div>
             <div className="mt-1 text-sm font-semibold text-gray-800 dark:text-gray-100">{parsedUserAgent.os}</div>
           </div>
-          <div>
-            <div className="text-xs font-semibold text-gray-500 dark:text-gray-400">Request ID</div>
-            <div className="mt-1"><CopyableValue value={log.request_id} /></div>
-          </div>
         </div>
         <div className="space-y-3">
           <div>
@@ -726,10 +722,8 @@ const AuditLogList: React.FC<AuditLogListProps> = ({ logs: propLogs, isLoading: 
   const [entityId, setEntityId] = useState('')
   const [fromDate, setFromDate] = useState('')
   const [toDate, setToDate] = useState('')
-  const [showChangesOnly, setShowChangesOnly] = useState(true)
-
   const logs = propLogs || internalLogs
-  const displayLogs = showChangesOnly ? logs.filter((log) => log.changed_fields.length > 0) : logs
+  const displayLogs = logs
   const isLoading = propLoading ?? internalLoading
   const pageCount = Math.max(1, Math.ceil(totalCount / limit))
   const safePage = Math.min(page, pageCount)
@@ -838,16 +832,7 @@ const AuditLogList: React.FC<AuditLogListProps> = ({ logs: propLogs, isLoading: 
                     onChange={(event) => setToDate(event.target.value)}
                     className="h-9 rounded-xl text-xs font-semibold"
                   />
-                  <label className="flex h-9 cursor-pointer items-center gap-2 rounded-xl border border-gray-200/70 bg-white/70 px-3 text-xs font-semibold text-gray-600 transition-colors hover:bg-gray-100/80 dark:border-gray-800/70 dark:bg-gray-900/70 dark:text-gray-300 dark:hover:bg-gray-800/80">
-                    <input
-                      type="checkbox"
-                      checked={showChangesOnly}
-                      onChange={(e) => setShowChangesOnly(e.target.checked)}
-                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500/40 dark:border-gray-600"
-                    />
-                    <FileDiff className="h-3.5 w-4 shrink-0" />
-                    Only with changes
-                  </label>
+
                 </div>
               </AdminFilterToolbar>
             )}
@@ -855,7 +840,7 @@ const AuditLogList: React.FC<AuditLogListProps> = ({ logs: propLogs, isLoading: 
         )}
         empty={displayLogs.length === 0 ? (
           <AdminEmptyState
-            title={showChangesOnly ? 'No admin audit logs with changes match the current filters' : 'No admin audit logs match the current filters'}
+            title='No admin audit logs match the current filters'
             description="Try adjusting actor, action, entity, or date filters."
           />
         ) : null}

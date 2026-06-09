@@ -27,7 +27,6 @@ export interface AuditLogEntry {
   metadata: Record<string, unknown>
   ip_address: string | null
   user_agent: string | null
-  request_id: string | null
   created_at: string
   total_count: number
 }
@@ -104,7 +103,6 @@ function normalizeAuditLog(row: any): AuditLogEntry {
     metadata: isRecord(row.metadata) ? row.metadata : {},
     ip_address: row.ip_address ?? null,
     user_agent: row.user_agent ?? null,
-    request_id: row.request_id ?? null,
     created_at: String(row.created_at || ''),
     total_count: Number(row.total_count || 0),
   }
