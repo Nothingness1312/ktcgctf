@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useMemo, useState } from 'react'
-import { Turnstile } from '@marsidev/react-turnstile'
 import { Eye, EyeOff, Lock, Mail, User } from 'lucide-react'
 import { useRegister } from '../hooks'
 import { isValidUsername } from '../lib/auth-utils'
@@ -15,6 +14,7 @@ import {
   AuthHeader,
   AuthInput,
   AuthStatusMessage,
+  AuthTurnstile,
   PasswordMatchIndicator,
 } from './ui'
 
@@ -136,18 +136,12 @@ export default function RegisterForm() {
         )}
 
         {captchaEnabled && (
-          <div className="w-full">
-            <Turnstile
-              key={turnstileKey}
-              siteKey={captchaSiteKey}
-              onSuccess={(token) => setCaptchaToken(token)}
-              onExpire={() => setCaptchaToken(null)}
-              options={{
-                theme: 'auto',
-                size: 'flexible'
-              }}
-            />
-          </div>
+          <AuthTurnstile
+            turnstileKey={turnstileKey}
+            siteKey={captchaSiteKey}
+            onSuccess={(token) => setCaptchaToken(token)}
+            onExpire={() => setCaptchaToken(null)}
+          />
         )}
 
         <AuthButton type="submit" loading={loading}>

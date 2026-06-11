@@ -16,7 +16,7 @@ import StatsGrid from './StatsGrid'
 import EventAccessSection from './EventAccessSection'
 import ProgressSection from './ProgressSection'
 import SolvedChallenges from './SolvedChallenges'
-import UnsolvedChallengesModal from './UnsolvedChallengesModal'
+import ProfileChallengesModal from './ProfileChallengesModal'
 import UserStatsPlotly from './UserStats'
 import EditProfileModal from './EditProfileModal'
 import { UserEmptyState } from '../ui/UserEmptyState'
@@ -205,11 +205,16 @@ export default function UserProfile({
           </div>
         )}
 
-        <UnsolvedChallengesModal
+        <ProfileChallengesModal
           open={showUnsolvedModal}
           onOpenChange={setShowUnsolvedModal}
+          mode="unsolved"
           loading={loadingUnsolved}
-          unsolvedChallenges={unsolvedChallenges}
+          challenges={unsolvedChallenges}
+          onSwitchMode={() => {
+            setShowUnsolvedModal(false)
+            setShowAllModal(true)
+          }}
         />
       </main>
     </PageBackground>

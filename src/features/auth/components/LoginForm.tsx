@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react'
 import Link from 'next/link'
-import { Turnstile } from '@marsidev/react-turnstile'
 import { Eye, EyeOff, Lock, Mail } from 'lucide-react'
 import { useLogin } from '../hooks'
 import { THEME_PRIMARY_RING_CLASS, THEME_PRIMARY_TEXT_CLASS } from '@/shared/styles'
@@ -15,6 +14,7 @@ import {
   AuthHeader,
   AuthInput,
   AuthStatusMessage,
+  AuthTurnstile,
 } from './ui'
 
 export default function LoginForm() {
@@ -89,18 +89,12 @@ export default function LoginForm() {
         </div>
 
         {captchaEnabled && (
-          <div className="w-full">
-            <Turnstile
-              key={turnstileKey}
-              siteKey={captchaSiteKey}
-              onSuccess={(token) => setCaptchaToken(token)}
-              onExpire={() => setCaptchaToken(null)}
-              options={{
-                theme: 'auto',
-                size: 'flexible'
-              }}
-            />
-          </div>
+          <AuthTurnstile
+            turnstileKey={turnstileKey}
+            siteKey={captchaSiteKey}
+            onSuccess={(token) => setCaptchaToken(token)}
+            onExpire={() => setCaptchaToken(null)}
+          />
         )}
 
         <AuthButton type="submit" loading={loading}>

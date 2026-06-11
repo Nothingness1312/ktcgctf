@@ -27,7 +27,7 @@ export default function ProfileChallengeListItem({
   return (
     <div
       className={cn(
-        'flex min-h-[64px] flex-col justify-between gap-2 p-3.5 sm:flex-row sm:items-center',
+        'flex min-h-[64px] flex-col justify-between gap-2 p-3.5 sm:flex-row sm:items-center sm:gap-4',
         SURFACE_GLASS_CARD_COMPACT_CLASS,
         SURFACE_INTERACTIVE_HOVER_CLASS,
         className
@@ -46,7 +46,7 @@ export default function ProfileChallengeListItem({
         </div>
       </div>
 
-      {trailing ? <div className="shrink-0">{trailing}</div> : null}
+      {trailing ? <div className="shrink-0 self-end sm:self-center">{trailing}</div> : null}
     </div>
   )
 }

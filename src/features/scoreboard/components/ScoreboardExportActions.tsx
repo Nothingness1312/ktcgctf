@@ -19,6 +19,7 @@ import {
 } from '../lib/scoreboard-export-data'
 
 type ExportRange = { fromRank: number; toRank: number }
+type RankInputValue = number | ''
 
 type ScoreboardExportActionsProps = {
   selectedEvent: string | number
@@ -49,7 +50,13 @@ function formatExportDate(value: string) {
   }).format(new Date(value))
 }
 
-function getPresetRange(preset: RankPreset, customFrom: number, customTo: number) {
+function normalizeRankInput(value: string): RankInputValue {
+  const normalized = value.replace(/^0+(?=\d)/, '')
+  if (normalized === '') return ''
+  return Number(normalized)
+}
+
+function getPresetRange(preset: RankPreset, customFrom: RankInputValue, customTo: RankInputValue) {
   if (preset === 'custom') {
     const from = Math.max(1, Math.floor(customFrom || 1))
     const to = Math.max(from, Math.floor(customTo || from))
@@ -141,8 +148,8 @@ export default function ScoreboardExportActions({
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [includeChart, setIncludeChart] = useState(true)
   const [rankPreset, setRankPreset] = useState<RankPreset>('1-25')
-  const [customFrom, setCustomFrom] = useState(1)
-  const [customTo, setCustomTo] = useState(25)
+  const [customFrom, setCustomFrom] = useState<RankInputValue>(1)
+  const [customTo, setCustomTo] = useState<RankInputValue>(25)
 
   const { from, to } = getPresetRange(rankPreset, customFrom, customTo)
   const canIncludeChart = from === 1
@@ -226,11 +233,23 @@ export default function ScoreboardExportActions({
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <Label className="text-xs font-semibold text-gray-500 dark:text-gray-400">From rank</Label>
-                  <Input type="number" min={1} value={customFrom} onChange={(event) => setCustomFrom(Number(event.target.value))} className="mt-1 h-9 rounded-xl" />
+                  <Input
+                    type="number"
+                    min={1}
+                    value={customFrom}
+                    onChange={(event) => setCustomFrom(normalizeRankInput(event.target.value))}
+                    className="mt-1 h-9 rounded-xl"
+                  />
                 </div>
                 <div>
                   <Label className="text-xs font-semibold text-gray-500 dark:text-gray-400">To rank</Label>
-                  <Input type="number" min={customFrom} value={customTo} onChange={(event) => setCustomTo(Number(event.target.value))} className="mt-1 h-9 rounded-xl" />
+                  <Input
+                    type="number"
+                    min={customFrom || 1}
+                    value={customTo}
+                    onChange={(event) => setCustomTo(normalizeRankInput(event.target.value))}
+                    className="mt-1 h-9 rounded-xl"
+                  />
                 </div>
               </div>
             )}

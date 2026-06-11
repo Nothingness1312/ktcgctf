@@ -201,6 +201,17 @@ body::-webkit-scrollbar-thumb:hover {
   /* Firefox */
 }
 
+input[type="number"] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
+}
+
 /* Sembunyikan semua scrollbar tapi tetap bisa scroll */
 /* *::-webkit-scrollbar {
   display: none;
