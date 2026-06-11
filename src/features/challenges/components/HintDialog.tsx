@@ -15,11 +15,11 @@ const HintDialog: React.FC<HintDialogProps> = ({ challenge, hintIdx = 0, open, o
   if (!challenge) return null
 
   const hints: string[] = Array.isArray(challenge.hint) ? challenge.hint : []
-  const hintText = hints[hintIdx]
+  const hintText = hints[hintIdx]?.trim()
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) onClose() }}>
-      <DialogContent className={`${DIALOG_GLASS_CONTENT_MD_CLASS} max-h-[85dvh] overflow-y-auto scroll-hidden`}>
+      <DialogContent className={`${DIALOG_GLASS_CONTENT_MD_CLASS} max-h-[85dvh] overflow-y-auto scroll-hidden p-4 sm:p-5`}>
         <DialogHeader className="select-none space-y-0">
           <div className="flex items-start justify-between gap-4">
             <DialogTitle className="flex min-w-0 items-center gap-3 text-lg font-bold tracking-tight text-gray-900 dark:text-white">
@@ -34,7 +34,7 @@ const HintDialog: React.FC<HintDialogProps> = ({ challenge, hintIdx = 0, open, o
           </div>
         </DialogHeader>
 
-        <div className="mt-6 select-text text-sm leading-relaxed text-gray-700 dark:text-gray-200">
+        <div className="mt-2 select-text text-sm leading-relaxed text-gray-700 dark:text-gray-200">
           {hintText ? (
             <div className="whitespace-pre-wrap break-words">{hintText}</div>
           ) : (

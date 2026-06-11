@@ -5,295 +5,38 @@ import { Clock, Loader2, Play, Power, PowerOff, RefreshCcw } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { SURFACE_GLASS_CARD_COMPACT_CLASS } from '@/shared/styles'
 import { parseNxctlService, type NxctlServiceEntry } from '../lib/nxctl-services'
+import {
+  formatExtendWaitDuration,
+  formatServiceSeconds,
+  formatShortDuration,
+  getChallengeServiceEndpoints,
+  getExtendButtonAlertClass,
+  getExtendState,
+  getRestartState,
+  getServiceDisplayName,
+  getTimerClass,
+  isNxctlNotFoundError,
+  type ServiceAction,
+  type ServiceActionLoadingState,
+} from '../lib/challenge-service-panel-state'
+import {
+  buildNxctlServiceHeaders,
+  buildNxctlStatusHeaders,
+  buildNxctlStatusUrl,
+  getNxctlErrorMessage,
+  getNxctlStatusName,
+  isHttpEndpoint,
+  normalizeNxctlStatusDetail,
+} from '../lib/nxctl-service-utils'
 
-type ServiceAction = 'up' | 'restart' | 'extend'
-type ServiceActionLoadingState = ServiceAction | null
-const CHALLENGE_KEY_HEADER = 'X-NXCTL-Challenge-Key'
 const EXTEND_REMINDER_SOUND = '/sounds/notif_ringtone.mp3'
 const EXTEND_REMINDER_VOLUME = 0.25
 const EXTEND_SOUND_COOLDOWN_MS = 60000
+const STATUS_REFRESH_INTERVAL_MS = 5000
 
 interface ChallengeServicesPanelProps {
   open: boolean
   services?: string[]
-}
-
-const buildNxctlHeaders = (service: NxctlServiceEntry, json = false) => {
-  const headers: Record<string, string> = {}
-  if (json) headers['Content-Type'] = 'application/json'
-  if (service.key) headers[CHALLENGE_KEY_HEADER] = service.key
-  return headers
-}
-
-const buildNxctlStatusHeaders = (services: NxctlServiceEntry[]) => {
-  const headers: Record<string, string> = {}
-  const keys = Array.from(new Set(
-    services
-      .map((service) => service.key?.trim())
-      .filter((key): key is string => Boolean(key))
-  ))
-
-  if (keys.length > 0) {
-    headers[CHALLENGE_KEY_HEADER] = keys.join(',')
-  }
-
-  return headers
-}
-
-const buildNxctlStatusUrl = (services: NxctlServiceEntry[]) => {
-  const params = new URLSearchParams({ action: 'status' })
-  const names = Array.from(new Set(
-    services
-      .map((service) => service.name.trim())
-      .filter(Boolean)
-  ))
-
-  if (names.length > 0) {
-    params.set('filter', names.join(','))
-  }
-
-  return `/api/nxctl?${params.toString()}`
-}
-
-const getExportEndpoint = (item: any) => String(item?.endpoint || item?.url || '').trim()
-
-const isTcpEndpoint = (item: any, fallbackType?: string) => {
-  const endpoint = getExportEndpoint(item).toLowerCase()
-  const type = String(item?.type || fallbackType || '').toLowerCase()
-  return type === 'tcp' || endpoint.startsWith('tcp://')
-}
-
-const parseTcpEndpoint = (endpoint: string) => {
-  const match = endpoint.match(/^tcp:\/\/([^/:]+):(\d+)/i)
-  if (match) return { host: match[1], port: match[2] }
-
-  const fallbackMatch = endpoint.match(/^([^/:]+):(\d+)$/i)
-  return fallbackMatch ? { host: fallbackMatch[1], port: fallbackMatch[2] } : null
-}
-
-const toTcpCommand = (endpoint: string) => {
-  const parsed = parseTcpEndpoint(endpoint)
-  return parsed ? `nc ${parsed.host} ${parsed.port}` : endpoint
-}
-
-const toSshCommand = (endpoint: string, user?: string) => {
-  const parsed = parseTcpEndpoint(endpoint)
-  if (!parsed) return endpoint
-
-  const username = user?.trim() || 'username'
-  const login = `${username}@`
-  return `ssh ${login}${parsed.host} -p ${parsed.port}`
-}
-
-const toSshCopyCommand = (endpoint: string, user?: string) => {
-  const command = toSshCommand(endpoint, user)
-  return command.startsWith('ssh ')
-    ? command.replace(/^ssh\s+/, 'ssh -o StrictHostKeyChecking=no ')
-    : command
-}
-
-const isHttpEndpoint = (endpoint: string) => /^https?:\/\//i.test(endpoint)
-
-const formatDuration = (seconds: number) => {
-  if (seconds <= 0) return '0s'
-  const h = Math.floor(seconds / 3600)
-  const m = Math.floor((seconds % 3600) / 60)
-  const sec = seconds % 60
-  if (h > 0) return `${h}h ${m}m ${sec}s`
-  return `${m}m ${sec}s`
-}
-
-const formatShortDuration = (seconds?: number | null) => {
-  if (!seconds || seconds <= 0) return null
-  if (seconds < 60) return `${Math.ceil(seconds)}s`
-  return `${Math.ceil(seconds / 60)}m`
-}
-
-const formatExtendWaitDuration = (seconds?: number | null) => {
-  if (!seconds || seconds <= 0) return null
-  return `${Math.max(1, Math.ceil(seconds / 60))}m`
-}
-
-const firstBoolean = (...values: unknown[]): boolean | null => {
-  for (const value of values) {
-    if (typeof value === 'boolean') return value
-    if (typeof value === 'number') return value !== 0
-    if (typeof value === 'string') {
-      const normalized = value.trim().toLowerCase()
-      if (normalized === 'true') return true
-      if (normalized === 'false') return false
-    }
-  }
-
-  return null
-}
-
-const firstNumber = (...values: unknown[]): number | null => {
-  for (const value of values) {
-    if (typeof value === 'number' && Number.isFinite(value)) return value
-    if (typeof value === 'string' && value.trim() !== '') {
-      const parsed = Number(value)
-      if (Number.isFinite(parsed)) return parsed
-    }
-  }
-
-  return null
-}
-
-const stringifyNxctlDetail = (value: unknown): string | null => {
-  if (!value) return null
-  if (typeof value === 'string') return value
-  if (typeof value !== 'object') return String(value)
-
-  const detail = value as Record<string, unknown>
-  const code = typeof detail.error === 'string' ? detail.error : ''
-  const message = typeof detail.message === 'string' ? detail.message : ''
-
-  if (code === 'challenge_not_found_or_not_authorized') {
-    return 'Challenge not found, disabled, or missing/invalid challenge key.'
-  }
-
-  if (code === 'challenge_not_found') {
-    return 'Challenge not found in NXCTL.'
-  }
-
-  if (code === 'invalid_or_missing_api_token') {
-    return 'NXCTL API token is missing or invalid.'
-  }
-
-  if (code === 'invalid_or_missing_admin_secret') {
-    return 'NXCTL admin secret is missing or invalid.'
-  }
-
-  if (code === 'api_admin_secret_not_configured') {
-    return 'NXCTL admin secret is not configured.'
-  }
-
-  if (code === 'restart_disabled') {
-    return 'Restart is disabled for this challenge.'
-  }
-
-  if (message) return message
-  if (code) return code
-
-  try {
-    return JSON.stringify(value)
-  } catch {
-    return null
-  }
-}
-
-const getNxctlErrorMessage = (data: any) => {
-  return (
-    stringifyNxctlDetail(data?.detail) ||
-    stringifyNxctlDetail(data?.error) ||
-    stringifyNxctlDetail(data?.message) ||
-    'Unknown error'
-  )
-}
-
-const getNxctlStatusName = (item: any) => String(item?.name || item?.challenge?.name || '').trim()
-
-const getServiceDisplayName = (name: string) => {
-  const normalized = name.trim().replace(/\\/g, '/')
-  const parts = normalized.split('/').filter(Boolean)
-  return parts.at(-1) || name
-}
-
-const getRestartState = (details: any) => {
-  const restart = details?.runtime?.restart || details?.restart || null
-  const enabled = firstBoolean(
-    restart?.enabled,
-    details?.runtime?.can_restart,
-    details?.challenge?.can_restart,
-    details?.can_restart
-  )
-  const cooldownSeconds = firstNumber(
-    restart?.cooldown_remaining_seconds,
-    details?.runtime?.restart_cooldown,
-    details?.restart_cooldown
-  )
-
-  return {
-    enabled: enabled ?? true,
-    cooldownSeconds: Math.max(0, Math.floor(cooldownSeconds ?? 0)),
-    restart,
-  }
-}
-
-const getExtendState = (details: any, remainingSec: number | null, timeSinceFetch: number) => {
-  const extend = details?.runtime?.extend || details?.extend || null
-  const thresholdSeconds = Math.max(0, Math.floor(firstNumber(extend?.threshold_seconds) ?? 300))
-  const rawCooldownSeconds = firstNumber(
-    extend?.cooldown_remaining_seconds,
-    details?.runtime?.extend_cooldown,
-    details?.extend_cooldown
-  ) ?? 0
-  const cooldownSeconds = Math.max(0, Math.floor(rawCooldownSeconds - timeSinceFetch))
-  const isWindowOpen = remainingSec !== null && remainingSec <= thresholdSeconds
-  const waitSeconds = remainingSec !== null && remainingSec > thresholdSeconds
-    ? remainingSec - thresholdSeconds
-    : 0
-  const backendCanExtend = firstBoolean(extend?.can_extend) === true
-
-  return {
-    canExtend: backendCanExtend || (remainingSec !== null && isWindowOpen && cooldownSeconds === 0),
-    cooldownSeconds,
-    thresholdSeconds,
-    waitSeconds,
-  }
-}
-
-const normalizeNxctlStatusDetail = (item: any) => {
-  const restart = item?.runtime?.restart || item?.restart || null
-  const restartEnabled = firstBoolean(
-    restart?.enabled,
-    item?.runtime?.can_restart,
-    item?.challenge?.can_restart,
-    item?.can_restart
-  )
-  const restartCooldown = firstNumber(
-    restart?.cooldown_remaining_seconds,
-    item?.runtime?.restart_cooldown,
-    item?.restart_cooldown
-  )
-
-  return {
-    challenge: {
-      name: getNxctlStatusName(item),
-      type: item?.type || item?.challenge?.type || null,
-      port: item?.port ?? item?.challenge?.port ?? null,
-      ports: Array.isArray(item?.ports) ? item.ports : Array.isArray(item?.challenge?.ports) ? item.challenge.ports : [],
-      can_restart: restartEnabled,
-    },
-    runtime: {
-      status: item?.runtime?.status || item?.status || 'unknown',
-      container_id: item?.runtime?.container_id || item?.container_id || null,
-      remaining_seconds: item?.runtime?.remaining_seconds ?? item?.remaining_seconds ?? null,
-      can_restart: restartEnabled,
-      restart_cooldown: restartCooldown ?? 0,
-      restart,
-      extend_cooldown: item?.runtime?.extend_cooldown ?? item?.extend_cooldown ?? 0,
-      extend: item?.runtime?.extend || item?.extend || null,
-    },
-    exports: Array.isArray(item?.exports) ? item.exports : [],
-  }
-}
-
-const isNxctlNotFoundError = (status: number, data: any): boolean => {
-  const getCode = (val: any): string | null => {
-    if (!val) return null
-    if (typeof val === 'string') return val
-    if (typeof val === 'object') {
-      if (typeof val.error === 'string') return val.error
-      if (typeof val.code === 'string') return val.code
-    }
-    return null
-  }
-
-  const code = getCode(data?.detail) || getCode(data?.error) || getCode(data)
-  if (code === 'challenge_not_found_or_not_authorized') return false
-  return status === 404 || code === 'challenge_not_found'
 }
 
 const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
@@ -548,8 +291,10 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
     }
 
     loadStatus()
+    const intervalId = window.setInterval(loadStatus, STATUS_REFRESH_INTERVAL_MS)
 
     return () => {
+      window.clearInterval(intervalId)
       inspectRunRef.current += 1
     }
   }, [open, parsedServices])
@@ -598,7 +343,7 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
       if (expiryReminderRef.current[service.name]) return
       expiryReminderRef.current[service.name] = true
       toast(
-        `${getServiceDisplayName(service.name)} expires in ${formatDuration(Math.floor(remainingSec))}. Extend it if needed.`,
+        `${getServiceDisplayName(service.name)} expires in ${formatServiceSeconds(Math.floor(remainingSec))}. Extend it if needed.`,
         {
           icon: '!',
           duration: 7000,
@@ -608,12 +353,12 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
     })
   }, [open, visibleServices, serviceDetails, serviceDetailsFetchTime, nowTick, playExtendReminderSound, stopExtendReminderSound])
 
-  const inspectService = async (service: NxctlServiceEntry) => {
+  const inspectService = React.useCallback(async (service: NxctlServiceEntry) => {
     setServiceDetailsLoading((prev) => ({ ...prev, [service.name]: true }))
     setServiceDetailsError((prev) => ({ ...prev, [service.name]: null }))
     try {
       const resInspect = await fetch(`/api/nxctl?action=inspect&name=${encodeURIComponent(service.name)}`, {
-        headers: buildNxctlHeaders(service),
+        headers: buildNxctlServiceHeaders(service),
       })
       const dataInspect = await resInspect.json()
       if (resInspect.ok) {
@@ -633,7 +378,7 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
     } finally {
       setServiceDetailsLoading((prev) => ({ ...prev, [service.name]: false }))
     }
-  }
+  }, [])
 
   const handleServiceAction = async (service: NxctlServiceEntry, action: ServiceAction) => {
     const details = serviceDetails[service.name]
@@ -667,7 +412,7 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
       }
 
       if (restartState.cooldownSeconds > 0) {
-        toast.error(`Restart cooldown active. Wait ${formatDuration(restartState.cooldownSeconds)}.`)
+        toast.error(`Restart cooldown active. Wait ${formatServiceSeconds(restartState.cooldownSeconds)}.`)
         return
       }
     }
@@ -679,7 +424,7 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
     try {
       const res = await fetch('/api/nxctl', {
         method: 'POST',
-        headers: buildNxctlHeaders(service, true),
+        headers: buildNxctlServiceHeaders(service, true),
         body: JSON.stringify({ action, name: service.name }),
       })
 
@@ -711,42 +456,8 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
           const serviceDisplayName = getServiceDisplayName(service.name)
           const details = serviceDetails[service.name]
           const isRunning = details?.runtime?.status === 'running'
-          const serviceType = details?.challenge?.type
           const hasPublishedPort = Boolean(details?.challenge?.port) || (Array.isArray(details?.challenge?.ports) && details.challenge.ports.length > 0)
-          const endpoints = Array.isArray(details?.exports)
-            ? details.exports
-              .map((item: any, exportIdx: number) => {
-                const endpoint = getExportEndpoint(item)
-                if (!endpoint) return null
-
-                const isTcp = isTcpEndpoint(item, serviceType)
-                const endpointType = String(item?.type || '').toLowerCase()
-                const isReturnedTcp =
-                  endpointType === 'tcp' ||
-                  endpoint.toLowerCase().startsWith('tcp://') ||
-                  (!isHttpEndpoint(endpoint) && parseTcpEndpoint(endpoint) !== null)
-                const isSsh = isReturnedTcp && service.options.type === 'ssh'
-                const command = isSsh ? toSshCommand(endpoint, service.options.user) : isTcp ? toTcpCommand(endpoint) : endpoint
-                const copyCommand = isSsh ? toSshCopyCommand(endpoint, service.options.user) : command
-                const password = isSsh ? service.options.pass || '' : ''
-
-                return {
-                  key: `${endpoint}-${exportIdx}`,
-                  endpoint,
-                  provider: item?.provider ? String(item.provider) : '',
-                  port: item?.port ? String(item.port) : '',
-                  status: item?.status ? String(item.status) : '',
-                  type: item?.type ? String(item.type) : String(serviceType || ''),
-                  isTcp,
-                  isSsh,
-                  command,
-                  password,
-                  copyText: copyCommand,
-                  copyMessage: isSsh ? 'Copied SSH command' : 'Copied endpoint',
-                }
-              })
-              .filter(Boolean)
-            : []
+          const endpoints = getChallengeServiceEndpoints(service, details)
 
           // Use remaining_seconds directly from API and keep countdown local between refreshes.
           const remainingSecFromApi = details?.runtime?.remaining_seconds ?? null
@@ -768,27 +479,8 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
           const extendDelayLabel = !canExtend
             ? extendCooldownLabel || formatExtendWaitDuration(extendState.waitSeconds)
             : null
-          const extendButtonAlertClass = canExtend && isRunning && remainingSec !== null
-            ? remainingSec <= 60
-              ? 'border-red-500/40 bg-red-500/15 text-red-200 shadow-red-500/10 hover:border-red-400/70 hover:bg-red-500/25 dark:border-red-400/40 dark:bg-red-500/15 dark:text-red-200 dark:hover:bg-red-500/25'
-              : 'border-amber-500/40 bg-amber-500/15 text-amber-200 shadow-amber-500/10 hover:border-amber-400/70 hover:bg-amber-500/25 dark:border-amber-400/40 dark:bg-amber-500/15 dark:text-amber-200 dark:hover:bg-amber-500/25'
-            : ''
-
-          const formatSecs = (s: number) => {
-            if (s <= 0) return '0s'
-            const h = Math.floor(s / 3600)
-            const m = Math.floor((s % 3600) / 60)
-            const sec = s % 60
-            if (h > 0) return `${h}h ${m}m ${sec}s`
-            return `${m}m ${sec}s`
-          }
-
-          const timerClass = (() => {
-            if (remainingSec === null) return 'border-gray-700/60 bg-gray-900/40 text-gray-500'
-            if (remainingSec <= 60) return 'border-red-500/30 bg-red-500/10 text-red-300'
-            if (remainingSec <= thresholdSec) return 'border-yellow-500/30 bg-yellow-500/10 text-yellow-300'
-            return 'border-cyan-500/20 bg-cyan-500/10 text-cyan-300'
-          })()
+          const extendButtonAlertClass = getExtendButtonAlertClass(canExtend, isRunning, remainingSec)
+          const timerClass = getTimerClass(remainingSec, thresholdSec)
           const isLoading = (serviceDetailsLoading[service.name] ?? (!details && open)) || (open && !fetchCompletedRef.current)
           const errorMessage = serviceDetailsError[service.name]
           const actionLoading = serviceActionLoading[service.name] ?? null
@@ -849,7 +541,7 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
                       if (isActionLoading) return 'Please wait...'
                       if (!restartEnabled) return 'Restart is disabled for this challenge'
                       if (!isRunning) return 'Cannot restart: service is not running'
-                      if (restartCooldownSec && restartCooldownSec > 0) return `Restart cooldown: ${formatSecs(restartCooldownSec)}`
+                       if (restartCooldownSec && restartCooldownSec > 0) return `Restart cooldown: ${formatServiceSeconds(restartCooldownSec)}`
                       return 'Restart Service'
                     })()}
                     disabled={
@@ -885,9 +577,9 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
                       if (!isRunning) return 'Cannot extend: service is not running'
                       if (remainingSec === null) return 'No expiration available to extend'
                       if (!canExtend) {
-                        if (extendCooldownLabel) return `Extend cooldown: ${formatSecs(extendState.cooldownSeconds)}`
+                         if (extendCooldownLabel) return `Extend cooldown: ${formatServiceSeconds(extendState.cooldownSeconds)}`
                         if (extendDelayLabel) return `Can extend in about ${extendDelayLabel}`
-                        return `Can extend when remaining <= ${formatSecs(thresholdSec)}`
+                         return `Can extend when remaining <= ${formatServiceSeconds(thresholdSec)}`
                       }
                       return `Extend service time`
                     })()}
@@ -916,7 +608,7 @@ const ChallengeServicesPanel: React.FC<ChallengeServicesPanelProps> = ({
                     title="Time remaining"
                   >
                     <Clock size={11} className="shrink-0 opacity-80" />
-                    {formatSecs(Math.floor(remainingSec))}
+                     {formatServiceSeconds(Math.floor(remainingSec))}
                   </span>
                 ) : (
                   <span

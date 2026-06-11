@@ -1,5 +1,6 @@
 import type { Challenge, Event } from '@/shared/types'
 import type { NxctlServiceEntry } from '@/features/challenges/lib/nxctl-services'
+import type { NxctlStatusDetail } from '@/features/challenges/lib/nxctl-service-utils'
 
 export type AdminServiceStatus = 'running' | 'stopped' | 'container_only' | 'expired' | 'error' | 'unknown'
 
@@ -29,25 +30,7 @@ export type AdminServiceEndpoint = {
   isHttp: boolean
 }
 
-export type AdminNxctlStatusDetail = {
-  challenge: {
-    name: string
-    type: string | null
-    port: number | null
-    ports: unknown[]
-    can_restart: boolean | null
-  }
-  runtime: {
-    status: string
-    container_id: string | null
-    remaining_seconds: number | null
-    can_restart: boolean | null
-    restart_cooldown: number
-    restart: unknown
-    extend_cooldown: number
-    extend: unknown
-  }
-  exports: unknown[]
+export type AdminNxctlStatusDetail = NxctlStatusDetail & {
   raw: unknown
 }
 
