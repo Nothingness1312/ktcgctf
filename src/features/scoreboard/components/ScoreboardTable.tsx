@@ -27,6 +27,8 @@ interface ScoreboardTableProps {
   missingLabel?: string
   /** Map of username to recent solves count */
   recentSolvesMap?: Map<string, number>
+  /** Offset used when rendering paged/exported rank ranges */
+  rankOffset?: number
 }
 
 const ScoreboardTable: React.FC<ScoreboardTableProps> = ({
@@ -37,7 +39,8 @@ const ScoreboardTable: React.FC<ScoreboardTableProps> = ({
   scoreColumnRenderer,
   onShowAll,
   missingLabel,
-  recentSolvesMap
+  recentSolvesMap,
+  rankOffset = 0,
 }) => {
   const currentUserIndex = currentUsername
     ? leaderboard.findIndex((entry) => entry.username === currentUsername)
@@ -53,7 +56,7 @@ const ScoreboardTable: React.FC<ScoreboardTableProps> = ({
       header: 'Rank',
       headerClassName: 'w-16 text-center',
       cellClassName: 'w-16 text-center font-mono text-gray-500 dark:text-gray-300',
-      render: (_entry, index) => index + 1,
+      render: (_entry, index) => rankOffset + index + 1,
     },
     {
       key: 'user',
@@ -123,7 +126,7 @@ const ScoreboardTable: React.FC<ScoreboardTableProps> = ({
         entries={leaderboard}
         columns={columns}
         getRowKey={(entry) => entry.username}
-        getRowId={(_entry, index) => `scoreboard-row-${index + 1}`}
+        getRowId={(_entry, index) => `scoreboard-row-${rankOffset + index + 1}`}
         getRowClassName={(entry) =>
           entry.username === currentUsername
             ? 'bg-blue-50/60 font-semibold dark:bg-blue-900/20'

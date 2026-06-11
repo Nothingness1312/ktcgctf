@@ -23,6 +23,7 @@ import { useScoreboardPageData } from '../hooks'
 import ScoreboardChart from './ScoreboardChart'
 import ScoreboardTable from './ScoreboardTable'
 import ScoreboardScopeTabs from './ScoreboardScopeTabs'
+import ScoreboardExportActions from './ScoreboardExportActions'
 import { cn } from '@/shared/lib/utils'
 
 export default function ScoreboardPage() {
@@ -54,6 +55,11 @@ export default function ScoreboardPage() {
     ? undefined
     : startedEvents.find((event) => String(event.id) === String(selectedEvent))
   const chartStartDate = selectedScoreboardEvent?.start_time
+  const exportEventLabel = selectedEvent === 'all'
+    ? 'All Events'
+    : selectedEvent === 'main'
+      ? 'Main Scoreboard'
+      : String(selectedScoreboardEvent?.name ?? 'Selected Event')
 
   return (
     <PageBackground
@@ -82,19 +88,28 @@ export default function ScoreboardPage() {
           </div>
         </div>
 
-        <AppTabs
-          items={[
-            { value: 'points', label: 'Points', icon: Coins },
-            { value: 'first-blood', label: 'First Blood', icon: Droplet },
-          ]}
-          value={firstBloodMode ? 'first-blood' : 'points'}
-          onValueChange={(tab) => setFirstBloodMode(tab === 'first-blood')}
-          variant="panel"
-          size="sm"
-          className="w-full sm:w-fit"
-          stretch
-          ariaLabel="Scoreboard mode"
-        />
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+          {!isEmpty && (
+            <ScoreboardExportActions
+              selectedEvent={selectedEvent}
+              eventLabel={exportEventLabel}
+              mode={firstBloodMode ? 'first-blood' : 'points'}
+            />
+          )}
+          <AppTabs
+            items={[
+              { value: 'points', label: 'Points', icon: Coins },
+              { value: 'first-blood', label: 'First Blood', icon: Droplet },
+            ]}
+            value={firstBloodMode ? 'first-blood' : 'points'}
+            onValueChange={(tab) => setFirstBloodMode(tab === 'first-blood')}
+            variant="panel"
+            size="sm"
+            className="w-full sm:w-fit"
+            stretch
+            ariaLabel="Scoreboard mode"
+          />
+        </div>
       </div>
 
       {loading && leaderboard.length === 0 ? (

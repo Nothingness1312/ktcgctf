@@ -13,12 +13,14 @@ type TeamScoreboardTableProps = {
   entries: TeamScoreboardEntry[]
   showTotalScore: boolean
   currentTeamName?: string | null
+  rankOffset?: number
 }
 
 export default function TeamScoreboardTable({
   entries,
   showTotalScore,
   currentTeamName,
+  rankOffset = 0,
 }: TeamScoreboardTableProps) {
   const scoreLabel = showTotalScore ? 'Total Score' : 'Unique Score'
   const currentTeamIndex = currentTeamName
@@ -38,7 +40,7 @@ export default function TeamScoreboardTable({
       header: 'Rank',
       headerClassName: 'w-16 text-center',
       cellClassName: 'w-16 text-center font-mono text-gray-500 dark:text-gray-300',
-      render: (_entry, index) => index + 1,
+      render: (_entry, index) => rankOffset + index + 1,
     },
     {
       key: 'team',
@@ -100,7 +102,7 @@ export default function TeamScoreboardTable({
         entries={entries}
         columns={columns}
         getRowKey={(entry) => entry.team_id}
-        getRowId={(_entry, index) => `scoreboard-row-${index + 1}`}
+        getRowId={(_entry, index) => `scoreboard-row-${rankOffset + index + 1}`}
         getRowClassName={(entry) =>
           currentTeamName && entry.team_name === currentTeamName
             ? 'bg-blue-50/60 font-semibold dark:bg-blue-900/20'
