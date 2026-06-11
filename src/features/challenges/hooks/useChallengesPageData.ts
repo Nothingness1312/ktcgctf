@@ -28,20 +28,19 @@ export function useChallengesPageData() {
     router.replace(`${pathname}?${params.toString()}`, { scroll: false })
   }
   const { filters, setFilters, layoutMode, sortMode, setSortMode } = useFilterContext()
-  const { events, selectedEvent, setSelectedEvent } = useEventContext()
+  const { events, selectedEvent, setSelectedEvent, refreshEvents } = useEventContext()
   const { user, loading } = useAuth()
   const {
     getState: getSubChallengeState,
     getAnswers: getSubChallengeAnswers,
     setAnswer: setSubChallengeAnswer,
-    ensureLoaded: ensureSubChallengesLoaded,
     refresh: refreshSubChallenges,
     submit: submitSubChallengeAnswers,
     resetAnswers: resetSubChallengeAnswers,
   } = useSubChallenges()
 
   const eventId: EventSelectorValue = selectedEvent === 'main' ? null : selectedEvent
-  const { challenges, isChallengesLoading, initialLoading, loadChallenges } = useChallengeList(user?.id)
+  const { challenges, isChallengesLoading, initialLoading, loadChallenges } = useChallengeList(user?.id, eventId)
   const { filterSettings, setFilterSettings } = useChallengeFilterSettings()
   const {
     challengeTab,
@@ -59,7 +58,6 @@ export function useChallengesPageData() {
   } = useChallengeDialogState({
     challenges,
     initialLoading,
-    ensureSubChallengesLoaded,
     refreshSubChallenges,
   })
   const {
@@ -121,12 +119,18 @@ export function useChallengesPageData() {
     if (!loading && !user) router.push('/login')
   }, [user, loading, router])
 
+  useEffect(() => {
+    if (!user || currentTab !== 'events') return
+    void refreshEvents()
+  }, [currentTab, refreshEvents, user])
+
   const handleSubChallengeAnswerChange = (challengeId: string, orderNumber: number, value: string) => {
     setSubChallengeAnswer(challengeId, orderNumber, value)
   }
 
   const handleSubChallengeSubmit = async (challengeId: string, orderNumber?: number) => {
-    await submitSubChallengeAnswers(challengeId, orderNumber)
+    const result = await submitSubChallengeAnswers(challengeId, orderNumber)
+    if (result.completed) await loadChallenges()
   }
 
   const selectedSubChallengeState = selectedChallenge ? getSubChallengeState(selectedChallenge.id) : null

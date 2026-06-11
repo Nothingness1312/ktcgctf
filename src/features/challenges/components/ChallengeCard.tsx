@@ -61,6 +61,7 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge, highlightTeamS
         ${isAnySolved ? 'opacity-55 hover:opacity-85' : 'opacity-100'}`}
       style={{ transformOrigin: 'center' }}
       onClick={isMaintenance ? undefined : handleOpen}
+      onMouseDown={(event) => event.preventDefault()}
       onKeyDown={handleKeyDown}
     >
       {/* Hover Glow Overlay */}

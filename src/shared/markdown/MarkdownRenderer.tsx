@@ -59,7 +59,7 @@ function CodeBlockWrapper({ children, isDark = true }: { children: React.ReactNo
   }
 
   return (
-    <div className="relative mb-6">
+    <div className="relative mb-3">
       {hasOverflow && (
         <div className="absolute top-2 right-2 flex gap-1 z-10">
           <button
@@ -121,7 +121,7 @@ function BlockquoteWrapper({ children, isDark = true }: { children: React.ReactN
   }
 
   return (
-    <div className="relative mb-6">
+    <div className="relative mb-3">
       {hasOverflow && (
         <div className="absolute -top-8 right-0 flex gap-1 z-10">
           <button
@@ -195,7 +195,7 @@ function MarkdownImage({
   const resolvedHeight = getMarkdownImageDimension(height, 800)
 
   return (
-    <div className="mb-6">
+    <div className="mb-3">
       <Zoom wrapElement="div">
         <div className="overflow-hidden rounded-lg border border-gray-800">
           <Image
@@ -240,7 +240,7 @@ export function MarkdownRenderer({ content, className = '', onCommentsExtracted,
             h1: ({ ...props }) => <h1 className="text-lg font-bold text-blue-400 border-b border-gray-800 pb-1 mb-4" {...props} />,
             h2: ({ ...props }) => <h2 className="text-base font-semibold text-blue-300 mb-4" {...props} />,
             h3: ({ ...props }) => <h3 className="text-sm font-semibold text-blue-200 mb-4" {...props} />,
-            p: ({ ...props }) => <p className="mb-5 leading-relaxed" {...props} />,
+            p: ({ ...props }) => <div className="mb-5 leading-relaxed" {...props} />,
             ul: ({ ...props }) => <ul className="mb-5 list-disc list-inside space-y-1 ml-2" {...props} />,
             ol: ({ ...props }) => <ol className="mb-5 list-decimal list-inside space-y-1 ml-2" {...props} />,
             li: ({ ...props }) => <li className="list-item" {...props} />,
@@ -264,7 +264,7 @@ export function MarkdownRenderer({ content, className = '', onCommentsExtracted,
                 </code>
               ) : (
                 <CodeBlockWrapper isDark={false}>
-                  <pre className="bg-gray-900 p-3 rounded-lg text-[13px] leading-snug font-mono max-w-full border border-gray-800 overflow-x-auto mb-6">
+                  <pre className="bg-gray-900 p-2 rounded-lg text-[13px] leading-snug font-mono max-w-full border border-gray-800 overflow-x-auto mb-3">
                     <code className="text-gray-200" {...props}>
                       {children}
                     </code>
@@ -295,7 +295,7 @@ export function MarkdownRenderer({ content, className = '', onCommentsExtracted,
           ),
           h2: ({ ...props }) => <h2 className="text-xl font-semibold mb-4 text-blue-300 tracking-tight" {...props} />,
           h3: ({ ...props }) => <h3 className="text-lg font-semibold mb-4 text-blue-200" {...props} />,
-          p: ({ ...props }) => <p className="mb-5 leading-relaxed text-gray-300" {...props} />,
+          p: ({ ...props }) => <div className="mb-2 leading-relaxed text-gray-300" {...props} />,
           ul: ({ ...props }) => <ul className="mb-5 space-y-1.5 list-disc list-inside ml-1" {...props} />,
           ol: ({ ...props }) => <ol className="mb-5 space-y-1.5 list-decimal list-inside ml-1" {...props} />,
           li: ({ ...props }) => <li className="ml-4 mb-2 list-item" {...props} />,
@@ -306,7 +306,7 @@ export function MarkdownRenderer({ content, className = '', onCommentsExtracted,
               </code>
             ) : (
               <CodeBlockWrapper isDark>
-                <pre className="bg-gray-900 p-4 rounded-xl text-sm font-mono max-w-full border border-gray-800 shadow-sm">
+                <pre className="bg-gray-900 p-2 rounded-xl text-sm font-mono max-w-full border border-gray-800 shadow-sm">
                   <code className="max-w-full text-gray-200 leading-relaxed" {...props}>{children}</code>
                 </pre>
               </CodeBlockWrapper>
@@ -324,12 +324,12 @@ export function MarkdownRenderer({ content, className = '', onCommentsExtracted,
           blockquote: ({ ...props }) => (
             <BlockquoteWrapper isDark>
               <blockquote
-                className="border-l-4 border-blue-400 bg-blue-500/5 pl-4 pr-2 py-2 text-gray-300 rounded-md italic leading-relaxed"
+                className="border-l-4 border-blue-400 bg-blue-500/5 pl-2 pr-1 py-1 text-gray-300 rounded-md italic leading-relaxed"
                 {...props}
               />
             </BlockquoteWrapper>
           ),
-          hr: () => <hr className="mb-6 border-gray-800" />,
+          hr: () => <hr className="mb-3 border-gray-800" />,
         }}
       >
         {sanitizedContent}
@@ -354,7 +354,7 @@ export function RulesMarkdownRenderer({ content, className = '' }: MarkdownRende
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkBreaks]}
         components={{
-          p: ({ ...props }) => <p className="mb-2 leading-relaxed" {...props} />,
+          p: ({ ...props }) => <div className="mb-2 leading-relaxed" {...props} />,
           li: ({ ...props }) => <li className="ml-6 list-disc mb-1" {...props} />,
           strong: ({ ...props }) => <strong className="font-bold text-gray-900 dark:text-blue-400" {...props} />,
           em: ({ ...props }) => <em className="italic text-gray-700 dark:text-gray-300" {...props} />,
@@ -366,7 +366,7 @@ export function RulesMarkdownRenderer({ content, className = '' }: MarkdownRende
               </code>
             ) : (
               <CodeBlockWrapper isDark={false}>
-                <pre className="bg-gray-100 dark:bg-gray-900 p-4 rounded-lg text-sm font-mono max-w-full border border-gray-300 dark:border-gray-700">
+                <pre className="bg-gray-100 dark:bg-gray-900 p-2 rounded-lg text-sm font-mono max-w-full border border-gray-300 dark:border-gray-700">
                   <code className="text-gray-900 dark:text-gray-100" {...props}>{children}</code>
                 </pre>
               </CodeBlockWrapper>

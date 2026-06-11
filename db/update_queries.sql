@@ -613,6 +613,9 @@ DECLARE
   v_username text := substring(p_username from 1 for 28);
   v_suffix int := 1;
 BEGIN
+  IF NOT v_username ~ '^[a-zA-Z0-9_. -]+$' THEN
+    RAISE EXCEPTION 'Username can only contain letters, numbers, spaces, ".", "_", and "-".';
+  END IF;
   WHILE EXISTS (SELECT 1 FROM public.users WHERE username = v_username) LOOP
     v_username := substring(p_username from 1 for 28) || '_' || v_suffix;
     v_suffix := v_suffix + 1;
@@ -715,6 +718,9 @@ BEGIN
   END IF;
   IF length(v_username) > 32 THEN
     RETURN json_build_object('success', false, 'message', 'Username cannot exceed 32 characters');
+  END IF;
+  IF NOT v_username ~ '^[a-zA-Z0-9_. -]+$' THEN
+    RETURN json_build_object('success', false, 'message', 'Username can only contain letters, numbers, spaces, ".", "_", and "-".');
   END IF;
   SELECT username INTO v_old_username FROM public.users WHERE id = p_id;
   IF NOT FOUND THEN
@@ -4278,6 +4284,9 @@ BEGIN
   IF length(p_name) > 64 THEN
     RAISE EXCEPTION 'Team name cannot exceed 64 characters';
   END IF;
+  IF NOT p_name ~ '^[a-zA-Z0-9_. -]+$' THEN
+    RAISE EXCEPTION 'Team name can only contain letters, numbers, spaces, ".", "_", and "-".';
+  END IF;
   INSERT INTO public.teams(name, invite_code, captain_user_id)
   VALUES (p_name, generate_team_invite_code(), v_user_id)
   RETURNING id INTO v_team_id;
@@ -4326,6 +4335,9 @@ BEGIN
   IF length(p_new_name) > 64 THEN
     RAISE EXCEPTION 'Team name cannot exceed 64 characters';
   END IF;
+  IF NOT p_new_name ~ '^[a-zA-Z0-9_. -]+$' THEN
+    RAISE EXCEPTION 'Team name can only contain letters, numbers, spaces, ".", "_", and "-".';
+  END IF;
   UPDATE public.teams
   SET name = trim(p_new_name),
       updated_at = now()
@@ -4358,6 +4370,9 @@ BEGIN
   END IF;
   IF length(v_name) > 64 THEN
     RAISE EXCEPTION 'Team name cannot exceed 64 characters';
+  END IF;
+  IF NOT v_name ~ '^[a-zA-Z0-9_. -]+$' THEN
+    RAISE EXCEPTION 'Team name can only contain letters, numbers, spaces, ".", "_", and "-".';
   END IF;
   IF v_picture_url IS NOT NULL AND length(v_picture_url) > 2048 THEN
     RAISE EXCEPTION 'Team image URL cannot exceed 2048 characters';

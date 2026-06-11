@@ -43,6 +43,20 @@ export function mergeProfilePicture<T extends Record<string, any>>(base: T, auth
   return merged
 }
 
+export function isValidTeamName(name: string): string | null {
+  const trimmed = name.trim()
+  if (trimmed.length > 64) {
+    return 'Team name must be at most 64 characters.'
+  }
+  if (trimmed.length < 3) {
+    return 'Team name must be at least 3 characters.'
+  }
+  if (!/^[a-zA-Z0-9_. -]+$/.test(trimmed)) {
+    return 'Team name can only contain letters, numbers, spaces, ".", "_", and "-".'
+  }
+  return null
+}
+
 export function isValidUsername(username: string): string | null {
   // Tidak boleh lebih dari 30 karakter
   if (username.length > 30) {

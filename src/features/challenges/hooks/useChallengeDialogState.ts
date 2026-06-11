@@ -22,14 +22,12 @@ import type {
 type UseChallengeDialogStateOptions = {
   challenges: ChallengeWithSolve[]
   initialLoading: boolean
-  ensureSubChallengesLoaded: (challengeId: string) => Promise<unknown> | unknown
   refreshSubChallenges: (challengeId: string) => Promise<unknown> | unknown
 }
 
 export function useChallengeDialogState({
   challenges,
   initialLoading,
-  ensureSubChallengesLoaded,
   refreshSubChallenges,
 }: UseChallengeDialogStateOptions) {
   const [challengeTab, setChallengeTab] = useState<ChallengeDialogTab>('challenge')
@@ -42,9 +40,21 @@ export function useChallengeDialogState({
   const [challengeDetailCache] = useState(() => new Map<string, ChallengeWithSolve>())
   const [solversCache] = useState(() => new Map<string, Solver[]>())
 
-  const fetchSolversForChallenge = useCallback(async (challengeId: string) => {
+  const preserveWindowScroll = useCallback(() => {
+    const scrollX = window.scrollX
+    const scrollY = window.scrollY
+    const restore = () => window.scrollTo({ left: scrollX, top: scrollY, behavior: 'auto' })
+
+    restore()
+    requestAnimationFrame(() => {
+      restore()
+      requestAnimationFrame(restore)
+    })
+  }, [])
+
+  const fetchSolversForChallenge = useCallback(async (challengeId: string, force = false) => {
     const cached = solversCache.get(challengeId)
-    if (cached) {
+    if (cached && !force) {
       setSolvers(cached)
       return
     }
@@ -61,13 +71,17 @@ export function useChallengeDialogState({
   const handleTabChange = useCallback(async (tab: ChallengeDialogTab, challengeId: string) => {
     setChallengeTab(tab)
     if (tab === 'solvers') {
-      await fetchSolversForChallenge(challengeId)
+      await fetchSolversForChallenge(challengeId, true)
       return
     }
-    if (tab === 'question') await ensureSubChallengesLoaded(challengeId)
-  }, [ensureSubChallengesLoaded, fetchSolversForChallenge])
+    if (tab === 'question') {
+      await refreshSubChallenges(challengeId)
+      return
+    }
+  }, [fetchSolversForChallenge, refreshSubChallenges])
 
   const openChallenge = useCallback(async (challenge: ChallengeWithSolve) => {
+    preserveWindowScroll()
     persistSelectedChallenge(challenge.id)
     setChallengeTab('challenge')
     setSolvers([])
@@ -92,6 +106,7 @@ export function useChallengeDialogState({
           attachments: Array.isArray((challenge as any).attachments) ? (challenge as any).attachments : [],
         } as any
     )
+    preserveWindowScroll()
 
     const freshDetail = await getChallengeDetail(challenge.id)
     if (!freshDetail) return
@@ -100,12 +115,15 @@ export function useChallengeDialogState({
       if (!prev || prev.id !== challenge.id) return prev
       return { ...prev, ...freshDetail, hint: normalizeChallengeHints((freshDetail as any).hint) } as any
     })
-  }, [challengeDetailCache, placeholders, refreshSubChallenges])
+    preserveWindowScroll()
+  }, [challengeDetailCache, placeholders, preserveWindowScroll, refreshSubChallenges])
 
   const closeChallenge = useCallback(() => {
+    preserveWindowScroll()
     persistSelectedChallenge(null)
     setSelectedChallenge(null)
-  }, [])
+    preserveWindowScroll()
+  }, [preserveWindowScroll])
 
   useEffect(() => {
     if (initialLoading || challenges.length === 0 || selectedChallenge) return
@@ -117,6 +135,33 @@ export function useChallengeDialogState({
     if (challengeToRestore) void openChallenge(challengeToRestore)
     else persistSelectedChallenge(null)
   }, [challenges, initialLoading, openChallenge, selectedChallenge])
+
+  useEffect(() => {
+    if (!selectedChallenge?.id) return
+
+    const updatedChallenge = challenges.find((challenge) => challenge.id === selectedChallenge.id)
+    if (!updatedChallenge) return
+
+    const hasChanged =
+      selectedChallenge.is_solved !== updatedChallenge.is_solved ||
+      (selectedChallenge as any).is_team_solved !== (updatedChallenge as any).is_team_solved ||
+      selectedChallenge.total_solves !== updatedChallenge.total_solves ||
+      selectedChallenge.points !== updatedChallenge.points ||
+      selectedChallenge.updated_at !== updatedChallenge.updated_at
+
+    if (!hasChanged) return
+
+    setSelectedChallenge((prev) => {
+      if (!prev || prev.id !== updatedChallenge.id) return prev
+      return {
+        ...prev,
+        ...updatedChallenge,
+        description: prev.description,
+        hint: normalizeChallengeHints((prev as any).hint),
+        attachments: Array.isArray((prev as any).attachments) ? (prev as any).attachments : [],
+      } as any
+    })
+  }, [challenges, selectedChallenge])
 
   const downloadFile = useCallback(async (attachment: Attachment, attachmentKey: string) => {
     setDownloading((prev) => ({ ...prev, [attachmentKey]: true }))

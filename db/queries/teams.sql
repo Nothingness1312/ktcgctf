@@ -554,6 +554,10 @@ BEGIN
     RAISE EXCEPTION 'Team name cannot exceed 64 characters';
   END IF;
 
+  IF NOT p_name ~ '^[a-zA-Z0-9_. -]+$' THEN
+    RAISE EXCEPTION 'Team name can only contain letters, numbers, spaces, ".", "_", and "-".';
+  END IF;
+
   INSERT INTO public.teams(name, invite_code, captain_user_id)
   VALUES (p_name, generate_team_invite_code(), v_user_id)
   RETURNING id INTO v_team_id;
@@ -614,6 +618,10 @@ BEGIN
     RAISE EXCEPTION 'Team name cannot exceed 64 characters';
   END IF;
 
+  IF NOT p_new_name ~ '^[a-zA-Z0-9_. -]+$' THEN
+    RAISE EXCEPTION 'Team name can only contain letters, numbers, spaces, ".", "_", and "-".';
+  END IF;
+
   UPDATE public.teams
   SET name = trim(p_new_name),
       updated_at = now()
@@ -652,6 +660,10 @@ BEGIN
 
   IF length(v_name) > 64 THEN
     RAISE EXCEPTION 'Team name cannot exceed 64 characters';
+  END IF;
+
+  IF NOT v_name ~ '^[a-zA-Z0-9_. -]+$' THEN
+    RAISE EXCEPTION 'Team name can only contain letters, numbers, spaces, ".", "_", and "-".';
   END IF;
 
   IF v_picture_url IS NOT NULL AND length(v_picture_url) > 2048 THEN

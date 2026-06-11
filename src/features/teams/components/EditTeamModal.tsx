@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import toast from 'react-hot-toast'
 import {
   Dialog,
   DialogContent,
@@ -14,6 +15,7 @@ import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
 import { EditActionButton } from '@/shared/components'
 import { DIALOG_GLASS_CONTENT_MD_CLASS } from '@/shared/styles'
+import { isValidTeamName } from '@/features/auth'
 
 interface EditTeamModalProps {
   currentName: string
@@ -48,6 +50,13 @@ export default function EditTeamModal({
   const handleSave = async () => {
     const trimmed = name.trim()
     const normalizedPictureUrl = pictureUrl.trim() || null
+
+    const nameError = isValidTeamName(trimmed)
+    if (nameError) {
+      toast.error(nameError)
+      return
+    }
+
     if (!trimmed || (trimmed === currentName && normalizedPictureUrl === (currentPictureUrl || null))) {
       setOpen(false)
       return
@@ -97,9 +106,6 @@ export default function EditTeamModal({
                 maxLength={50}
                 className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100"
               />
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                Max 50 characters. Must be unique.
-              </p>
             </div>
 
             <div className="space-y-1.5">

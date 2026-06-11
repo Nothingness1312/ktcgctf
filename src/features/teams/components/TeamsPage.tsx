@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { AlertTriangle, Users, UserPlus, Sparkles, ShieldCheck } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { isValidTeamName } from '@/features/auth'
 
 import Loader from '@/shared/components/Loader'
 import PageLoader from '@/shared/components/PageLoader'
@@ -105,7 +106,13 @@ export default function TeamsPage() {
   }, [team, members, summary, challenges])
 
   const onCreateTeam = async () => {
-    await handleCreateTeam(teamName)
+    const trimmed = teamName.trim()
+    const nameError = isValidTeamName(trimmed)
+    if (nameError) {
+      toast.error(nameError)
+      return
+    }
+    await handleCreateTeam(trimmed)
     setTeamName('')
   }
 

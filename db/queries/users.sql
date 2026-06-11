@@ -542,6 +542,10 @@ DECLARE
   v_username text := substring(p_username from 1 for 28);
   v_suffix int := 1;
 BEGIN
+  IF NOT v_username ~ '^[a-zA-Z0-9_. -]+$' THEN
+    RAISE EXCEPTION 'Username can only contain letters, numbers, spaces, ".", "_", and "-".';
+  END IF;
+
   WHILE EXISTS (SELECT 1 FROM public.users WHERE username = v_username) LOOP
     v_username := substring(p_username from 1 for 28) || '_' || v_suffix;
     v_suffix := v_suffix + 1;
@@ -653,6 +657,10 @@ BEGIN
 
   IF length(v_username) > 32 THEN
     RETURN json_build_object('success', false, 'message', 'Username cannot exceed 32 characters');
+  END IF;
+
+  IF NOT v_username ~ '^[a-zA-Z0-9_. -]+$' THEN
+    RETURN json_build_object('success', false, 'message', 'Username can only contain letters, numbers, spaces, ".", "_", and "-".');
   END IF;
 
   SELECT username INTO v_old_username FROM public.users WHERE id = p_id;

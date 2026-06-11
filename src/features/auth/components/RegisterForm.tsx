@@ -136,14 +136,15 @@ export default function RegisterForm() {
         )}
 
         {captchaEnabled && (
-          <div className="w-full flex justify-center">
+          <div className="w-full">
             <Turnstile
               key={turnstileKey}
               siteKey={captchaSiteKey}
               onSuccess={(token) => setCaptchaToken(token)}
               onExpire={() => setCaptchaToken(null)}
               options={{
-                theme: 'auto'
+                theme: 'auto',
+                size: 'flexible'
               }}
             />
           </div>

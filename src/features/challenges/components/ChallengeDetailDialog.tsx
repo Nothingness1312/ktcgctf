@@ -122,6 +122,23 @@ const ChallengeDetailDialog: React.FC<ChallengeDetailDialogProps> = ({
 }) => {
   const [solvesSortOrder, setSolvesSortOrder] = useState<'newest' | 'oldest'>('oldest')
   const contentScrollRef = React.useRef<HTMLDivElement | null>(null)
+  const windowScrollRef = React.useRef({ x: 0, y: 0 })
+
+  const restoreWindowScroll = React.useCallback(() => {
+    const { x, y } = windowScrollRef.current
+    const restore = () => window.scrollTo({ left: x, top: y, behavior: 'auto' })
+
+    restore()
+    requestAnimationFrame(() => {
+      restore()
+      requestAnimationFrame(restore)
+    })
+  }, [])
+
+  React.useEffect(() => {
+    if (!open) return
+    windowScrollRef.current = { x: window.scrollX, y: window.scrollY }
+  }, [open])
 
   const solverCount = solvers.length > 0 ? solvers.length : (challenge?.total_solves ?? 0)
 
@@ -141,7 +158,7 @@ const ChallengeDetailDialog: React.FC<ChallengeDetailDialogProps> = ({
   }, [solvers, solvesSortOrder])
 
   React.useEffect(() => {
-    contentScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
+    contentScrollRef.current?.scrollTo({ top: 0, behavior: 'auto' })
   }, [challenge?.id, challengeTab])
 
   if (!challenge) return null
@@ -159,10 +176,20 @@ const ChallengeDetailDialog: React.FC<ChallengeDetailDialogProps> = ({
   const dialogTitle = getChallengeDialogTitle(challenge.title);
 
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) onClose() }}>
+    <Dialog open={open} onOpenChange={(isOpen) => {
+      if (isOpen) return
+      restoreWindowScroll()
+      onClose()
+    }}>
       <DialogContent
         className={`${DIALOG_CONTENT_CLASS_2XL} w-[95vw] h-[90vh] flex flex-col`}
+        aria-describedby={undefined}
         onClick={(event) => event.stopPropagation()}
+        onOpenAutoFocus={(event) => event.preventDefault()}
+        onCloseAutoFocus={(event) => {
+          event.preventDefault()
+          restoreWindowScroll()
+        }}
       >
         {/* Fixed Header Section */}
         <div className="p-4 md:px-6 pb-0 shrink-0">
@@ -239,7 +266,7 @@ const ChallengeDetailDialog: React.FC<ChallengeDetailDialogProps> = ({
         </div>
 
         {/* Scrollable Content Area */}
-        <div ref={contentScrollRef} className="flex-1 overflow-y-auto px-4 pb-2 md:px-6 scroll-hidden">
+        <div ref={contentScrollRef} className="flex-1 overflow-y-auto overscroll-contain px-4 pb-2 md:px-6 scroll-hidden">
           {challengeTab === 'challenge' && (
             <div className="min-h-full flex flex-col pb-5">
               {/* Description at the Top */}
