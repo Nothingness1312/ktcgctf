@@ -81,11 +81,11 @@ export default function ChallengeDialogs({ data }: ChallengeDialogsProps) {
         }}
         onSubChallengeSubmit={(orderNumber) => {
           if (!data.selectedChallenge) return
-          data.handleSubChallengeSubmit(data.selectedChallenge.id, orderNumber)
+          return data.handleSubChallengeSubmit(data.selectedChallenge.id, orderNumber)
         }}
         onSubChallengeReset={() => {
           if (!data.selectedChallenge) return
-          data.resetSubChallengeAnswers(data.selectedChallenge.id)
+          return data.resetSubChallengeAnswers(data.selectedChallenge.id)
         }}
       />
     </>

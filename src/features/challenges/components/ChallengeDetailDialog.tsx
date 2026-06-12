@@ -59,7 +59,7 @@ interface ChallengeDetailDialogProps {
   onClose: () => void
   flagInputs: KeyedStringMap
   handleFlagInputChange: (challengeId: string, value: string) => void
-  handleFlagSubmit: (challengeId: string) => void
+  handleFlagSubmit: (challengeId: string) => void | Promise<unknown>
   submitting: KeyedBooleanMap
   flagFeedback: KeyedFlagFeedbackMap
   downloading: KeyedBooleanMap
@@ -79,8 +79,8 @@ interface ChallengeDetailDialogProps {
   subChallengeFlag: string | null
   subChallengeMessage: string | null
   onSubChallengeAnswerChange: (orderNumber: number, value: string) => void
-  onSubChallengeSubmit: (orderNumber?: number) => void
-  onSubChallengeReset: () => void
+  onSubChallengeSubmit: (orderNumber?: number) => void | Promise<unknown>
+  onSubChallengeReset: () => void | Promise<unknown>
   placeholders: KeyedStringMap
   services?: string[]
 }
@@ -133,6 +133,40 @@ const ChallengeDetailDialog: React.FC<ChallengeDetailDialogProps> = ({
       restore()
       requestAnimationFrame(restore)
     })
+  }, [])
+
+  const preserveDialogScroll = React.useCallback(() => {
+    const windowScrollPosition = windowScrollRef.current
+    const contentScrollPosition = {
+      left: contentScrollRef.current?.scrollLeft ?? 0,
+      top: contentScrollRef.current?.scrollTop ?? 0,
+    }
+
+    const restore = () => {
+      window.scrollTo({
+        left: windowScrollPosition.x,
+        top: windowScrollPosition.y,
+        behavior: 'auto',
+      })
+      contentScrollRef.current?.scrollTo({
+        left: contentScrollPosition.left,
+        top: contentScrollPosition.top,
+        behavior: 'auto',
+      })
+    }
+
+    const restoreAfterRender = () => {
+      restore()
+      requestAnimationFrame(() => {
+        restore()
+        requestAnimationFrame(restore)
+      })
+      window.setTimeout(restore, 50)
+      window.setTimeout(restore, 150)
+    }
+
+    restoreAfterRender()
+    return restoreAfterRender
   }, [])
 
   React.useEffect(() => {
@@ -294,7 +328,7 @@ const ChallengeDetailDialog: React.FC<ChallengeDetailDialogProps> = ({
         </div>
 
         {/* Scrollable Content Area */}
-        <div ref={contentScrollRef} className="flex-1 overflow-y-auto overscroll-contain px-4 pb-2 md:px-6 scroll-hidden">
+        <div ref={contentScrollRef} className="flex-1 overflow-y-auto overscroll-contain px-4 pb-2 md:px-6 scroll-hidden [overflow-anchor:none]">
           {challengeTab === 'challenge' && (
             <div className="min-h-full flex flex-col pb-5">
               {/* Description at the Top */}
@@ -353,6 +387,7 @@ const ChallengeDetailDialog: React.FC<ChallengeDetailDialogProps> = ({
                 onAnswerChange={onSubChallengeAnswerChange}
                 onSubmit={onSubChallengeSubmit}
                 onReset={onSubChallengeReset}
+                preserveDialogScroll={preserveDialogScroll}
               />
             </div>
           )}
@@ -368,6 +403,7 @@ const ChallengeDetailDialog: React.FC<ChallengeDetailDialogProps> = ({
             flagFeedback={flagFeedback}
             handleFlagInputChange={handleFlagInputChange}
             handleFlagSubmit={handleFlagSubmit}
+            preserveDialogScroll={preserveDialogScroll}
           />
         )}
 
@@ -376,6 +412,7 @@ const ChallengeDetailDialog: React.FC<ChallengeDetailDialogProps> = ({
             subChallengeCompleted={subChallengeCompleted}
             subChallengeFlag={subChallengeFlag}
             onReset={onSubChallengeReset}
+            preserveDialogScroll={preserveDialogScroll}
           />
         )}
 

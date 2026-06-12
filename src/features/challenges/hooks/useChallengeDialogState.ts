@@ -50,6 +50,8 @@ export function useChallengeDialogState({
       restore()
       requestAnimationFrame(restore)
     })
+    window.setTimeout(restore, 50)
+    window.setTimeout(restore, 150)
   }, [])
 
   const fetchSolversForChallenge = useCallback(async (challengeId: string, force = false) => {
@@ -151,6 +153,7 @@ export function useChallengeDialogState({
 
     if (!hasChanged) return
 
+    preserveWindowScroll()
     setSelectedChallenge((prev) => {
       if (!prev || prev.id !== updatedChallenge.id) return prev
       return {
@@ -161,7 +164,8 @@ export function useChallengeDialogState({
         attachments: Array.isArray((prev as any).attachments) ? (prev as any).attachments : [],
       } as any
     })
-  }, [challenges, selectedChallenge])
+    preserveWindowScroll()
+  }, [challenges, preserveWindowScroll, selectedChallenge])
 
   const downloadFile = useCallback(async (attachment: Attachment, attachmentKey: string) => {
     setDownloading((prev) => ({ ...prev, [attachmentKey]: true }))

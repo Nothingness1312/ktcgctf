@@ -7,15 +7,69 @@ import ConfirmDialog from '@/shared/components/ConfirmDialog'
 export interface QuestionFooterProps {
   subChallengeCompleted: boolean
   subChallengeFlag: string | null
-  onReset: () => void
+  onReset: () => void | Promise<unknown>
+  preserveDialogScroll?: () => () => void
 }
 
 export const QuestionFooter: React.FC<QuestionFooterProps> = ({
   subChallengeCompleted,
   subChallengeFlag,
   onReset,
+  preserveDialogScroll,
 }) => {
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false)
+  const resetScrollPositionRef = React.useRef({ x: 0, y: 0 })
+  const resetScrollRestoreRef = React.useRef<(() => void) | null>(null)
+
+  const saveResetScrollPosition = React.useCallback(() => {
+    resetScrollPositionRef.current = { x: window.scrollX, y: window.scrollY }
+  }, [])
+
+  const restoreResetScrollPosition = React.useCallback(() => {
+    const restoreDialogScroll = preserveDialogScroll?.()
+
+    if (restoreDialogScroll) {
+      restoreDialogScroll()
+      return
+    }
+
+    const scrollPosition = resetScrollPositionRef.current
+    const restore = () => window.scrollTo({ left: scrollPosition.x, top: scrollPosition.y, behavior: 'auto' })
+
+    restore()
+    requestAnimationFrame(() => {
+      restore()
+      requestAnimationFrame(restore)
+    })
+    window.setTimeout(restore, 50)
+    window.setTimeout(restore, 150)
+  }, [preserveDialogScroll])
+
+  const openResetConfirmWithoutScrollJump = React.useCallback(() => {
+    saveResetScrollPosition()
+    resetScrollRestoreRef.current = preserveDialogScroll?.() || null
+
+    setResetConfirmOpen(true)
+
+    if (resetScrollRestoreRef.current) {
+      resetScrollRestoreRef.current()
+      return
+    }
+
+    restoreResetScrollPosition()
+  }, [preserveDialogScroll, restoreResetScrollPosition, saveResetScrollPosition])
+
+  const handleResetConfirm = React.useCallback(async () => {
+    saveResetScrollPosition()
+    const restoreDialogScroll = resetScrollRestoreRef.current || preserveDialogScroll?.() || null
+    const restoreAfterReset = restoreDialogScroll || restoreResetScrollPosition
+
+    try {
+      await onReset()
+    } finally {
+      restoreAfterReset()
+    }
+  }, [onReset, preserveDialogScroll, restoreResetScrollPosition, saveResetScrollPosition])
 
   return (
     <>
@@ -54,7 +108,13 @@ export const QuestionFooter: React.FC<QuestionFooterProps> = ({
           </div>
 
           <button
-            onClick={() => setResetConfirmOpen(true)}
+            onMouseDown={(event) => {
+              event.preventDefault()
+              saveResetScrollPosition()
+              resetScrollRestoreRef.current = preserveDialogScroll?.() || null
+            }}
+            onTouchStart={saveResetScrollPosition}
+            onClick={openResetConfirmWithoutScrollJump}
             className="flex h-[38px] shrink-0 select-none items-center justify-center rounded-xl px-4 text-[11px] font-bold uppercase tracking-widest text-red-500/80 underline decoration-red-500/30 underline-offset-4 transition-all hover:bg-red-50 hover:text-red-500 hover:decoration-red-500 active:scale-95 dark:hover:bg-red-500/10"
           >
             Reset
@@ -69,7 +129,8 @@ export const QuestionFooter: React.FC<QuestionFooterProps> = ({
         description="Are you sure you want to reset your progress? This will clear all your answers for this challenge."
         variant="destructive"
         confirmLabel="Reset"
-        onConfirm={onReset}
+        onConfirm={handleResetConfirm}
+        onRestoreWindowScroll={restoreResetScrollPosition}
       />
     </>
   )

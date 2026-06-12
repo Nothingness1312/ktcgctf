@@ -13,7 +13,8 @@ type ChallengeFlagFormProps = {
   submitting: KeyedBooleanMap
   flagFeedback: KeyedFlagFeedbackMap
   handleFlagInputChange: (challengeId: string, value: string) => void
-  handleFlagSubmit: (challengeId: string) => void
+  handleFlagSubmit: (challengeId: string) => void | Promise<unknown>
+  preserveDialogScroll?: () => () => void
 }
 
 export default function ChallengeFlagForm({
@@ -24,10 +25,12 @@ export default function ChallengeFlagForm({
   flagFeedback,
   handleFlagInputChange,
   handleFlagSubmit,
+  preserveDialogScroll,
 }: ChallengeFlagFormProps) {
   const overlayRef = React.useRef<HTMLDivElement>(null)
   const inputRef = React.useRef<HTMLInputElement>(null)
   const submitScrollPositionRef = React.useRef({ x: 0, y: 0 })
+  const submitScrollRestoreRef = React.useRef<(() => void) | null>(null)
   const [isDeleting, setIsDeleting] = React.useState(false)
 
   const restoreWindowScroll = React.useCallback((scrollPosition: { x: number; y: number }) => {
@@ -43,12 +46,22 @@ export default function ChallengeFlagForm({
   const saveSubmitScrollPosition = React.useCallback(() => {
     submitScrollPositionRef.current = { x: window.scrollX, y: window.scrollY }
   }, [])
+  const prepareSubmitScrollRestore = React.useCallback(() => {
+    saveSubmitScrollPosition()
+    submitScrollRestoreRef.current = preserveDialogScroll?.() || null
+  }, [preserveDialogScroll, saveSubmitScrollPosition])
   const submitFlagWithoutScrollJump = React.useCallback(() => {
     const scrollPosition = submitScrollPositionRef.current
+    const restoreDialogScroll = submitScrollRestoreRef.current || preserveDialogScroll?.() || null
+    const restoreAfterSubmit = restoreDialogScroll || (() => restoreWindowScrollAfterSubmit(scrollPosition))
+    const result = handleFlagSubmit(challenge.id)
 
-    handleFlagSubmit(challenge.id)
-    restoreWindowScrollAfterSubmit(scrollPosition)
-  }, [challenge.id, handleFlagSubmit, restoreWindowScrollAfterSubmit])
+    restoreAfterSubmit()
+
+    if (result instanceof Promise) {
+      void result.finally(restoreAfterSubmit)
+    }
+  }, [challenge.id, handleFlagSubmit, preserveDialogScroll, restoreWindowScrollAfterSubmit])
 
   React.useEffect(() => {
     const scrollPosition = { x: window.scrollX, y: window.scrollY }
@@ -99,7 +112,7 @@ export default function ChallengeFlagForm({
             value={flagInputs[challenge.id] || ''}
             onKeyDown={(event) => {
               if (event.key === 'Enter') {
-                saveSubmitScrollPosition()
+                prepareSubmitScrollRestore()
               }
 
               if (event.key === 'Backspace') {
@@ -134,8 +147,11 @@ export default function ChallengeFlagForm({
             !flagInputs[challenge.id]?.trim() ||
             (challenge.flag_placeholder && placeholders[challenge.id] ? (flagInputs[challenge.id] || '').length !== placeholders[challenge.id].length : false)
           }
-          onMouseDown={saveSubmitScrollPosition}
-          onTouchStart={saveSubmitScrollPosition}
+          onMouseDown={(event) => {
+            event.preventDefault()
+            prepareSubmitScrollRestore()
+          }}
+          onTouchStart={prepareSubmitScrollRestore}
           className="flex h-[38px] shrink-0 select-none items-center justify-center rounded-xl bg-blue-600 px-6 text-[13px] font-black uppercase tracking-widest text-white shadow-lg shadow-blue-500/20 transition-all hover:bg-blue-500 hover:shadow-blue-500/30 active:scale-95 disabled:opacity-30"
         >
           {submitting[challenge.id] ? '...' : 'Submit'}

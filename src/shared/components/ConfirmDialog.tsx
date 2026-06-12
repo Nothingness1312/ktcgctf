@@ -20,6 +20,7 @@ type ConfirmDialogProps = {
   verificationValue?: string
   onVerificationValueChange?: (value: string) => void
   verificationPlaceholder?: string
+  onRestoreWindowScroll?: () => void
 }
 
 export default function ConfirmDialog({
@@ -37,6 +38,7 @@ export default function ConfirmDialog({
   verificationValue: externalValue,
   onVerificationValueChange,
   verificationPlaceholder,
+  onRestoreWindowScroll,
 }: ConfirmDialogProps) {
   const [loading, setLoading] = useState(false)
   const [internalValue, setInternalValue] = useState("")
@@ -48,6 +50,11 @@ export default function ConfirmDialog({
       setInternalValue("")
     }
   }, [open, isExternallyControlled])
+
+  useEffect(() => {
+    if (!open) return
+    onRestoreWindowScroll?.()
+  }, [onRestoreWindowScroll, open])
 
   const handleConfirm = async () => {
     setLoading(true)
@@ -62,12 +69,23 @@ export default function ConfirmDialog({
   const confirmVariant = variant === "destructive" ? "destructive" : "default"
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(isOpen) => {
+      if (!isOpen) onRestoreWindowScroll?.()
+      onOpenChange(isOpen)
+    }}>
       <DialogContent className="sm:max-w-md p-3 gap-2" hideCloseButton onKeyDown={(e) => {
         if (e.key === 'Enter' && !e.shiftKey && !loading && !confirmDisabled && (verificationText === undefined || verificationValue === verificationText)) {
           e.preventDefault()
           handleConfirm()
         }
+      }} onOpenAutoFocus={(event) => {
+        if (!onRestoreWindowScroll) return
+        event.preventDefault()
+        onRestoreWindowScroll()
+      }} onCloseAutoFocus={(event) => {
+        if (!onRestoreWindowScroll) return
+        event.preventDefault()
+        onRestoreWindowScroll()
       }}>
         <div className="flex items-start justify-between gap-2">
           <DialogTitle className="text-sm font-semibold tracking-tight pt-0.5">

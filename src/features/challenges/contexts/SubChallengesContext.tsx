@@ -33,7 +33,7 @@ type SubChallengesContextType = {
   ensureLoaded: (challengeId: string) => Promise<SubChallengeState>
   refresh: (challengeId: string) => Promise<SubChallengeState>
   submit: (challengeId: string, orderNumber?: number) => Promise<SubmitSubChallengesResult>
-  resetAnswers: (challengeId: string) => void
+  resetAnswers: (challengeId: string) => Promise<SubChallengeState>
 }
 
 const STORAGE_KEY_PREFIX = 'nxctf_sub_challenge_answers_v1:'
@@ -183,7 +183,7 @@ export function SubChallengesProvider({ children }: { children: React.ReactNode 
 
   const resetAnswers = (challengeId: string) => {
     clearAnswers(challengeId)
-    refresh(challengeId, {}) // Explicitly pass empty answers to avoid stale state
+    return refresh(challengeId, {}) // Explicitly pass empty answers to avoid stale state
   }
 
   const refresh = async (challengeId: string, pAnswers?: SubChallengeAnswerMap): Promise<SubChallengeState> => {
