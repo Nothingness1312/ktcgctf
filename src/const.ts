@@ -20,6 +20,13 @@ export const LINKS = {
 
 export const YEAR = new Date().getFullYear()
 
+export const SUB_CATEGORY_ORDER: string[] = [
+  "fundamentals",
+  "intro",
+  "user",
+  "root",
+]
+
 export const DIFFICULTY_STYLES: Record<string, string> = {
   Baby: 'cyan',
   Easy: 'green',

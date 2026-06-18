@@ -120,15 +120,29 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge, highlightTeamS
 
             {/* LEFT: Category Badge + Feature Badge */}
             <div className="min-w-0 flex flex-1 items-center gap-1.5 overflow-hidden pr-1">
-              <div
-                title={challenge.category}
-                className={`min-w-0 max-w-[104px] sm:max-w-[118px] truncate whitespace-nowrap text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-md transition-opacity duration-400
-                ${isAnySolved
-                  ? `${categoryBadgeColor} opacity-60`
-                  : categoryBadgeColor}`}
-              >
-                {challenge.category}
-              </div>
+              {(() => {
+                const parts = (challenge.category || '').split('/');
+                const parent = parts[0];
+                const sub = parts.slice(1).join('/');
+                return (
+                  <div className="flex items-center gap-1 min-w-0">
+                    <div
+                      title={parent}
+                      className={`min-w-0 truncate whitespace-nowrap text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-md transition-opacity duration-400
+                      ${isAnySolved
+                        ? `${categoryBadgeColor} opacity-60`
+                        : categoryBadgeColor}`}
+                    >
+                      {parent}
+                    </div>
+                    {sub && (
+                      <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 truncate uppercase tracking-wide min-w-0">
+                        / {sub}
+                      </span>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* Feature Badge (T / S / TS) */}
               {featureBadge && (
@@ -183,7 +197,7 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge, highlightTeamS
           {!isMaintenance && (
             <div className="flex items-center gap-3">
               {noFirstBlood ? (
-                <span className="text-red-400 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider">
+                <span className="text-orange-400 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider">
                   <Flame size={11} className="fill-current" />
                   First Blood
                 </span>

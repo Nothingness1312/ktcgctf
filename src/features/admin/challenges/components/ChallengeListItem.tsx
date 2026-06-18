@@ -22,19 +22,31 @@ const ChallengeListItem: React.FC<ChallengeListItemProps> = ({
   onToggleMaintenance,
 }) => {
   const handleToggleActive = async (id: string, checked: boolean) => {
-    await onToggleActive(id, checked); // update ke backend
+    await onToggleActive(id, checked);
   };
+
+  const parts = (challenge.category || '').split('/')
+  const parentCat = parts[0]
+  const subCat = parts.slice(1).join('/')
 
   return (
     <div className="w-full px-5 py-3">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div className="flex items-center gap-3 min-w-0 order-2 sm:order-1">
+        <div className="flex items-center gap-3 min-w-0 order-2 sm:order-1 flex-1">
           <DifficultyBadge difficulty={challenge.difficulty} width={92} />
 
-          <div className="min-w-0 pl-3">
+          <div className="min-w-0 pl-3 flex-1">
             <div className="font-medium truncate text-gray-900 dark:text-white">{challenge.title}</div>
-            <div className="text-xs text-muted-foreground dark:text-gray-300 truncate flex items-center gap-2">
-              <span className="truncate">{challenge.category} • {challenge.points} pts</span>
+            <div className="text-xs text-muted-foreground dark:text-gray-300 flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+              <span className="shrink-0 font-semibold uppercase tracking-wide">{parentCat}</span>
+              {subCat && (
+                <>
+                  <span className="shrink-0 text-gray-400">/</span>
+                  <span className="truncate min-w-0 max-w-[200px]">{subCat}</span>
+                </>
+              )}
+              <span className="shrink-0 text-gray-400">•</span>
+              <span className="shrink-0 whitespace-nowrap">{challenge.points} pts</span>
               {challenge.is_dynamic && (
                 <>
                   <Badge className="bg-indigo-100 text-indigo-800 dark:bg-indigo-600 dark:text-white px-1 py-0.5">

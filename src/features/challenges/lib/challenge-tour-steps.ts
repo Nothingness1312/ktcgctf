@@ -36,19 +36,19 @@ export function buildChallengeTourSteps(): Step[] {
       content: 'Open search here to find challenges by title or description. You can also press / anywhere on the challenges page for quick search.',
       placement: 'right',
     },
-    {
+{
       target: '[data-tour="challenge-sidebar-status-filter"]',
-      content: 'Cycle status between All Status, Unsolved, and Solved without opening a dropdown.',
+      content: 'Pick a status between All Status, Unsolved, and Solved without opening a dropdown.',
       placement: 'right',
     },
     {
       target: '[data-tour="challenge-sidebar-feature-filter"]',
-      content: 'Cycle feature type between All Features, Tasks, and Services. Challenges with both still appear in Tasks or Services.',
+      content: 'Pick a feature type between All Features, Tasks, and Services.',
       placement: 'right',
     },
     {
       target: '[data-tour="challenge-sidebar-difficulty-filter"]',
-      content: 'Pick a difficulty here. The gauge icon marks this as the difficulty filter even when it is set to All Difficulties.',
+      content: 'Pick a difficulty level between All Difficulties, Easy, Medium, and Hard.',
       placement: 'right',
     },
     {

@@ -104,7 +104,7 @@ function ChallengeRow({
         title={challenge.title}
         subtitle={
           <p className="truncate">
-            {challenge.category} / {challenge.difficulty} / {challenge.solved_at ? formatRelativeDate(challenge.solved_at) : '-'}
+            {(challenge.category || '').replace(/\//g, ' / ')} / {challenge.difficulty} / {challenge.solved_at ? formatRelativeDate(challenge.solved_at) : '-'}
           </p>
         }
         trailing={(

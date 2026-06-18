@@ -6,6 +6,8 @@ import { AdminDataSurface, AdminEmptyState, AdminListSurface, AdminStickyToolbar
 import AdminChallengesToolbar from './AdminChallengesToolbar'
 import ChallengeListItem from './ChallengeListItem'
 import type { AdminChallengeEventId, AdminChallengeFilterState, Challenge, Event } from '../types'
+import APP from '@/config'
+import { buildFuzzyOrderedList } from '@/features/challenges/lib/challenge-utils'
 
 interface ChallengeListPanelProps {
   challenges: Challenge[]
@@ -53,6 +55,24 @@ const ChallengeListPanel: React.FC<ChallengeListPanelProps> = ({
     </p>
   ) : null
 
+  const rawCategories = Array.from(new Set(challenges.map(c => (c.category || '').split('/')[0]))).filter(Boolean)
+  const categoryOrder = APP.challengeCategories || []
+  const sortedCategories = buildFuzzyOrderedList(categoryOrder, rawCategories)
+
+  const rawDifficulties = Array.from(new Set(challenges.map(c => c.difficulty))).filter(Boolean)
+  const difficultyOrder = Object.keys(APP.difficultyStyles || {})
+  const normalizedDiffOrder = difficultyOrder.map(d => d.toLowerCase())
+  const sortedDifficulties = [...rawDifficulties].sort((a, b) => {
+    const normA = a.trim().toLowerCase()
+    const normB = b.trim().toLowerCase()
+    let idxA = normalizedDiffOrder.indexOf(normA)
+    let idxB = normalizedDiffOrder.indexOf(normB)
+    if (idxA === -1) idxA = normalizedDiffOrder.length
+    if (idxB === -1) idxB = normalizedDiffOrder.length
+    if (idxA !== idxB) return idxA - idxB
+    return a.localeCompare(b)
+  })
+
   return (
     <motion.div className="order-1 xl:col-span-3" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
       <div className="w-full">
@@ -63,8 +83,8 @@ const ChallengeListPanel: React.FC<ChallengeListPanelProps> = ({
                 <AdminChallengesToolbar
                   filters={filters}
                   onFiltersChange={onFiltersChange}
-                  categories={Array.from(new Set(challenges.map(c => c.category))).filter(Boolean).sort()}
-                  difficulties={Array.from(new Set(challenges.map(c => c.difficulty))).filter(Boolean).sort()}
+                  categories={sortedCategories}
+                  difficulties={sortedDifficulties}
                   actions={headerActions}
                   status={syncStatus}
                   events={events}

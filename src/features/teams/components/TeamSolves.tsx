@@ -102,7 +102,17 @@ function TeamSolveRow({ challenge }: { challenge: TeamChallenge }) {
         title={challenge.title}
         subtitle={
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-bold text-blue-500/80">{challenge.category}</span>
+            {(() => {
+              const parts = (challenge.category || '').split('/')
+              const parent = parts[0]
+              const sub = parts.slice(1).join('/')
+              return (
+                <span className="font-bold text-blue-500/80">
+                  {parent}
+                  {sub && <span className="text-xs font-semibold text-gray-500 dark:text-gray-400"> / {sub}</span>}
+                </span>
+              )
+            })()}
             <span className="h-1 w-1 rounded-full bg-gray-300 dark:bg-gray-700" />
             <span>Solved {formatDate(challenge.first_solved_at)}</span>
             <span className="h-1 w-1 rounded-full bg-gray-300 dark:bg-gray-700" />

@@ -121,7 +121,7 @@ export default function ProfileChallengesModal({
                 <section key={category} className="space-y-3">
                   <div className="flex items-center gap-2">
                     <span className="rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1 text-xs font-bold text-blue-600 dark:text-blue-400">
-                      {category}
+                      {category.replace(/\//g, ' / ')}
                     </span>
                     <span className="text-xs text-gray-500 dark:text-gray-400">
                       {challengeList.length} {challengeList.length === 1 ? 'challenge' : 'challenges'}
@@ -180,7 +180,7 @@ function SolvedChallengeModalRow({
       title={challenge.title}
       subtitle={(
         <p className="truncate">
-          {challenge.category} / {challenge.difficulty} / {challenge.solved_at ? formatRelativeDate(challenge.solved_at) : '-'}
+          {(challenge.category || '').replace(/\//g, ' / ')} / {challenge.difficulty} / {challenge.solved_at ? formatRelativeDate(challenge.solved_at) : '-'}
         </p>
       )}
       trailing={(

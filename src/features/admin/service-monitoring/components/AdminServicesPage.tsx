@@ -267,6 +267,7 @@ export default function AdminServicesPage() {
         events={events}
         hideMainEventOption={!isGlobalAdmin}
         onSubmitSuccess={() => { void refresh() }}
+        initialTab="additional"
       />
 
       <ConfirmDialog

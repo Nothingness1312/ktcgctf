@@ -6,7 +6,7 @@ import type {
   ChallengeFilterState,
   EventSelectorValue,
 } from '../../types'
-import { buildFuzzyOrderedList } from '../challenge-utils'
+import { buildFuzzyOrderedList, getCategoryParent, isCategoryMatch } from '../challenge-utils'
 
 const DEFAULT_FILTERS = {
   status: 'all',
@@ -66,7 +66,8 @@ export function filterChallengesByState({
         if (end && !Number.isNaN(end) && nowMs > end) return false
       }
 
-      const isIntro = String(challenge.category || '').toLowerCase() === 'intro'
+      const catLower = String(challenge.category || '').toLowerCase()
+      const isIntro = catLower === 'intro' || catLower.startsWith('intro/')
       const isMain = challenge.event_id === null || typeof challenge.event_id === 'undefined'
       if (isIntro && !isMain) return false
     }
@@ -80,7 +81,8 @@ export function filterChallengesByState({
     if (settings.hideMaintenance && challenge.is_maintenance) return false
 
     // Hide solved Intro challenges if setting is enabled and not specifically filtering for solved
-    const isIntro = String(challenge.category || '').toLowerCase() === 'intro'
+    const catLower = String(challenge.category || '').toLowerCase()
+    const isIntro = catLower === 'intro' || catLower.startsWith('intro/')
     const isFilteringSolved = filters.status === 'solved'
     if (isIntro && challenge.is_solved && settings.hideSolvedIntro && !isFilteringSolved) {
       return false
@@ -92,7 +94,7 @@ export function filterChallengesByState({
     if (filters.feature === 'F' && !featureType.includes('F')) return false
     if (filters.status === 'solved' && !challenge.is_solved) return false
     if (filters.status === 'unsolved' && challenge.is_solved) return false
-    if (filters.category !== 'all' && challenge.category !== filters.category) return false
+    if (!isCategoryMatch(challenge.category, filters.category)) return false
     if (filters.difficulty !== 'all' && challenge.difficulty !== filters.difficulty) return false
 
     if (filters.search) {
@@ -108,7 +110,9 @@ export function filterChallengesByState({
 }
 
 export function buildChallengeFilterOptions(challenges: ChallengeWithSolve[], preferredCategoryOrder: string[]) {
-  const allCategories = Array.from(new Set(challenges.map((challenge) => challenge.category))).filter(Boolean) as string[]
+  const allCategories = Array.from(
+    new Set(challenges.map((challenge) => getCategoryParent(challenge.category)))
+  ).filter(Boolean) as string[]
 
   return {
     categories: buildFuzzyOrderedList(preferredCategoryOrder, allCategories),
@@ -131,13 +135,10 @@ export function getSortedFilterValues({
   const normalizedDifficulties = Array.from(new Set(difficulties.map(capitalize)))
 
   return {
-    sortedCategories: [
-      ...categoryOrder.filter((category) => categories.includes(category)),
-      ...categories.filter((category) => !categoryOrder.includes(category)),
-    ],
+    sortedCategories: buildFuzzyOrderedList(categoryOrder, categories),
     sortedDifficulties: [
       ...difficultyOrder.filter((difficulty) => normalizedDifficulties.includes(difficulty)),
-      ...normalizedDifficulties.filter((difficulty) => !difficultyOrder.includes(difficulty)),
+      ...normalizedDifficulties.filter((difficulty) => !normalizedDifficulties.includes(difficulty)),
     ],
   }
 }

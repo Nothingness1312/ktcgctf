@@ -1,3 +1,4 @@
+import { isCategoryMatch } from '@/features/challenges/lib/challenge-utils'
 import type {
   AdminChallengeEventId,
   AdminChallengeFilterState,
@@ -21,7 +22,7 @@ export function getFilteredAdminChallenges({
   eventId,
   filters,
   categoryOrder,
-}: GetFilteredAdminChallengesParams) {
+}: GetFilteredAdminChallengesParams): Challenge[] {
   const allowedEventSet = new Set(adminScope?.event_ids ?? [])
   const manageable = isGlobalAdmin
     ? challenges
@@ -44,7 +45,7 @@ export function getFilteredAdminChallenges({
     }
 
     // 3. Category filter
-    if (filters.category !== "all" && challenge.category !== filters.category) return false
+    if (!isCategoryMatch(challenge.category, filters.category)) return false
 
     // 4. Difficulty filter
     if (filters.difficulty !== "all" && challenge.difficulty !== filters.difficulty) return false

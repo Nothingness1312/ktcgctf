@@ -8,6 +8,7 @@ export const APP = {
 
   challengeCategories: [
     "Intro",
+    "Linux",
     "Boot To Root",
     "Web",
     "Forensics",

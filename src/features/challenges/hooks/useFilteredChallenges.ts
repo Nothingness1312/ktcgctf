@@ -93,8 +93,9 @@ export function useFilteredChallenges({
       sortMode,
       difficultyOrder,
       preferredCategoryOrder: preferredOrder,
+      splitSubCategories: deferredFilterSettings.splitSubCategories,
     })
-  }, [difficultyOrder, filteredChallenges, preferredOrder, sortMode])
+  }, [difficultyOrder, filteredChallenges, preferredOrder, sortMode, deferredFilterSettings.splitSubCategories])
 
   return {
     filteredChallenges,

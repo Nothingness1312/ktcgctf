@@ -11,6 +11,7 @@ export type nxctfettingsV1 = {
       hideMaintenance: boolean
       highlightTeamSolves: boolean
       hideSolvedIntro: boolean
+      splitSubCategories?: boolean
     }
   }
   events?: {
@@ -197,12 +198,12 @@ export const setSolveSoundEnabledSetting = (enabled: boolean) => {
   }))
 }
 
-export const getChallengeFilterSettings = (): { hideMaintenance: boolean; highlightTeamSolves: boolean; hideSolvedIntro: boolean } | null => {
+export const getChallengeFilterSettings = (): { hideMaintenance: boolean; highlightTeamSolves: boolean; hideSolvedIntro: boolean; splitSubCategories?: boolean } | null => {
   const settings = getSettings()
   return settings.challenges?.filterSettings ?? null
 }
 
-export const setChallengeFilterSettings = (filterSettings: { hideMaintenance: boolean; highlightTeamSolves: boolean; hideSolvedIntro: boolean }) => {
+export const setChallengeFilterSettings = (filterSettings: { hideMaintenance: boolean; highlightTeamSolves: boolean; hideSolvedIntro: boolean; splitSubCategories?: boolean }) => {
   updateSettings((prev) => ({
     ...prev,
     challenges: { ...(prev.challenges || {}), filterSettings },

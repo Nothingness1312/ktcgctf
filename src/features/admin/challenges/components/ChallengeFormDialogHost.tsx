@@ -14,6 +14,7 @@ interface ChallengeFormDialogHostProps {
   events: Event[]
   hideMainEventOption: boolean
   onSubmitSuccess: () => void
+  initialTab?: 'general' | 'additional' | 'subquestions'
 }
 
 const ChallengeFormDialogHost: React.FC<ChallengeFormDialogHostProps> = ({
@@ -24,6 +25,7 @@ const ChallengeFormDialogHost: React.FC<ChallengeFormDialogHostProps> = ({
   events,
   hideMainEventOption,
   onSubmitSuccess,
+  initialTab,
 }) => {
   const {
     formData,
@@ -90,6 +92,7 @@ const ChallengeFormDialogHost: React.FC<ChallengeFormDialogHostProps> = ({
           questionPreviewRows={questionPreviewRows}
           setQuestionPreviewRows={setQuestionPreviewRows}
           normalizeQuestionMarkdown={normalizeQuestionMarkdown}
+          initialTab={initialTab}
         />
       )}
     </AnimatePresence>

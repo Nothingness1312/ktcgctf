@@ -59,10 +59,11 @@ export default function ChallengeFilterControls({
   onClear,
   onSortModeChange,
 }: ChallengeFilterControlsProps) {
-  const resolvedSettings = settings ?? {
-    hideMaintenance: false,
-    highlightTeamSolves: true,
-    hideSolvedIntro: true,
+  const resolvedSettings = {
+    hideMaintenance: settings?.hideMaintenance ?? false,
+    highlightTeamSolves: settings?.highlightTeamSolves ?? true,
+    hideSolvedIntro: settings?.hideSolvedIntro ?? true,
+    splitSubCategories: settings?.splitSubCategories ?? true,
   }
   const categoryOrder = APP.challengeCategories || []
   const difficultyOrder = Object.keys(APP.difficultyStyles || {})

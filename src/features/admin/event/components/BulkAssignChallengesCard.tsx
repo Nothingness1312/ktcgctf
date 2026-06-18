@@ -1,6 +1,7 @@
 import React from 'react'
 import { ArrowUpDown, CheckSquare, Minus, Plus, XCircle } from 'lucide-react'
 import { Button } from '@/shared/ui'
+import { formatCategory } from '@/features/challenges/lib/challenge-utils'
 import {
   ADMIN_ROW_CLASS,
   AdminDataSurface,
@@ -259,7 +260,7 @@ const BulkAssignChallengesCard: React.FC<BulkAssignChallengesCardProps> = ({
               <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-semibold text-gray-900 dark:text-white">{challenge.title}</div>
                 <div className="mt-0.5 truncate text-xs text-gray-500 dark:text-gray-400">
-                  {challenge.category || 'Uncategorized'} {' / '}
+                  {formatCategory(challenge.category) || 'Uncategorized'} {' / '}
                   {challenge.difficulty || 'Unknown'} {' / '}
                   {typeof challenge.points === 'number' ? `${challenge.points} pts` : 'No points'} {' / '}
                   {challenge.event_id ? (events.find((event) => event.id === challenge.event_id)?.name || 'Event') : 'Main Event'}

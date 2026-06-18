@@ -21,7 +21,21 @@ export default function ChallengeMetadata({ challenge, events }: ChallengeMetada
   return (
     <div className="flex items-center justify-between flex-wrap gap-2">
       <div className="flex items-center gap-2 flex-wrap">
-        <CustomBadge label={challenge.category} color="bg-blue-200 text-blue-800 dark:bg-blue-900 dark:text-blue-200" />
+        {(() => {
+          const parts = (challenge.category || '').split('/')
+          const parent = parts[0]
+          const sub = parts.slice(1).join('/')
+          return (
+            <div className="flex items-center gap-2">
+              <CustomBadge label={parent} color="bg-blue-200 text-blue-800 dark:bg-blue-900 dark:text-blue-200" />
+              {sub && (
+                <span className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  / {sub}
+                </span>
+              )}
+            </div>
+          )
+        })()}
         <span>
           <React.Suspense fallback={<span className="inline-block min-w-[64px] text-center text-xs font-semibold">{challenge.difficulty}</span>}>
             <DifficultyBadge className="min-w-[62px]" difficulty={challenge.difficulty} />

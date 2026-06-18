@@ -275,9 +275,23 @@ const ChallengeDetailDialog: React.FC<ChallengeDetailDialogProps> = ({
               <div className="flex flex-wrap items-center gap-3">
                 {/* Category Badge */}
                 <div className="flex items-center gap-2">
-                  <div className={`select-none text-[12px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md ${categoryBadgeColor}`}>
-                    {challenge.category}
-                  </div>
+                  {(() => {
+                    const parts = (challenge.category || '').split('/');
+                    const parent = parts[0];
+                    const sub = parts.slice(1).join('/');
+                    return (
+                      <div className="flex items-center gap-2">
+                        <div className={`select-none text-[12px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md ${categoryBadgeColor}`}>
+                          {parent}
+                        </div>
+                        {sub && (
+                          <span className="text-[12px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                            / {sub}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })()}
 
                   {(() => {
                     const featureType = getChallengeFeatureType(challenge);

@@ -1,4 +1,5 @@
-import { Globe, Bomb, Binary, Cpu, Search, Puzzle, Shield, Terminal, Lightbulb, Eye, Wifi, Bot, Link2 } from 'lucide-react'
+import { Globe, Bomb, Binary, Cpu, Search, Puzzle, Shield, Terminal, Lightbulb, Eye, Wifi, Bot, Link2, Server } from 'lucide-react'
+import React from 'react'
 import type { ElementType } from 'react'
 import { ImageIcon } from 'lucide-react'
 import type { ChallengeWithSolve } from '@/shared/types'
@@ -13,6 +14,7 @@ export function getCategoryDetails(category: string): CategoryDetails {
   const cat = (category || '').toLowerCase()
   if (cat.includes('intro'))        return { color: 'text-yellow-500',  borderColor: 'border-yellow-500/30',  badgeColor: 'bg-yellow-500/15 text-yellow-400'   }
   if (cat.includes('boot to root')) return { color: 'text-emerald-500', borderColor: 'border-emerald-500/30', badgeColor: 'bg-emerald-500/15 text-emerald-400'  }
+  if (cat.includes('linux'))        return { color: 'text-sky-500',     borderColor: 'border-sky-500/30',     badgeColor: 'bg-sky-500/15 text-sky-400'          }
   if (cat.includes('web'))          return { color: 'text-blue-500',    borderColor: 'border-blue-500/30',    badgeColor: 'bg-blue-500/15 text-blue-400'        }
   if (cat.includes('forensic'))     return { color: 'text-teal-500',    borderColor: 'border-teal-500/30',    badgeColor: 'bg-teal-500/15 text-teal-400'        }
   if (cat.includes('osint'))        return { color: 'text-cyan-500',    borderColor: 'border-cyan-500/30',    badgeColor: 'bg-cyan-500/15 text-cyan-400'        }
@@ -30,6 +32,7 @@ export function getCategoryDetails(category: string): CategoryDetails {
 const CATEGORY_ICON_MAP: Record<string, ElementType> = {
   'text-yellow-500': Lightbulb,
   'text-emerald-500': Terminal,
+  'text-sky-500': Server,
   'text-blue-500': Globe,
   'text-teal-500': Search,
   'text-cyan-500': Eye,
@@ -134,32 +137,69 @@ export function sortChallengesByNewest<T extends Pick<ChallengeWithSolve, 'creat
   })
 }
 
-export function buildFuzzyOrderedList(preferredOrder: string[], values: string[]): string[] {
-  const matchedValues = new Set<string>()
+export function buildFuzzyOrderedList(
+  preferredOrder: string[],
+  values: string[],
+  subCategoryOrder?: string[]
+): string[] {
+  const normalizedOrder = preferredOrder.map(c => c.toLowerCase())
+  const normalizedSubOrder = (subCategoryOrder || []).map(c => c.toLowerCase())
 
-  return [
-    ...preferredOrder.flatMap((preferred) => {
-      const preferredLower = preferred.toLowerCase()
-      const found = values.find((value) => {
-        const valueLower = value.toLowerCase()
-        return valueLower.includes(preferredLower) || preferredLower.includes(valueLower)
-      })
+  const getSortKey = (cat: string) => {
+    const parts = cat.split('/')
+    const parent = parts[0].toLowerCase()
+    const sub = parts.slice(1).join('/').toLowerCase()
 
-      if (found && !matchedValues.has(found)) {
-        matchedValues.add(found)
-        return found
-      }
+    let parentIndex = normalizedOrder.indexOf(parent)
+    if (parentIndex === -1) parentIndex = normalizedOrder.length
 
-      return [] as string[]
-    }),
-    ...values.filter((value) => !matchedValues.has(value)).sort(),
-  ]
+    let subIndex: number
+    if (!sub) {
+      subIndex = -1
+    } else {
+      subIndex = normalizedSubOrder.indexOf(sub)
+      if (subIndex === -1) subIndex = normalizedSubOrder.length
+    }
+
+    return { parentIndex, subIndex, catLower: cat.toLowerCase() }
+  }
+
+  return [...values].sort((a, b) => {
+    const keyA = getSortKey(a)
+    const keyB = getSortKey(b)
+    if (keyA.parentIndex !== keyB.parentIndex) return keyA.parentIndex - keyB.parentIndex
+    if (keyA.subIndex !== keyB.subIndex) return keyA.subIndex - keyB.subIndex
+    return keyA.catLower.localeCompare(keyB.catLower)
+  })
 }
 
-export function groupChallengesByCategory(challenges: ChallengeWithSolve[]): Record<string, ChallengeWithSolve[]> {
+export function groupChallengesByCategory(
+  challenges: ChallengeWithSolve[],
+  splitSubCategories: boolean = true
+): Record<string, ChallengeWithSolve[]> {
   return challenges.reduce((acc, challenge) => {
-    if (!acc[challenge.category]) acc[challenge.category] = []
-    acc[challenge.category].push(challenge)
+    const key = splitSubCategories ? challenge.category : getCategoryParent(challenge.category)
+    if (!acc[key]) acc[key] = []
+    acc[key].push(challenge)
     return acc
   }, {} as Record<string, ChallengeWithSolve[]>)
+}
+
+export function getCategoryParent(category: string | null | undefined): string {
+  if (!category) return ''
+  return category.split('/')[0]
+}
+
+export function formatCategory(category: string | null | undefined): string {
+  if (!category) return ''
+  return category.replace(/\//g, ' / ')
+}
+
+export function isCategoryMatch(challengeCategory: string | null | undefined, filterCategory: string): boolean {
+  if (filterCategory === 'all') return true
+  const challengeCatLower = String(challengeCategory || '').toLowerCase()
+  const filterCatLower = filterCategory.toLowerCase()
+  const isExact = challengeCatLower === filterCatLower
+  const isSub = challengeCatLower.startsWith(filterCatLower + '/')
+  return isExact || isSub
 }

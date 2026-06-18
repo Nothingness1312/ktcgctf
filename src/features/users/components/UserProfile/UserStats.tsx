@@ -80,7 +80,8 @@ export default function UserStatsPlotly({
   /* ===== CATEGORY ===== */
   const byCategory: Record<string, number> = {}
   solvedChallenges.forEach(s => {
-    const c = s.category || "Uncategorized"
+    const rawCategory = s.category || "Uncategorized"
+    const c = rawCategory.split('/')[0]
     byCategory[c] = (byCategory[c] || 0) + 1
   })
 

@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
 import APP from '@/config'
+import { getCategoryParent, isCategoryMatch } from '@/features/challenges/lib/challenge-utils'
 import {
   DEFAULT_EVENT_FILTERS,
   getChallengesLite,
@@ -27,7 +28,7 @@ export function useAdminEventBulkChallenges() {
     return challenges.filter((c) => {
       const searchableText = `${c.title || ''} ${c.description || ''}`.toLowerCase()
       if (q && !searchableText.includes(q)) return false
-      if (filters.category !== 'all' && c.category !== filters.category) return false
+      if (!isCategoryMatch(c.category, filters.category)) return false
       if (filters.difficulty !== 'all' && c.difficulty !== filters.difficulty) return false
 
       if (filters.sourceEventId === 'main' && c.event_id) return false
@@ -56,7 +57,7 @@ export function useAdminEventBulkChallenges() {
   }, [filters, challenges])
 
   const allCategories = useMemo(
-    () => Array.from(new Set(challenges.map((c) => c.category))).filter((c): c is string => Boolean(c)),
+    () => Array.from(new Set(challenges.map((c) => getCategoryParent(c.category)))).filter((c): c is string => Boolean(c)),
     [challenges],
   )
   const categories = useMemo(() => {

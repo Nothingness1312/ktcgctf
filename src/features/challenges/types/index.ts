@@ -38,6 +38,7 @@ export type ChallengeFilterSettings = {
   hideMaintenance: boolean
   highlightTeamSolves: boolean
   hideSolvedIntro: boolean
+  splitSubCategories: boolean
 }
 
 export type FlagFeedback = {

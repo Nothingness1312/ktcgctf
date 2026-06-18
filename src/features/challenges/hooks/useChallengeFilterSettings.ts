@@ -13,6 +13,7 @@ export function useChallengeFilterSettings() {
     hideMaintenance: false,
     highlightTeamSolves: true,
     hideSolvedIntro: true,
+    splitSubCategories: true,
   })
   const [settingsLoaded, setSettingsLoaded] = useState(false)
 
@@ -24,11 +25,10 @@ export function useChallengeFilterSettings() {
       if (stored) {
         setFilterSettings({
           ...stored,
+          splitSubCategories: stored.splitSubCategories ?? true,
           highlightTeamSolves: APP.teams.enabled ? stored.highlightTeamSolves : false,
         })
       }
-    } catch {
-      // ignore
     } finally {
       setSettingsLoaded(true)
     }

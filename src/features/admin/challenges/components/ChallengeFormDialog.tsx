@@ -49,6 +49,7 @@ interface ChallengeFormDialogProps {
   questionPreviewRows: Record<number, boolean>
   setQuestionPreviewRows: React.Dispatch<React.SetStateAction<Record<number, boolean>>>
   normalizeQuestionMarkdown: (v: string) => string
+  initialTab?: 'general' | 'additional' | 'subquestions'
 }
 
 const ChallengeFormDialog: React.FC<ChallengeFormDialogProps> = (props) => {
@@ -85,7 +86,13 @@ const ChallengeFormDialog: React.FC<ChallengeFormDialogProps> = (props) => {
     normalizeQuestionMarkdown
   } = props
 
-  const [activeFormTab, setActiveFormTab] = React.useState<'general' | 'additional' | 'subquestions'>('general')
+  const [activeFormTab, setActiveFormTab] = React.useState<'general' | 'additional' | 'subquestions'>(props.initialTab || 'general')
+
+  React.useEffect(() => {
+    if (open) {
+      setActiveFormTab(props.initialTab || 'general')
+    }
+  }, [open, props.initialTab])
 
   const tabItems = [
     { value: 'general' as const, label: 'General Info' },

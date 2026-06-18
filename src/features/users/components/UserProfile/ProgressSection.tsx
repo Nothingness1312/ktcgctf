@@ -24,14 +24,35 @@ export default function ProgressSection({
   difficultyTotals,
   solvedChallenges
 }: ProgressSectionProps) {
-  const visibleCategories = categoryTotals
-    .map(({ category, total_challenges }) => {
-      const categoryKey = normalizeChallengeCategory(category)
-      const solvedCount = solvedChallenges.filter(c => normalizeChallengeCategory(c.category) === categoryKey).length
-      const progress = total_challenges > 0 ? (solvedCount / total_challenges) * 100 : 0
-      return { category, total_challenges, solvedCount, progress }
+  const visibleCategories = React.useMemo(() => {
+    const aggregated: Record<string, { category: string; total_challenges: number; solvedCount: number }> = {}
+
+    categoryTotals.forEach(({ category, total_challenges }) => {
+      const parent = (category || '').split('/')[0]
+      if (!parent) return
+
+      if (!aggregated[parent]) {
+        const solvedCount = solvedChallenges.filter(c => {
+          const challengeParent = (c.category || '').split('/')[0]
+          return challengeParent.toLowerCase() === parent.toLowerCase()
+        }).length
+
+        aggregated[parent] = {
+          category: parent,
+          total_challenges: 0,
+          solvedCount
+        }
+      }
+      aggregated[parent].total_challenges += total_challenges
     })
-    .filter(({ solvedCount }) => solvedCount > 0)
+
+    return Object.values(aggregated)
+      .map(({ category, total_challenges, solvedCount }) => {
+        const progress = total_challenges > 0 ? (solvedCount / total_challenges) * 100 : 0
+        return { category, total_challenges, solvedCount, progress }
+      })
+      .filter(({ solvedCount }) => solvedCount > 0)
+  }, [categoryTotals, solvedChallenges])
 
   const difficultyOrder = Object.keys(APP.difficultyStyles).map(k => k.toLowerCase())
   const activeDifficulties = difficultyTotals

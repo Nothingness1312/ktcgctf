@@ -71,6 +71,18 @@ export default function FilterSettingsMenu({
               }
             />
           </div>
+          <div className="flex items-center justify-between py-2">
+            <div>
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Split sub-categories</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Show sub-categories in separate lists</p>
+            </div>
+            <Switch
+              checked={settings.splitSubCategories ?? true}
+              onCheckedChange={(checked) =>
+                onSettingsChange({ ...settings, splitSubCategories: checked })
+              }
+            />
+          </div>
           {APP.teams.enabled && (
             <div className="flex items-center justify-between py-2">
               <div>
