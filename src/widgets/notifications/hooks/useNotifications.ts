@@ -34,7 +34,7 @@ export function useNotifications() {
   const [notifMessage, setNotifMessage] = useState('')
   const [notifLevel, setNotifLevel] = useState<'info' | 'info_platform' | 'info_challenges'>('info_challenges')
 
-  const [solveNotif, setSolveNotif] = useState<{ username: string; challenge: string } | null>(null)
+  const [solveNotif, setSolveNotif] = useState<{ username: string; challenge: string; isFirstBlood?: boolean } | null>(null)
   const [notifToasts, setNotifToasts] = useState<Array<{ id: string; title: string; message: string; level: string }>>([])
 
   const notifTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -272,12 +272,13 @@ export function useNotifications() {
   // Real-time solves subscription
   useEffect(() => {
     if (!user || !APP.notifSolves) return;
-    const unsubscribe = subscribeToSolves(({ username, challenge }) => {
-      setSolveNotif({ username, challenge })
+    const unsubscribe = subscribeToSolves(({ username, challenge, isFirstBlood }) => {
+      setSolveNotif({ username, challenge, isFirstBlood })
       if (solveSoundEnabled && username !== user.username) {
         try {
-          const audio = new Audio('/sounds/notif_solves.mp3')
-          audio.volume = 0.5
+          const soundFile = isFirstBlood ? '/sounds/first-blood.mp3' : '/sounds/notif_solves.mp3';
+          const audio = new Audio(soundFile)
+          audio.volume = isFirstBlood ? 0.6 : 0.5
           audio.play()
         } catch { }
       }

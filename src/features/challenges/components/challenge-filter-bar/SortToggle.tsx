@@ -19,12 +19,15 @@ export default function SortToggle({ sortMode, onToggle }: SortToggleProps) {
       onClick={onToggle}
       title={sortMode === 'default' ? 'Switch to newest first' : 'Switch to default sort'}
       aria-label="Toggle challenge sorting"
-      className={`inline-flex h-8 w-8 items-center justify-center rounded-lg border transition ${isDefaultSort
+      className={`inline-flex h-8 w-8 sm:w-auto sm:px-2.5 items-center justify-center rounded-lg border transition ${isDefaultSort
         ? SURFACE_FILTER_ITEM_CLASS
         : SURFACE_FILTER_ITEM_ACTIVE_CLASS
         }`}
     >
       <Clock3 size={16} className={isDefaultSort ? 'opacity-70' : 'text-blue-600 dark:text-blue-400'} />
+      <span className="hidden sm:inline-block min-w-[48px] text-center ml-1.5 text-[11px] font-bold tracking-wide">
+        {isDefaultSort ? 'Default' : 'Newest'}
+      </span>
     </button>
   )
 }

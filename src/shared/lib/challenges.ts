@@ -1040,7 +1040,7 @@ export function subscribeToNotifications(onNotif: (payload: { id: string; title:
  * @param onSolve callback({ username, challenge }) dipanggil setiap ada solve baru
  * @returns unsubscribe function
  */
-export function subscribeToSolves(onSolve: (payload: { username: string, challenge: string }) => void) {
+export function subscribeToSolves(onSolve: (payload: { username: string, challenge: string, isFirstBlood?: boolean }) => void) {
   console.log('[subscribeToSolves] Subscribing to solves-insert channel...')
   const channel = supabase
     .channel('solves-insert')
@@ -1057,16 +1057,34 @@ export function subscribeToSolves(onSolve: (payload: { username: string, challen
           console.warn('[subscribeToSolves] Missing user_id or challenge_id:', solve)
           const { data: latestSolve, error: latestError } = await supabase
             .from('solves')
-            .select('user_id, challenge_id')
+            .select('id, user_id, challenge_id')
             .order('created_at', { ascending: false })
             .limit(1)
             .maybeSingle();
           if (latestError || !latestSolve || !latestSolve.user_id || !latestSolve.challenge_id) {
             console.warn('[subscribeToSolves] Still cannot get user_id or challenge_id from latest solve:', latestError, latestSolve)
-            onSolve({ username: 'Unknown', challenge: 'Unknown' });
+            onSolve({ username: 'Unknown', challenge: 'Unknown', isFirstBlood: false });
             return;
           }
           solve = latestSolve;
+        }
+
+        // Check if this solve is the first solve (First Blood) for this challenge
+        let isFirstBlood = false;
+        try {
+          const { data: firstSolve } = await supabase
+            .from('solves')
+            .select('id')
+            .eq('challenge_id', solve.challenge_id)
+            .order('created_at', { ascending: true })
+            .limit(1)
+            .maybeSingle();
+          
+          if (firstSolve && firstSolve.id === solve.id) {
+            isFirstBlood = true;
+          }
+        } catch (err) {
+          console.warn('[subscribeToSolves] Error checking first blood:', err)
         }
 
         const { data, error } = await supabase
@@ -1077,7 +1095,7 @@ export function subscribeToSolves(onSolve: (payload: { username: string, challen
 
         if (error) {
           console.warn('[subscribeToSolves] Error fetching solve info via RPC:', error);
-          onSolve({ username: 'Unknown', challenge: 'Unknown' });
+          onSolve({ username: 'Unknown', challenge: 'Unknown', isFirstBlood });
           return;
         }
 
@@ -1085,10 +1103,10 @@ export function subscribeToSolves(onSolve: (payload: { username: string, challen
           // Pastikan type string dan fallback jika null/undefined
           const username = typeof data[0].username === 'string' && data[0].username ? data[0].username : 'Unknown';
           const challenge = typeof data[0].challenge === 'string' && data[0].challenge ? data[0].challenge : 'Unknown';
-          onSolve({ username, challenge });
-          console.log(`[subscribeToSolves] Real-time solve: ${username} solved ${challenge}`);
+          onSolve({ username, challenge, isFirstBlood });
+          console.log(`[subscribeToSolves] Real-time solve: ${username} solved ${challenge} (First Blood: ${isFirstBlood})`);
         } else {
-          onSolve({ username: 'Unknown', challenge: 'Unknown' });
+          onSolve({ username: 'Unknown', challenge: 'Unknown', isFirstBlood });
         }
       } catch (err) {
         console.error('[subscribeToSolves] Error handling solve event:', err)

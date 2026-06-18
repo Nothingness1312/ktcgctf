@@ -14,14 +14,10 @@ import {
 import {
   getCategoryDetails,
   getCategoryIcon,
-  getFeatureFilterLabel,
-  getFeatureFilterTitle,
-  getNextFeatureFilterMode,
   getSortedFilterValues,
 } from '../../lib'
-import type { ChallengeFeatureFilter, ChallengeFilterState } from '../../types'
+import type { ChallengeFilterState } from '../../types'
 import type { ChallengeStats } from '../../hooks/useChallengeStats'
-
 type DesktopChallengeFilterSidebarProps = {
   filters: ChallengeFilterState
   categories: string[]
@@ -48,25 +44,19 @@ export default function DesktopChallengeFilterSidebar({
   const selectedCategory = filters.category || 'all'
   const selectedDifficulty = filters.difficulty || 'all'
   const difficultyActive = selectedDifficulty !== 'all'
-  const selectedFeature = filters.feature || 'N'
-  const selectedFeatureMode = selectedFeature as ChallengeFeatureFilter
   const searchQuery = String(filters.search || '').trim()
   const searchTitle = searchQuery
     ? `Search: ${searchQuery}. Click to edit search.`
     : 'Search challenges'
-  const showUnsolvedOnly = filters.status === 'unsolved'
-  const showSolvedOnly = filters.status === 'solved'
-  const statusLabel = showSolvedOnly ? 'Solved' : showUnsolvedOnly ? 'Unsolved' : 'All Status'
-  const statusTitle = showSolvedOnly
-    ? 'Showing solved only. Click to show all statuses.'
-    : showUnsolvedOnly
-      ? 'Showing unsolved only. Click to show solved only.'
-      : 'Showing all statuses. Click to show unsolved only.'
-  const StatusIcon = showSolvedOnly ? CheckCircle2 : showUnsolvedOnly ? EyeOff : ListFilter
-  const nextFeatureMode = getNextFeatureFilterMode(selectedFeatureMode)
-  const featureLabel = getFeatureFilterLabel(selectedFeatureMode)
-  const featureTitle = getFeatureFilterTitle(selectedFeatureMode)
-  const FeatureIcon = selectedFeatureMode === 'T' ? ListChecks : selectedFeatureMode === 'S' ? ServerCog : selectedFeatureMode === 'F' ? Flag : Layers
+
+  const selectedStatus = filters.status || 'all'
+  const statusActive = selectedStatus !== 'all'
+  const StatusIcon = selectedStatus === 'solved' ? CheckCircle2 : selectedStatus === 'unsolved' ? EyeOff : ListFilter
+
+  const selectedFeature = filters.feature || 'N'
+  const featureActive = selectedFeature !== 'N'
+  const FeatureIcon = selectedFeature === 'T' ? ListChecks : selectedFeature === 'S' ? ServerCog : selectedFeature === 'F' ? Flag : Layers
+
   const { sortedCategories, sortedDifficulties } = getSortedFilterValues({
     categories,
     difficulties,
@@ -98,11 +88,8 @@ export default function DesktopChallengeFilterSidebar({
     scrollToChallengeFilter()
   }
 
-  const handleStatusToggle = () => {
-    onFilterChange({
-      ...filters,
-      status: showSolvedOnly ? 'all' : showUnsolvedOnly ? 'solved' : 'unsolved',
-    })
+  const handleStatusChange = (status: string) => {
+    onFilterChange({ ...filters, status })
     scrollToChallengeFilter()
   }
 
@@ -111,8 +98,8 @@ export default function DesktopChallengeFilterSidebar({
     scrollToChallengeFilter()
   }
 
-  const handleFeatureToggle = () => {
-    onFilterChange({ ...filters, feature: nextFeatureMode })
+  const handleFeatureChange = (feature: string) => {
+    onFilterChange({ ...filters, feature })
     scrollToChallengeFilter()
   }
 
@@ -157,29 +144,58 @@ export default function DesktopChallengeFilterSidebar({
             </span>
           </button>
 
-          <button
-            type="button"
-            data-tour="challenge-sidebar-status-filter"
-            onClick={handleStatusToggle}
-            title={statusTitle}
-            aria-label={statusTitle}
-            className={iconButtonClass(showUnsolvedOnly || showSolvedOnly)}
-          >
-            <StatusIcon size={19} />
-            <span className="truncate">{statusLabel}</span>
-          </button>
+          <div data-tour="challenge-sidebar-status-filter" className="w-full">
+            <FilterSelect
+              value={selectedStatus}
+              onChange={handleStatusChange}
+              placeholder="Status"
+              active={statusActive}
+              clearable={false}
+              className="w-full sm:w-full"
+              triggerClassName={cn(
+                "px-3 text-xs font-semibold h-9 rounded-xl border transition focus:ring-2 focus:ring-blue-500/30",
+                statusActive ? SURFACE_FILTER_ITEM_ACTIVE_CLASS : SURFACE_FILTER_ITEM_CLASS
+              )}
+              icon={
+                <StatusIcon
+                  size={14}
+                  className={statusActive ? 'text-white' : 'text-gray-500 dark:text-gray-400'}
+                />
+              }
+              options={[
+                { value: 'all', label: 'All Status' },
+                { value: 'unsolved', label: 'Unsolved' },
+                { value: 'solved', label: 'Solved' },
+              ]}
+            />
+          </div>
 
-          <button
-            type="button"
-            data-tour="challenge-sidebar-feature-filter"
-            onClick={handleFeatureToggle}
-            title={featureTitle}
-            aria-label={featureTitle}
-            className={iconButtonClass(selectedFeature !== 'N')}
-          >
-            <FeatureIcon size={19} />
-            <span className="truncate">{featureLabel}</span>
-          </button>
+          <div data-tour="challenge-sidebar-feature-filter" className="w-full">
+            <FilterSelect
+              value={selectedFeature}
+              onChange={handleFeatureChange}
+              placeholder="Feature"
+              active={featureActive}
+              clearable={false}
+              className="w-full sm:w-full"
+              triggerClassName={cn(
+                "px-3 text-xs font-semibold h-9 rounded-xl border transition focus:ring-2 focus:ring-blue-500/30",
+                featureActive ? SURFACE_FILTER_ITEM_ACTIVE_CLASS : SURFACE_FILTER_ITEM_CLASS
+              )}
+              icon={
+                <FeatureIcon
+                  size={14}
+                  className={featureActive ? 'text-white' : 'text-gray-500 dark:text-gray-400'}
+                />
+              }
+              options={[
+                { value: 'N', label: 'All Features' },
+                { value: 'T', label: 'Tasks' },
+                { value: 'S', label: 'Services' },
+                { value: 'F', label: 'Placeholder' },
+              ]}
+            />
+          </div>
 
           <div data-tour="challenge-sidebar-difficulty-filter" className="w-full">
             <FilterSelect

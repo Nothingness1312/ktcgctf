@@ -172,9 +172,8 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge, highlightTeamS
                 Maintenance
               </span>
             ) : (
-              <div className="flex items-center gap-1.5">
-                <div className={`w-2 h-2 rounded-full flex-shrink-0 ${diffTextColor.replace('text-', 'bg-').replace('-400', '-500')}`} />
-                <span className="text-[11px] font-semibold tracking-tight text-gray-500">
+              <div className="flex items-center">
+                <span className={`text-[11px] font-bold tracking-wide ${diffTextColor}`}>
                   {normalizedDiff}
                 </span>
               </div>

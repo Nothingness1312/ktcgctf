@@ -306,7 +306,7 @@ export default function Navbar() {
 
                 {authReady && adminStatus && user && (
                   <Link
-                    href="/admin"
+                    href={globalAdminStatus ? '/admin/overview' : '/admin/challenges'}
                     className={navLinkClass(routeActive('/admin'))}
                   >
                     <Shield size={18} className="mr-1" /> Admin
@@ -549,7 +549,7 @@ export default function Navbar() {
               <>
                 {adminStatus && (
                   <Link
-                    href="/admin"
+                    href={globalAdminStatus ? '/admin/overview' : '/admin/challenges'}
                     className={`px-3 py-2 rounded-lg flex items-center gap-1 text-[15px] font-medium transition-all duration-150 ${theme === 'dark' ? 'text-gray-200 hover:text-blue-400 hover:bg-gray-800 focus:ring-2 focus:ring-blue-700' : 'text-gray-700 hover:text-blue-600 hover:bg-blue-50 focus:ring-2 focus:ring-blue-400'}`}
                     onClick={() => setMobileMenuOpen(false)}
                   >

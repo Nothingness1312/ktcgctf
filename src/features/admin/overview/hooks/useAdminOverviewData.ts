@@ -22,8 +22,8 @@ export function useAdminOverviewData() {
   const [activityData, setActivityData] = useState<ActivityPoint[]>([])
   const [recentSolves, setRecentSolves] = useState<SolverRow[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [accessReady, setAccessReady] = useState(false)
-  const [isAllowed, setIsAllowed] = useState(false)
+  const [accessReady, setAccessReady] = useState(true)
+  const [isAllowed, setIsAllowed] = useState(true)
 
   const refreshStats = useCallback(async (newRange: TimeRange) => {
     setTimeRange(newRange)

@@ -49,7 +49,7 @@ export function useAdminServicesData() {
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [statusLoading, setStatusLoading] = useState(false)
-  const [accessReady, setAccessReady] = useState(false)
+  const [accessReady, setAccessReady] = useState(true)
   const [actionLoading, setActionLoading] = useState<Record<string, AdminServiceAction | null>>({})
   const [globalActionLoading, setGlobalActionLoading] = useState<'up' | 'down' | null>(null)
 

@@ -32,7 +32,7 @@ export const SURFACE_NAV_LINK_ACTIVE_CLASS =
   "bg-blue-500/10 text-blue-700 ring-1 ring-blue-500/20 dark:bg-blue-500/10 dark:text-blue-300"
 
 export const SURFACE_NAV_DROPDOWN_CLASS =
-  "absolute left-0 z-50 mt-2 min-w-[200px] overflow-hidden rounded-xl border border-gray-200/80 bg-white/90 text-gray-900 shadow-xl shadow-blue-500/5 backdrop-blur-xl dark:border-gray-800/90 dark:bg-[#111622]/95 dark:text-gray-100"
+  "absolute left-0 top-full z-50 mt-3 min-w-[200px] overflow-hidden rounded-xl border border-gray-200/80 bg-white/90 text-gray-900 shadow-xl shadow-blue-500/5 backdrop-blur-xl dark:border-gray-800/90 dark:bg-[#111622]/95 dark:text-gray-100"
 
 export const SURFACE_NAV_DROPDOWN_ITEM_CLASS =
   "block px-3 py-2 text-sm transition-colors hover:bg-blue-50/80 hover:text-blue-600 dark:hover:bg-blue-500/10 dark:hover:text-blue-300"

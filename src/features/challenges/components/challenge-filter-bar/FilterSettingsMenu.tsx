@@ -46,7 +46,7 @@ export default function FilterSettingsMenu({
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-64 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg p-3 z-40">
+        <div className="absolute right-0 top-full mt-3 w-64 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg p-3 z-40">
           <div className="flex items-center justify-between py-2">
             <div>
               <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Hide maintenance</p>

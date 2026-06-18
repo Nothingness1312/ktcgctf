@@ -14,8 +14,8 @@ type AuditLogTab = 'admin' | 'auth'
 export default function AdminAuditLogsPage() {
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
-  const [accessReady, setAccessReady] = useState(false)
-  const [isAllowed, setIsAllowed] = useState(false)
+  const [accessReady, setAccessReady] = useState(true)
+  const [isAllowed, setIsAllowed] = useState(true)
   const [activeTab, setActiveTab] = useTabState<AuditLogTab>('tab', 'auth')
 
   useEffect(() => {

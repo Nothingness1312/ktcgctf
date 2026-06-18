@@ -63,7 +63,14 @@ export default function AdminRouteShell({ children }: AdminRouteShellProps) {
   }, [adminScope, authLoading, navItems, pathname, router, scopeLoading])
 
   if (authLoading || scopeLoading) {
-    return <Loader fullscreen />
+    return (
+      <PageBackground
+        selectionClassName={THEME_PRIMARY_SELECTION_CLASS}
+        contentClassName="relative z-10 min-h-[calc(100lvh-3.5rem)] w-full flex items-center justify-center"
+      >
+        <Loader size={40} />
+      </PageBackground>
+    )
   }
 
   return (

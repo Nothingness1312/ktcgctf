@@ -15,8 +15,8 @@ export function useAdminUsersData() {
   const [totalCount, setTotalCount] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [isDataLoading, setIsDataLoading] = useState(false)
-  const [accessReady, setAccessReady] = useState(false)
-  const [isAllowed, setIsAllowed] = useState(false)
+  const [accessReady, setAccessReady] = useState(true)
+  const [isAllowed, setIsAllowed] = useState(true)
 
   // Filters state
   const [query, setQuery] = useState('')

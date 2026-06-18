@@ -290,9 +290,8 @@ const ChallengeDetailDialog: React.FC<ChallengeDetailDialogProps> = ({
                 </div>
 
                 {/* Difficulty */}
-                <div className="select-none flex items-center gap-1.5">
-                  <div className={`w-2 h-2 rounded-full ${diffTextColor.replace('text-', 'bg-').replace('-400', '-500')} shadow-sm`} />
-                  <span className="text-[12px] font-semibold text-gray-500 tracking-tight">
+                <div className="select-none flex items-center">
+                  <span className={`text-[12px] font-bold tracking-wide ${diffTextColor}`}>
                     {normalizedDiff}
                   </span>
                 </div>
