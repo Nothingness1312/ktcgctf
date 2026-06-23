@@ -129,6 +129,10 @@ BEGIN
     RAISE EXCEPTION 'Not authenticated';
   END IF;
 
+  IF p_user_id IS DISTINCT FROM auth.uid() AND NOT is_admin() THEN
+    RAISE EXCEPTION 'Unauthorized';
+  END IF;
+
   RETURN QUERY
   SELECT
     e.id,

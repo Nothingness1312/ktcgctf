@@ -20,7 +20,7 @@ BEGIN
   RETURN v_flag;
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 
 GRANT EXECUTE ON FUNCTION get_flag(p_challenge_id uuid) TO authenticated;
 
@@ -48,3 +48,10 @@ CREATE TRIGGER trigger_auto_flag_hash
 
 -- RLS
 ALTER TABLE public.challenge_flags ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Challenge flags admin all" ON public.challenge_flags;
+CREATE POLICY "Challenge flags admin all"
+  ON public.challenge_flags
+  FOR ALL
+  USING (is_admin() OR can_manage_challenge(challenge_id))
+  WITH CHECK (is_admin() OR can_manage_challenge(challenge_id));

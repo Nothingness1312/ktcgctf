@@ -30,7 +30,7 @@ BEGIN
   ORDER BY c.category;
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 
 GRANT EXECUTE ON FUNCTION get_category_totals(UUID, TEXT) TO authenticated;
 
@@ -60,7 +60,7 @@ BEGIN
   ORDER BY c.difficulty;
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 
 GRANT EXECUTE ON FUNCTION get_difficulty_totals(UUID, TEXT) TO authenticated;
 
@@ -145,7 +145,7 @@ BEGIN
   RETURN v_challenge_id;
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 
 GRANT EXECUTE ON FUNCTION add_challenge(TEXT, TEXT, TEXT, INTEGER, TEXT, TEXT, JSONB, JSONB, BOOLEAN, BOOLEAN, INTEGER, INTEGER, INTEGER, UUID, BOOLEAN, TEXT[]) TO authenticated;
 
@@ -271,7 +271,7 @@ BEGIN
   RETURN json_build_object('success', true, 'message', format('Correct! +%s points.', v_awarded_points));
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 
 GRANT EXECUTE ON FUNCTION submit_flag(uuid, text) TO authenticated;
 
@@ -405,7 +405,7 @@ BEGIN
   RETURN TRUE;
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 
 GRANT EXECUTE ON FUNCTION update_challenge(
   uuid, text, text, text, integer, text, jsonb, jsonb, boolean, boolean, text, boolean, integer, integer, integer, uuid, boolean, text[]
@@ -450,7 +450,7 @@ BEGIN
   );
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 
 GRANT EXECUTE ON FUNCTION set_challenge_active(UUID, BOOLEAN) TO authenticated;
 
@@ -493,7 +493,7 @@ BEGIN
   );
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 
 GRANT EXECUTE ON FUNCTION set_challenge_maintenance(UUID, BOOLEAN) TO authenticated;
 
@@ -583,7 +583,7 @@ EXECUTE FUNCTION handle_challenge_activation();
 CREATE OR REPLACE FUNCTION public.get_challenge_placeholder(p_challenge_id UUID)
 RETURNS TEXT
 LANGUAGE plpgsql
-SECURITY DEFINER
+SECURITY DEFINER SET search_path = public, auth, extensions
 AS $$
 DECLARE
     v_flag TEXT;
@@ -644,13 +644,20 @@ BEGIN
   RETURN TRUE;
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 
 GRANT EXECUTE ON FUNCTION delete_challenge(UUID) TO authenticated;
 
 -- RLS/POLICY
 ALTER TABLE public.challenges ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.solves_nonactive ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Solves nonactive admin all" ON public.solves_nonactive;
+CREATE POLICY "Solves nonactive admin all"
+  ON public.solves_nonactive
+  FOR ALL
+  USING (is_admin() OR can_manage_challenge(challenge_id))
+  WITH CHECK (is_admin() OR can_manage_challenge(challenge_id));
 
 DROP POLICY IF EXISTS "Challenges can select all" ON public.challenges;
 DROP POLICY IF EXISTS "Challenges admin select all" ON public.challenges;

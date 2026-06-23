@@ -14,7 +14,7 @@ BEGIN
   RETURN COALESCE(v_is_admin, FALSE);
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 
 GRANT EXECUTE ON FUNCTION is_admin() TO authenticated;
 
@@ -38,7 +38,7 @@ BEGIN
   );
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 
 GRANT EXECUTE ON FUNCTION has_admin_access() TO authenticated;
 
@@ -53,7 +53,7 @@ BEGIN
   SELECT banned_until INTO v_banned_until FROM public.users WHERE id = p_user_id;
   RETURN v_banned_until IS NOT NULL AND v_banned_until > now();
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, auth, extensions;
 
 GRANT EXECUTE ON FUNCTION public.is_banned(UUID) TO authenticated, anon;
 
@@ -62,7 +62,7 @@ RETURNS BOOLEAN AS $$
 BEGIN
   RETURN public.is_banned(auth.uid()::uuid);
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, auth, extensions;
 
 GRANT EXECUTE ON FUNCTION public.is_current_user_banned() TO authenticated, anon;
 
@@ -129,7 +129,7 @@ BEGIN
   WHERE u.id = p_id;
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 
 GRANT EXECUTE ON FUNCTION get_user_profile(UUID) TO authenticated;
 
@@ -246,7 +246,7 @@ BEGIN
   );
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 
 GRANT EXECUTE ON FUNCTION detail_user(UUID, UUID, TEXT) TO authenticated;
 
@@ -299,7 +299,7 @@ BEGIN
   );
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 
 GRANT EXECUTE ON FUNCTION detail_user_lite(UUID, UUID, TEXT) TO authenticated;
 
@@ -465,7 +465,7 @@ BEGIN
   );
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 
 GRANT EXECUTE ON FUNCTION get_info() TO authenticated;
 
@@ -559,7 +559,7 @@ BEGIN
   WHERE u.id = p_user_id;
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 
 GRANT EXECUTE ON FUNCTION get_solve_info(UUID, UUID) TO authenticated;
 
@@ -636,7 +636,7 @@ BEGIN
   ON CONFLICT (id) DO NOTHING;
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 
 GRANT EXECUTE ON FUNCTION create_profile(UUID, TEXT) TO authenticated;
 
@@ -709,7 +709,7 @@ BEGIN
   RETURN json_build_object('success', true, 'username', v_username);
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 
 GRANT EXECUTE ON FUNCTION update_username(uuid, text) TO authenticated;
 
@@ -734,7 +734,7 @@ BEGIN
   RETURN json_build_object('success', true, 'bio', p_bio);
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 
 GRANT EXECUTE ON FUNCTION update_bio(uuid, text) TO authenticated;
 
@@ -755,7 +755,7 @@ BEGIN
   RETURN json_build_object('success', true, 'sosmed', p_sosmed);
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 
 GRANT EXECUTE ON FUNCTION update_sosmed(uuid, jsonb) TO authenticated;
 
@@ -777,7 +777,7 @@ BEGIN
   RETURN json_build_object('success', true, 'profile_picture_url', v_url);
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 
 GRANT EXECUTE ON FUNCTION update_profile_picture(uuid, text) TO authenticated;
 

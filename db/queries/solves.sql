@@ -89,7 +89,7 @@ BEGIN
   LIMIT p_limit OFFSET p_offset;
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 
 GRANT EXECUTE ON FUNCTION get_logs(INT, INT, UUID, TEXT) TO authenticated;
 
@@ -235,7 +235,7 @@ BEGIN
   LIMIT p_limit OFFSET p_offset;
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 
 GRANT EXECUTE ON FUNCTION get_solvers_all(INT, INT) TO authenticated;
 
@@ -286,7 +286,7 @@ BEGIN
   ORDER BY s.created_at DESC;
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 
 GRANT EXECUTE ON FUNCTION get_solves_by_name(TEXT) TO authenticated;
 
@@ -337,7 +337,7 @@ BEGIN
   ORDER BY s.created_at DESC;
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 
 GRANT EXECUTE ON FUNCTION get_solves_by_challenge(TEXT) TO authenticated;
 
@@ -410,7 +410,7 @@ BEGIN
   RETURN TRUE;
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 
 GRANT EXECUTE ON FUNCTION delete_solver(UUID) TO authenticated;
 

@@ -82,6 +82,10 @@ BEGIN
     RETURN json_build_object('mode', 'none', 'questions', '[]'::jsonb, 'message', 'Not authenticated');
   END IF;
 
+  IF public.is_banned(v_user_id) THEN
+    RETURN json_build_object('mode', 'none', 'questions', '[]'::jsonb, 'message', 'You are currently banned');
+  END IF;
+
   IF p_answers IS NULL THEN
     p_answers := '{}'::jsonb;
   END IF;
@@ -269,6 +273,10 @@ BEGIN
     RETURN json_build_object('results', '{}'::jsonb, 'completed', false, 'message', 'Not authenticated');
   END IF;
 
+  IF public.is_banned(v_user_id) THEN
+    RETURN json_build_object('results', '{}'::jsonb, 'completed', false, 'message', 'You are currently banned');
+  END IF;
+
   IF p_answers IS NULL OR jsonb_typeof(p_answers) <> 'object' THEN
     RETURN json_build_object('results', '{}'::jsonb, 'completed', false, 'message', 'answers must be a JSON object');
   END IF;
@@ -421,6 +429,10 @@ DECLARE
 BEGIN
   IF p_challenge_id IS NULL THEN
     RETURN;
+  END IF;
+
+  IF NOT (auth.uid() IS NULL OR is_admin() OR can_manage_challenge(p_challenge_id)) THEN
+    RAISE EXCEPTION 'Unauthorized';
   END IF;
 
   SELECT COALESCE(MAX(sc.order_number), 0) + COUNT(*)::INTEGER + 1

@@ -29,7 +29,7 @@ BEGIN
   );
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 
 GRANT EXECUTE ON FUNCTION can_manage_event(UUID) TO authenticated;
 
@@ -45,7 +45,7 @@ BEGIN
   RETURN can_manage_event(v_event_id);
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 
 GRANT EXECUTE ON FUNCTION can_manage_challenge(UUID) TO authenticated;
 
@@ -70,7 +70,7 @@ BEGIN
   RETURN json_build_object('is_global_admin', v_is_global, 'event_ids', v_event_ids);
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 
 GRANT EXECUTE ON FUNCTION get_admin_scope() TO authenticated;
 

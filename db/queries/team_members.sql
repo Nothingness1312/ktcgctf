@@ -534,6 +534,10 @@ BEGIN
     RAISE EXCEPTION 'Not authenticated';
   END IF;
 
+  IF get_system_setting('disable_join_team') = 'true' AND NOT is_admin() THEN
+    RAISE EXCEPTION 'Team membership changes are currently disabled';
+  END IF;
+
   IF v_requester = p_user_id THEN
     RAISE EXCEPTION 'Cannot kick yourself';
   END IF;

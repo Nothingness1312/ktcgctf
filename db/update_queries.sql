@@ -123,7 +123,7 @@ BEGIN
   RETURN COALESCE(v_is_admin, FALSE);
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 GRANT EXECUTE ON FUNCTION is_admin() TO authenticated;
 CREATE OR REPLACE FUNCTION has_admin_access()
 RETURNS BOOLEAN AS $$
@@ -143,7 +143,7 @@ BEGIN
   );
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 GRANT EXECUTE ON FUNCTION has_admin_access() TO authenticated;
 CREATE OR REPLACE FUNCTION public.is_banned(p_user_id UUID)
 RETURNS BOOLEAN AS $$
@@ -156,14 +156,14 @@ BEGIN
   SELECT banned_until INTO v_banned_until FROM public.users WHERE id = p_user_id;
   RETURN v_banned_until IS NOT NULL AND v_banned_until > now();
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, auth, extensions;
 GRANT EXECUTE ON FUNCTION public.is_banned(UUID) TO authenticated, anon;
 CREATE OR REPLACE FUNCTION public.is_current_user_banned()
 RETURNS BOOLEAN AS $$
 BEGIN
   RETURN public.is_banned(auth.uid()::uuid);
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, auth, extensions;
 GRANT EXECUTE ON FUNCTION public.is_current_user_banned() TO authenticated, anon;
 CREATE OR REPLACE FUNCTION get_email_by_username(p_username TEXT)
 RETURNS TEXT AS $$
@@ -224,7 +224,7 @@ BEGIN
   WHERE u.id = p_id;
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 GRANT EXECUTE ON FUNCTION get_user_profile(UUID) TO authenticated;
 CREATE OR REPLACE FUNCTION detail_user(p_id UUID, p_event_id UUID DEFAULT NULL, p_event_mode TEXT DEFAULT 'any')
 RETURNS JSON
@@ -333,7 +333,7 @@ BEGIN
   );
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 GRANT EXECUTE ON FUNCTION detail_user(UUID, UUID, TEXT) TO authenticated;
 CREATE OR REPLACE FUNCTION detail_user_lite(p_id UUID, p_event_id UUID DEFAULT NULL, p_event_mode TEXT DEFAULT 'any')
 RETURNS JSON
@@ -382,7 +382,7 @@ BEGIN
   );
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 GRANT EXECUTE ON FUNCTION detail_user_lite(UUID, UUID, TEXT) TO authenticated;
 CREATE OR REPLACE FUNCTION get_leaderboard(
   limit_rows integer DEFAULT 100,
@@ -539,7 +539,7 @@ BEGIN
   );
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 GRANT EXECUTE ON FUNCTION get_info() TO authenticated;
 CREATE OR REPLACE FUNCTION public.get_admin_users()
 RETURNS TABLE (
@@ -628,7 +628,7 @@ BEGIN
   WHERE u.id = p_user_id;
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 GRANT EXECUTE ON FUNCTION get_solve_info(UUID, UUID) TO authenticated;
 -- INSERT
 CREATE OR REPLACE FUNCTION create_profile(p_id uuid, p_username text)
@@ -700,7 +700,7 @@ BEGIN
   ON CONFLICT (id) DO NOTHING;
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 GRANT EXECUTE ON FUNCTION create_profile(UUID, TEXT) TO authenticated;
 CREATE OR REPLACE FUNCTION check_username_exists(p_username TEXT)
 RETURNS BOOLEAN
@@ -761,7 +761,7 @@ BEGIN
   RETURN json_build_object('success', true, 'username', v_username);
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 GRANT EXECUTE ON FUNCTION update_username(uuid, text) TO authenticated;
 CREATE OR REPLACE FUNCTION update_bio(p_id uuid, p_bio text)
 RETURNS json AS $$
@@ -781,7 +781,7 @@ BEGIN
   RETURN json_build_object('success', true, 'bio', p_bio);
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 GRANT EXECUTE ON FUNCTION update_bio(uuid, text) TO authenticated;
 CREATE OR REPLACE FUNCTION update_sosmed(p_id uuid, p_sosmed jsonb)
 RETURNS json AS $$
@@ -798,7 +798,7 @@ BEGIN
   RETURN json_build_object('success', true, 'sosmed', p_sosmed);
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 GRANT EXECUTE ON FUNCTION update_sosmed(uuid, jsonb) TO authenticated;
 CREATE OR REPLACE FUNCTION update_profile_picture(p_id uuid, p_profile_picture_url text)
 RETURNS json AS $$
@@ -816,7 +816,7 @@ BEGIN
   RETURN json_build_object('success', true, 'profile_picture_url', v_url);
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 GRANT EXECUTE ON FUNCTION update_profile_picture(uuid, text) TO authenticated;
 -- DELETE
 CREATE OR REPLACE FUNCTION cleanup_orphaned_users_and_solves()
@@ -1403,7 +1403,7 @@ BEGIN
   );
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 GRANT EXECUTE ON FUNCTION can_manage_event(UUID) TO authenticated;
 CREATE OR REPLACE FUNCTION can_manage_challenge(p_challenge_id UUID)
 RETURNS BOOLEAN AS $$
@@ -1416,7 +1416,7 @@ BEGIN
   RETURN can_manage_event(v_event_id);
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 GRANT EXECUTE ON FUNCTION can_manage_challenge(UUID) TO authenticated;
 CREATE OR REPLACE FUNCTION get_admin_scope()
 RETURNS JSON AS $$
@@ -1436,7 +1436,7 @@ BEGIN
   RETURN json_build_object('is_global_admin', v_is_global, 'event_ids', v_event_ids);
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 GRANT EXECUTE ON FUNCTION get_admin_scope() TO authenticated;
 CREATE OR REPLACE FUNCTION public.get_event_admins()
 RETURNS TABLE (
@@ -1675,6 +1675,9 @@ RETURNS TABLE (
 BEGIN
   IF auth.uid() IS NULL THEN
     RAISE EXCEPTION 'Not authenticated';
+  END IF;
+  IF p_user_id IS DISTINCT FROM auth.uid() AND NOT is_admin() THEN
+    RAISE EXCEPTION 'Unauthorized';
   END IF;
   RETURN QUERY
   SELECT
@@ -2112,7 +2115,7 @@ BEGIN
   RETURN v_flag;
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 GRANT EXECUTE ON FUNCTION get_flag(p_challenge_id uuid) TO authenticated;
 -- UPDATE
 CREATE OR REPLACE FUNCTION generate_flag_hash(flag_text TEXT)
@@ -2135,6 +2138,12 @@ CREATE TRIGGER trigger_auto_flag_hash
   EXECUTE FUNCTION auto_update_flag_hash();
 -- RLS
 ALTER TABLE public.challenge_flags ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Challenge flags admin all" ON public.challenge_flags;
+CREATE POLICY "Challenge flags admin all"
+  ON public.challenge_flags
+  FOR ALL
+  USING (is_admin() OR can_manage_challenge(challenge_id))
+  WITH CHECK (is_admin() OR can_manage_challenge(challenge_id));
 
 -- <<< END: queries/challenge_flags.sql
 
@@ -2183,7 +2192,7 @@ BEGIN
   RETURN v_event_id;
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 GRANT EXECUTE ON FUNCTION add_event(TEXT, TEXT, TIMESTAMPTZ, TIMESTAMPTZ, BOOLEAN, TEXT) TO authenticated;
 -- UPDATE
 CREATE OR REPLACE FUNCTION update_event(
@@ -2253,7 +2262,7 @@ BEGIN
   RETURN TRUE;
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 GRANT EXECUTE ON FUNCTION update_event(UUID, TEXT, TEXT, TIMESTAMPTZ, TIMESTAMPTZ, BOOLEAN, TEXT) TO authenticated;
 CREATE OR REPLACE FUNCTION set_challenges_event(
   p_event_id UUID,
@@ -2287,7 +2296,7 @@ BEGIN
   RETURN v_count;
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 GRANT EXECUTE ON FUNCTION set_challenges_event(UUID, UUID[]) TO authenticated;
 -- DELETE
 CREATE OR REPLACE FUNCTION delete_event(
@@ -2324,7 +2333,7 @@ BEGIN
   RETURN TRUE;
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 GRANT EXECUTE ON FUNCTION delete_event(UUID) TO authenticated;
 -- RLS/POLICY
 ALTER TABLE public.events ENABLE ROW LEVEL SECURITY;
@@ -2368,7 +2377,7 @@ BEGIN
   ORDER BY c.category;
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 GRANT EXECUTE ON FUNCTION get_category_totals(UUID, TEXT) TO authenticated;
 CREATE OR REPLACE FUNCTION get_difficulty_totals(p_event_id UUID DEFAULT NULL, p_event_mode TEXT DEFAULT 'any')
 RETURNS TABLE (
@@ -2396,7 +2405,7 @@ BEGIN
   ORDER BY c.difficulty;
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 GRANT EXECUTE ON FUNCTION get_difficulty_totals(UUID, TEXT) TO authenticated;
 CREATE OR REPLACE FUNCTION get_user_first_bloods(p_user_id UUID)
 RETURNS TABLE(challenge_id UUID)
@@ -2473,7 +2482,7 @@ BEGIN
   RETURN v_challenge_id;
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 GRANT EXECUTE ON FUNCTION add_challenge(TEXT, TEXT, TEXT, INTEGER, TEXT, TEXT, JSONB, JSONB, BOOLEAN, BOOLEAN, INTEGER, INTEGER, INTEGER, UUID, BOOLEAN, TEXT[]) TO authenticated;
 CREATE OR REPLACE FUNCTION submit_flag(
   p_challenge_id uuid,
@@ -2578,7 +2587,7 @@ BEGIN
   RETURN json_build_object('success', true, 'message', format('Correct! +%s points.', v_awarded_points));
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 GRANT EXECUTE ON FUNCTION submit_flag(uuid, text) TO authenticated;
 -- UPDATE
 UPDATE challenges
@@ -2702,7 +2711,7 @@ BEGIN
   RETURN TRUE;
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 GRANT EXECUTE ON FUNCTION update_challenge(
   uuid, text, text, text, integer, text, jsonb, jsonb, boolean, boolean, text, boolean, integer, integer, integer, uuid, boolean, text[]
 ) TO authenticated;
@@ -2741,7 +2750,7 @@ BEGIN
   );
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 GRANT EXECUTE ON FUNCTION set_challenge_active(UUID, BOOLEAN) TO authenticated;
 CREATE OR REPLACE FUNCTION set_challenge_maintenance(
   p_challenge_id UUID,
@@ -2778,7 +2787,7 @@ BEGIN
   );
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 GRANT EXECUTE ON FUNCTION set_challenge_maintenance(UUID, BOOLEAN) TO authenticated;
 CREATE OR REPLACE FUNCTION update_challenge_solve_count()
 RETURNS TRIGGER AS $$
@@ -2852,7 +2861,7 @@ EXECUTE FUNCTION handle_challenge_activation();
 CREATE OR REPLACE FUNCTION public.get_challenge_placeholder(p_challenge_id UUID)
 RETURNS TEXT
 LANGUAGE plpgsql
-SECURITY DEFINER
+SECURITY DEFINER SET search_path = public, auth, extensions
 AS $$
 DECLARE
     v_flag TEXT;
@@ -2907,11 +2916,17 @@ BEGIN
   RETURN TRUE;
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 GRANT EXECUTE ON FUNCTION delete_challenge(UUID) TO authenticated;
 -- RLS/POLICY
 ALTER TABLE public.challenges ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.solves_nonactive ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Solves nonactive admin all" ON public.solves_nonactive;
+CREATE POLICY "Solves nonactive admin all"
+  ON public.solves_nonactive
+  FOR ALL
+  USING (is_admin() OR can_manage_challenge(challenge_id))
+  WITH CHECK (is_admin() OR can_manage_challenge(challenge_id));
 DROP POLICY IF EXISTS "Challenges can select all" ON public.challenges;
 DROP POLICY IF EXISTS "Challenges admin select all" ON public.challenges;
 DROP POLICY IF EXISTS "Challenges event admin select scoped" ON public.challenges;
@@ -3039,6 +3054,9 @@ DECLARE
 BEGIN
   IF v_user_id IS NULL THEN
     RETURN json_build_object('mode', 'none', 'questions', '[]'::jsonb, 'message', 'Not authenticated');
+  END IF;
+  IF public.is_banned(v_user_id) THEN
+    RETURN json_build_object('mode', 'none', 'questions', '[]'::jsonb, 'message', 'You are currently banned');
   END IF;
   IF p_answers IS NULL THEN
     p_answers := '{}'::jsonb;
@@ -3203,6 +3221,9 @@ BEGIN
   IF v_user_id IS NULL THEN
     RETURN json_build_object('results', '{}'::jsonb, 'completed', false, 'message', 'Not authenticated');
   END IF;
+  IF public.is_banned(v_user_id) THEN
+    RETURN json_build_object('results', '{}'::jsonb, 'completed', false, 'message', 'You are currently banned');
+  END IF;
   IF p_answers IS NULL OR jsonb_typeof(p_answers) <> 'object' THEN
     RETURN json_build_object('results', '{}'::jsonb, 'completed', false, 'message', 'answers must be a JSON object');
   END IF;
@@ -3329,6 +3350,9 @@ DECLARE
 BEGIN
   IF p_challenge_id IS NULL THEN
     RETURN;
+  END IF;
+  IF NOT (auth.uid() IS NULL OR is_admin() OR can_manage_challenge(p_challenge_id)) THEN
+    RAISE EXCEPTION 'Unauthorized';
   END IF;
   SELECT COALESCE(MAX(sc.order_number), 0) + COUNT(*)::INTEGER + 1
   INTO v_offset
@@ -3643,7 +3667,7 @@ BEGIN
   LIMIT p_limit OFFSET p_offset;
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 GRANT EXECUTE ON FUNCTION get_logs(INT, INT, UUID, TEXT) TO authenticated;
 CREATE OR REPLACE FUNCTION get_recent_solves(
   p_limit INT DEFAULT 50,
@@ -3780,7 +3804,7 @@ BEGIN
   LIMIT p_limit OFFSET p_offset;
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 GRANT EXECUTE ON FUNCTION get_solvers_all(INT, INT) TO authenticated;
 CREATE OR REPLACE FUNCTION get_solves_by_name(
   p_username TEXT
@@ -3828,7 +3852,7 @@ BEGIN
   ORDER BY s.created_at DESC;
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 GRANT EXECUTE ON FUNCTION get_solves_by_name(TEXT) TO authenticated;
 CREATE OR REPLACE FUNCTION get_solves_by_challenge(
   p_challenge_title TEXT
@@ -3876,7 +3900,7 @@ BEGIN
   ORDER BY s.created_at DESC;
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 GRANT EXECUTE ON FUNCTION get_solves_by_challenge(TEXT) TO authenticated;
 CREATE OR REPLACE FUNCTION get_challenge_solvers(
   p_challenge_id UUID
@@ -3941,7 +3965,7 @@ BEGIN
   RETURN TRUE;
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 GRANT EXECUTE ON FUNCTION delete_solver(UUID) TO authenticated;
 CREATE OR REPLACE FUNCTION get_solved_event_ids()
 RETURNS TABLE (event_id UUID)
@@ -3979,7 +4003,7 @@ RETURNS TEXT AS $$
 BEGIN
   RETURN replace(gen_random_uuid()::text, '-', '');
 END;
-$$ LANGUAGE plpgsql IMMUTABLE;
+$$ LANGUAGE plpgsql VOLATILE;
 CREATE OR REPLACE FUNCTION is_team_captain(p_team_id UUID)
 RETURNS BOOLEAN AS $$
 DECLARE
@@ -5126,6 +5150,9 @@ BEGIN
   IF v_requester IS NULL THEN
     RAISE EXCEPTION 'Not authenticated';
   END IF;
+  IF get_system_setting('disable_join_team') = 'true' AND NOT is_admin() THEN
+    RAISE EXCEPTION 'Team membership changes are currently disabled';
+  END IF;
   IF v_requester = p_user_id THEN
     RAISE EXCEPTION 'Cannot kick yourself';
   END IF;
@@ -5185,7 +5212,7 @@ BEGIN
   LIMIT p_limit OFFSET p_offset;
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 GRANT EXECUTE ON FUNCTION get_notifications(INT, INT) TO authenticated;
 -- INSERT
 CREATE OR REPLACE FUNCTION create_notification(
@@ -5207,7 +5234,7 @@ BEGIN
   RETURN v_new_id;
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 GRANT EXECUTE ON FUNCTION create_notification(TEXT, TEXT, TEXT) TO authenticated;
 -- DELETE
 CREATE OR REPLACE FUNCTION delete_notification(
@@ -5222,7 +5249,7 @@ BEGIN
   RETURN TRUE;
 END;
 $$ LANGUAGE plpgsql
-SECURITY DEFINER;
+SECURITY DEFINER SET search_path = public, auth, extensions;
 GRANT EXECUTE ON FUNCTION delete_notification(UUID) TO authenticated;
 -- RLS/POLICY
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;

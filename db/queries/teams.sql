@@ -12,7 +12,7 @@ RETURNS TEXT AS $$
 BEGIN
   RETURN replace(gen_random_uuid()::text, '-', '');
 END;
-$$ LANGUAGE plpgsql IMMUTABLE;
+$$ LANGUAGE plpgsql VOLATILE;
 
 CREATE OR REPLACE FUNCTION is_team_captain(p_team_id UUID)
 RETURNS BOOLEAN AS $$
