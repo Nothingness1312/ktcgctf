@@ -3,7 +3,7 @@ import { LINKS, YEAR, DIFFICULTY_STYLES, NXCTF } from './const'
 export const APP = {
   shortName: "KTCG",
   fullName: "KTCG CTF",
-  description: "Aplikasi CTF minimalis dengan Next.js dan Supabase",
+  description: "Website CTF KTCG Dari Pemula Sampai ke Sepuh",
   flagFormat: "KTCG{your_flag_here}",
 
   challengeCategories: [
@@ -47,9 +47,9 @@ export const APP = {
   eventMainLabel: "main",
   // Gambar untuk "Main/Featured" event (boleh URL external atau path public). Contoh:
   // 'https://example.com/banner.png' atau '/images/banner.png'
-  eventMainImageUrl: "https://raw.githubusercontent.com/nxctf/assets/refs/heads/main/event/active_nxctf.png",
+  eventMainImageUrl: "https://i.ibb.co.com/Kp6JyZrQ/logodc.png",
   // Fallback image untuk event yang tidak punya image_url.
-  // eventFallbackImageUrl: "https://raw.githubusercontent.com/ariafatah0711/fgte_s1/refs/heads/main/img/FGTE_Blank.png",
+  // eventFallbackImageUrl: "https://i.ibb.co.com/Kp6JyZrQ/logodc.png",
   eventFallbackImageUrl: "",
 
   /* Maintenance configuration (env-only): NEXT_PUBLIC_MAINTENANCE_MODE should be 'yes' or 'no'. */
@@ -59,7 +59,7 @@ export const APP = {
 
   links: {
     ...LINKS,
-    discord: "https://discord.gg/5etKks6aQQ",
+    discord: "https://discord.gg/Q5dVVBs6xX",
   },
   difficultyStyles: DIFFICULTY_STYLES,
   year: YEAR,
