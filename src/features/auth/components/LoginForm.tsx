@@ -35,7 +35,7 @@ export default function LoginForm() {
     <AuthCard>
       <AuthHeader
         badge="Welcome Back"
-        title="Sign in to NXCTF"
+        title="Sign in to KTCG CTF"
         subtitle="Continue your CTF journey"
       />
 
@@ -105,7 +105,7 @@ export default function LoginForm() {
         <GoogleLoginButton />
       </form>
 
-      <AuthFooter text="New to NXCTF?" href="/register" linkText="Create an account" />
+      <AuthFooter text="New to KTCG CTF?" href="/register" linkText="Create an account" />
     </AuthCard>
   )
 }

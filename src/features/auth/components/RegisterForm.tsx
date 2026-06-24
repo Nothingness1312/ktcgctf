@@ -43,7 +43,7 @@ export default function RegisterForm() {
     <AuthCard>
       <AuthHeader
         badge="Create Account"
-        title="Join NXCTF"
+        title="Join KTCG CTF"
         subtitle="Start solving challenges today"
       />
 
