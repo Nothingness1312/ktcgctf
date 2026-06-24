@@ -38,6 +38,7 @@ yarn-error.log*
 next-env.d.ts
 
 _tmp
+.temp
 
 .vscode
 .vercel
@@ -62,3 +63,5 @@ DESIGN.md
 .weave
 
 refactor
+
+supabase

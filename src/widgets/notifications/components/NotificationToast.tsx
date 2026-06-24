@@ -16,24 +16,25 @@ function getToastIcon(level: string) {
 }
 
 type NotificationToastProps = {
-  solveNotif: { username: string; challenge: string; isFirstBlood?: boolean } | null
+  solveToasts: Array<{ id: string; username: string; challenge: string; isFirstBlood?: boolean }>
   notifToasts: Array<{ id: string; title: string; message: string; level: string }>
-  onDismissSolve: () => void
+  onDismissSolve: (id: string) => void
   onDismissToast: (id: string) => void
 }
 
 export default function NotificationToast({
-  solveNotif,
+  solveToasts,
   notifToasts,
   onDismissSolve,
   onDismissToast,
 }: NotificationToastProps) {
   return (
     <div className="fixed top-4 right-4 z-[5000] flex flex-col gap-3 pointer-events-none" style={{ width: '100%', maxWidth: 380 }}>
-      {/* Solve notification */}
-      {solveNotif && (
-        solveNotif.isFirstBlood ? (
+      {/* Solve notifications */}
+      {solveToasts.map((toast) => (
+        toast.isFirstBlood ? (
           <div
+            key={toast.id}
             className="pointer-events-auto relative overflow-hidden flex flex-col gap-2 rounded-xl border border-red-500/20 bg-[#0d0e12]/95 px-4 py-3.5 shadow-[0_4px_20px_rgba(220,38,38,0.12)] animate-toast-in animate-blood-shake"
           >
             {/* Top Row: Icon, Badges, Username, Close */}
@@ -42,10 +43,10 @@ export default function NotificationToast({
                 <Skull size={14} />
               </div>
               <span className="shrink-0 bg-red-500/10 border border-red-500/20 text-red-400 font-bold px-1.5 py-0.5 rounded text-[9px] tracking-wider font-mono">FIRST BLOOD</span>
-              <span className="truncate text-[13px] text-gray-100 font-semibold">{solveNotif.username}</span>
+              <span className="truncate text-[13px] text-gray-100 font-semibold">{toast.username}</span>
               
               <button
-                onClick={onDismissSolve}
+                onClick={() => onDismissSolve(toast.id)}
                 className="ml-auto shrink-0 rounded p-1 text-gray-500 transition-all hover:bg-white/5 hover:text-gray-300"
                 aria-label="Dismiss"
               >
@@ -55,7 +56,7 @@ export default function NotificationToast({
 
             {/* Bottom Row: Solve Description (Left Aligned) */}
             <div className="text-[12px] text-gray-400 relative z-10">
-              secured first blood on <span className="font-semibold text-red-400">{solveNotif.challenge}</span>
+              secured first blood on <span className="font-semibold text-red-400">{toast.challenge}</span>
             </div>
             
             {/* Animated progress bar */}
@@ -65,6 +66,7 @@ export default function NotificationToast({
           </div>
         ) : (
           <div
+            key={toast.id}
             className="pointer-events-auto relative overflow-hidden flex flex-col gap-2 rounded-xl border border-blue-500/20 bg-[#090d16]/90 backdrop-blur-md px-4 py-3.5 shadow-[0_0_25px_rgba(59,130,246,0.15)] ring-1 ring-blue-500/10 transition-all hover:border-blue-500/40 animate-toast-in"
           >
             {/* Top Row: Icon, Username, Close */}
@@ -72,10 +74,10 @@ export default function NotificationToast({
               <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 ring-1 ring-blue-500/20">
                 <Bell size={14} className="text-blue-400" />
               </div>
-              <span className="truncate text-[13px] font-bold text-gray-100">{solveNotif.username}</span>
+              <span className="truncate text-[13px] font-bold text-gray-100">{toast.username}</span>
               
               <button
-                onClick={onDismissSolve}
+                onClick={() => onDismissSolve(toast.id)}
                 className="ml-auto shrink-0 rounded p-1 text-gray-400 transition-all hover:bg-white/10 hover:text-gray-300"
                 aria-label="Dismiss"
               >
@@ -85,7 +87,7 @@ export default function NotificationToast({
 
             {/* Bottom Row: Solve Description (Left Aligned) */}
             <div className="text-[12px] text-gray-300 font-medium relative z-10">
-              just solved <span className="font-extrabold text-blue-400">{solveNotif.challenge}</span>
+              just solved <span className="font-extrabold text-blue-400">{toast.challenge}</span>
             </div>
 
             {/* Animated progress bar */}
@@ -94,7 +96,7 @@ export default function NotificationToast({
             </div>
           </div>
         )
-      )}
+      ))}
 
       {/* Stacked notification toasts */}
       {notifToasts.map((toast) => {

@@ -52,6 +52,34 @@ export default function BannedOverlay({ user, variant = 'fullscreen' }: BannedOv
     return () => clearInterval(intervalId)
   }, [user.banned_until])
 
+  // Poll database to check if unbanned (every 15 seconds and on tab focus)
+  useEffect(() => {
+    const checkBanStatus = async () => {
+      try {
+        const freshUser = await AuthService.getCurrentUser()
+        const stillBanned = freshUser && freshUser.banned_until && new Date(freshUser.banned_until) > new Date()
+        
+        if (!stillBanned) {
+          window.location.reload()
+        }
+      } catch (err) {
+        console.error('Failed to verify ban status:', err)
+      }
+    }
+
+    const pollId = setInterval(checkBanStatus, 15000)
+
+    const handleFocus = () => {
+      void checkBanStatus()
+    }
+    window.addEventListener('focus', handleFocus)
+
+    return () => {
+      clearInterval(pollId)
+      window.removeEventListener('focus', handleFocus)
+    }
+  }, [])
+
   const formatTimeLeft = (secondsCount: number) => {
     const days = Math.floor(secondsCount / (24 * 3600))
     const hours = Math.floor((secondsCount % (24 * 3600)) / 3600)

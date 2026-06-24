@@ -193,7 +193,7 @@ export async function getUserByUsername(username: string): Promise<User | null> 
       id: data.id,
       username: data.username,
       score: 0,
-      is_admin: data.is_admin ?? undefined,
+      is_admin: (data as any).is_admin ?? undefined,
       created_at: data.created_at ?? '',
       updated_at: data.updated_at ?? '',
       profile_picture_url: data.profile_picture_url ?? null,

@@ -32,7 +32,7 @@ export async function getAdminUsers(params?: {
 }): Promise<{ users: AdminUserRow[]; totalCount: number }> {
   try {
     const { data, error } = await supabase.rpc('get_admin_users_paginated', {
-      p_search: params?.search || null,
+      p_search: params?.search || undefined,
       p_role: params?.role || 'all',
       p_sort_by: params?.sortBy || 'newest',
       p_limit: params?.limit || 100,
@@ -80,7 +80,7 @@ export async function adminBanUser(
   try {
     const { error } = await supabase.rpc('admin_ban_user', {
       p_user_id: userId,
-      p_duration_minutes: durationMinutes,
+      p_duration_minutes: durationMinutes ?? -1,
       p_reason: reason || 'Banned by administrator'
     })
     if (error) {

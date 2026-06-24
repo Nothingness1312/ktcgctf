@@ -79,6 +79,20 @@ Go to your Supabase dashboard → Authentication → Settings → Site URL and a
 ### 6. Create an Admin Account
 To create an admin account, register a new account on the platform, then go to Supabase Dashboard → **users** table, find your user, and set `admin = true`. After that, refresh the page and you will see the Admin menu in the navbar.
 
+### 7. Generating Database TypeScript Types
+If you modify the database schema or RPC functions, you should regenerate the TypeScript type definitions:
+* **Remote Supabase Project**:
+  Run the command directly by passing your Supabase Project ID as an argument:
+  ```bash
+  npm run update-types <your-project-ref>
+  npm run update-types rzucnnwfbhxbsoipfyed
+  ```
+* **Local Supabase Instance**: If you are running Supabase locally, run:
+  ```bash
+  npm run update-types:local
+  ```
+This will automatically update `src/lib/supabase/database.types.ts` to keep your frontend code in sync with your database changes.
+
 ## 🚀 Production Setup
 ### Deploy to Vercel
 1. Push to GitHub
@@ -200,11 +214,13 @@ db/
 
 ## 🛠️ Available Scripts
 ```bash
-npm run setup    # Generate db/init.sql from schema
-npm run dev      # Start development server (localhost:3000)
-npm run build    # Build for production
-npm run start    # Start production server
-npm run lint     # Run ESLint
+npm run setup               # Generate db/init.sql from schema
+npm run dev                 # Start development server (localhost:3000)
+npm run build               # Build for production
+npm run start               # Start production server
+npm run lint                # Run ESLint
+npm run update-types <project-ref> # Generate TypeScript types from remote Supabase
+npm run update-types:local  # Generate TypeScript types from local Supabase
 ```
 
 ## ✨ Key Technologies

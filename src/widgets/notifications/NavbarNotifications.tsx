@@ -40,7 +40,7 @@ export default function NavbarNotifications({
     setNotifMessage,
     notifLevel,
     setNotifLevel,
-    solveNotif,
+    solveToasts,
     notifToasts,
     solveSoundEnabled,
     setSolveSoundEnabled,
@@ -79,7 +79,7 @@ export default function NavbarNotifications({
       {mounted && createPortal(
         <>
           <NotificationToast
-            solveNotif={solveNotif}
+            solveToasts={solveToasts}
             notifToasts={notifToasts}
             onDismissSolve={dismissSolveNotif}
             onDismissToast={dismissNotifToast}

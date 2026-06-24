@@ -121,7 +121,7 @@ export default function JoinEventDialog({
             ) : null}
           </div>
 
-          <DialogFooter className="gap-2">
+          <DialogFooter className="gap-2 mt-4">
             <Button
               type="button"
               variant="ghost"

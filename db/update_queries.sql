@@ -735,6 +735,9 @@ BEGIN
   IF NOT public.is_admin() THEN
     RAISE EXCEPTION 'Only global admins can ban users';
   END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.users WHERE id = p_user_id) THEN
+    RAISE EXCEPTION 'User not found';
+  END IF;
   IF EXISTS (SELECT 1 FROM public.users WHERE id = p_user_id AND is_admin = true) THEN
     RAISE EXCEPTION 'Cannot ban an admin user';
   END IF;
@@ -760,6 +763,9 @@ BEGIN
   IF NOT public.is_admin() THEN
     RAISE EXCEPTION 'Only global admins can unban users';
   END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.users WHERE id = p_user_id) THEN
+    RAISE EXCEPTION 'User not found';
+  END IF;
   UPDATE public.users
   SET banned_until = NULL,
       ban_reason = NULL,
@@ -777,6 +783,9 @@ RETURNS BOOLEAN AS $$
 BEGIN
   IF NOT public.is_admin() THEN
     RAISE EXCEPTION 'Only global admins can change user passwords';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM auth.users WHERE id = p_user_id) THEN
+    RAISE EXCEPTION 'User not found';
   END IF;
   IF p_new_password IS NULL OR length(p_new_password) < 6 THEN
     RAISE EXCEPTION 'Password must be at least 6 characters long';
